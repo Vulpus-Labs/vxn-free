@@ -31,3 +31,10 @@ reverse gain.
 - [ ] No allocation in `process` (a no-alloc test).
 - [ ] Aliasing measured at 44.1 and 96 kHz on a 1 kHz sine. Whether to
       oversample is decided from the numbers, which go in the close-out.
+- [ ] Latency is known exactly. Without oversampling it is zero; with
+      it, the resampling filters' delay, rounded to whole samples with
+      the dry path (MIX) delayed to match so dry and wet stay aligned.
+      The engine exposes its latency in samples as a function of its
+      settings and rate, and a test measures it: an impulse and a step
+      through the engine at every setting that could change it and at
+      44.1, 48 and 96 kHz land on the sample the engine says.
