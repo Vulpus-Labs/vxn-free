@@ -20,6 +20,7 @@ asymmetric crush, and mono, separate or linked stereo.
 | 0005 | CLAP plugin: params, state, tests, clap-validator |
 | 0006 | Manual |
 | 0012 (closed) | Auto gain: PEAK and RANGE detectors, DECAY |
+| 0013 (closed) | Faceplate rendered in Blender, 1990s rack style |
 
 ## Dependency order
 

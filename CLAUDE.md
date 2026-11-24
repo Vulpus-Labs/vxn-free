@@ -1,6 +1,7 @@
 # vxn-free: working conventions
 
-vxn-free holds Vulpus Labs' free CLAP effects (Beverley, Glow-Up). It is
+vxn-free holds Vulpus Labs' free CLAP effects (Beverley, Glow-Up,
+Murmuration). It is
 public, under MIT OR Apache-2.0. It is built on the public silkscreen
 library (<https://github.com/Vulpus-Labs/silkscreen>, checked out at
 `~/src/silkscreen`).

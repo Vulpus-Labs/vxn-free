@@ -1,0 +1,145 @@
+# 0002: Murmuration, a listening ensemble chorus
+
+Status: proposed (2026-11-24)
+
+## Context
+
+The suite gains a third free effect: a chorus. Most choruses are a few
+delayed copies of the input moved by sine LFOs. Their weaknesses are
+known:
+
+- The pitch of each copy swings back and forth with the LFO's slope,
+  which reads as seasick wobble rather than players slightly out of tune.
+- A periodic LFO is easy to hear as a cycle.
+- Dry and delayed copies form comb filters whose notches sweep through
+  sustained notes and hollow them out.
+- Chorusing the bass smears it and widens what should stay central.
+- Attacks are chorused as much as sustains, so drums and plucks soften.
+- Widening material that is already wide makes the mono sum collapse.
+
+Murmuration addresses each of these, and stays a zero-latency effect.
+
+## Decision
+
+1. **Plugin.** Murmuration, id `labs.vulpus.murmuration`, vendor Vulpus
+   Labs, features audio-effect, chorus. This extends ADR 0001's list of
+   plugins. It is an original design, not a port, so it has no module
+   behaviour to keep.
+
+2. **Zero latency.** The audio path has no block processing: each output
+   sample depends only on input up to that sample. The reported latency
+   is zero at every setting and every rate. Analysis runs beside the
+   audio path and steers it (point 6); it never sits in it.
+
+3. **Voices are a flock.** Two to eight voices each read a modulated delay
+   line. A voice is an agent in a two-dimensional space of (delay, pan):
+   - Its position on the delay axis is its delay time. Its velocity on
+     that axis is its pitch shift: a voice whose delay changes at rate
+     d′ plays at ratio 1 − d′. Detune is therefore a speed limit. DETUNE
+     (in cents) clamps every voice's delay velocity, so no voice is ever
+     further out of tune than that.
+   - Steering follows the boids rules. *Cohesion* pulls voices towards
+     the flock's centre, so they stay one section. *Separation* pushes
+     apart voices whose delays come close, since two voices at the same
+     delay double up and comb. *Alignment* matches neighbours' velocities,
+     so the section drifts together.
+   - *Turbulence* adds a band-limited random force per voice, so the
+     motion never settles and has no period.
+   - Delay is bounded softly within a range set by SPREAD, with a floor
+     set by point 6. Pan is bounded within ±WIDTH.
+
+   The flock updates at a control rate (once per fixed internal tick, not
+   per host block), and each voice's delay is interpolated per sample
+   between ticks. There is no LFO, so there is no tempo sync. Its
+   absence is deliberate.
+
+4. **Bands.** Linkwitz-Riley (4th order) crossovers split the input into
+   LOW, MID and HIGH.
+   - Voices are fed from MID and HIGH only. LOW is never chorused, so
+     the bass stays tight and central. The LOW crossover is a control
+     (default 150 Hz).
+   - MID and HIGH have separate depth, so the upper band can be
+     decorrelated more, as in a real section.
+   - The dry signal is the unfiltered input. The wet signal is the sum of
+     the chorused bands. Because LOW has no wet part, the crossovers never
+     need to sum flat in the dry path.
+   - Voices read the mid signal (L + R) / 2 of their band and are placed
+     by pan. The dry signal keeps the input's own stereo image.
+
+5. **Pan law.** Equal-power panning. Interaural time and level difference
+   panning was considered and left out: it combs when summed to mono,
+   which works against point 8.
+
+6. **Analysis runs behind and still looks ahead.** A sidechain analyses the
+   dry input on a fixed internal hop, independent of the host's block
+   size. Its window is about 5 ms (256 samples at 48 kHz, scaled to the
+   next power of two at other rates), with a hop of a quarter-window.
+   - The analysis lags the input by at most one window plus one hop. Every
+     voice reads at least that far into the past, so the analysis sees
+     each sample before any voice plays it. The plugin gets this
+     lookahead for free and still reports zero latency.
+   - Results reach the voices through a **side-buffer** that runs
+     alongside each delay line: the analysis writes gain values there
+     after the fact, at the positions it has just examined, and each
+     voice reads them at the same position as its audio tap.
+   - The minimum voice delay is window + hop, rounded up (about 7 ms at
+     every rate), and is enforced whatever the parameters.
+   - Small windows give coarse bins (about 190 Hz at 48 kHz). That is
+     acceptable because the analysis only serves MID and HIGH: LOW, where
+     fine resolution would matter, is never chorused.
+
+7. **What the analysis drives.**
+   - **Duck.** Onsets (spectral flux per band) lower wet gain over the
+     attack. They are written into the side-buffer from the start of the
+     frame in which the onset was found, so the duck begins before the
+     attack reaches any voice. DUCK sets the depth.
+   - **Bloom.** After an onset, wet depth rises from zero over BLOOM
+     time, the way a singer brings in vibrato late in a note. BLOOM = 0
+     turns it off.
+   - **Clarity.** Strong spectral peaks in MID and HIGH add a term to the
+     flock's steering. For a voice at delay d, the dry + voice comb has
+     notches at (2k + 1) / 2d Hz. The term pushes each voice away from
+     delays whose notches land on strong peaks, weighted by peak strength.
+     Because the push goes through the flock's dynamics, the detune speed
+     limit also limits how fast a voice can be pushed, so steering adds no
+     pitch glitches of its own. CLARITY sets the weight.
+   - **Auto width.** Inter-channel coherence of the input, per band,
+     smoothed over about 300 ms. Bands that are already wide get less pan
+     spread; narrow bands get the full WIDTH. A guard limits the drop in
+     each band's level when the output is summed to mono to a set bound
+     (decided by measurement in its ticket).
+
+8. **Determinism.** The same input and automation give the same output
+   whatever the host's block size, and on every run: the flock and
+   analysis ticks are fixed, and turbulence comes from a per-instance
+   seeded generator. Offline bounces match realtime playback.
+
+9. **Controls (first draft).** VOICES, DETUNE, SPREAD, COHESION,
+   SEPARATION, TURBULENCE, WIDTH, AUTO WIDTH, LOW XOVER, MID DEPTH, HIGH
+   DEPTH, CLARITY, DUCK, BLOOM, MIX. The engine ticket fixes ranges,
+   defaults and ids. The faceplate ticket may group or merge controls.
+
+10. **Measured DSP.** The interpolation for modulated delay reads is
+    chosen by measuring aliasing and CPU in a scratch harness, at the
+    largest DETUNE and at 44.1, 48 and 96 kHz. The numbers go in the
+    ticket.
+
+## Out of scope
+
+- Spectral resynthesis of partials (per-partial ensembles in the
+  frequency domain). It needs block latency and is not wanted.
+- Pitch (f0) detection and pitch-locked modulation. Specifying detune in
+  cents already makes beating follow pitch, and peak picking serves
+  Clarity without an f0.
+- A frequency-shift layer, odd/even harmonic splitting, and a diffusion
+  network. Candidates for later, each with its own ADR if taken up.
+
+## Consequences
+
+- `vxn-free-dsp` gains a modulated delay line, Linkwitz-Riley crossovers
+  and a gain side-buffer. Its STFT (from Glow-Up, ticket 0007) gains
+  window sizes down to 128.
+- The flock is a small physics simulation. Its parameters interact, so
+  its controls need tuning by ear before the ranges are fixed.
+- The minimum delay of about 7 ms rules out flanger territory. Murmuration
+  is a chorus and ensemble, not a flanger.
