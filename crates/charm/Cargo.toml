@@ -14,6 +14,8 @@ vxn-free-dsp.workspace = true
 
 [dev-dependencies]
 silkscreen-bridge = { workspace = true, features = ["testing"] }
+# WAV in and out for the bench (examples/bench); never in the engine.
+hound = "3.5"
 
 [lints]
 workspace = true
