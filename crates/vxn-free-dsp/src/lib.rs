@@ -11,12 +11,20 @@
 
 pub mod crossover;
 pub mod delay;
+// A copy of Patches' FFT, kept as its source formats it (see its header).
+#[rustfmt::skip]
+pub mod fft;
 pub mod peak;
 pub mod smooth;
+pub mod spectrum;
+pub mod stft;
 pub mod svf;
 
 pub use crossover::Crossover;
 pub use delay::{DelayLine, SideBuffer};
+pub use fft::RealPackedFft;
 pub use peak::{PeakFollower, RangeFollower};
 pub use smooth::{Glide, Ramp};
+pub use spectrum::{Peak, peaks};
+pub use stft::{Frame, Stft};
 pub use svf::{Svf, SvfOut};
