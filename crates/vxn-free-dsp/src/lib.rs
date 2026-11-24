@@ -1,4 +1,4 @@
-//! DSP shared by the vxn-free plugins, Beverley and Glow-Up.
+//! DSP shared by the vxn-free plugins: Beverley, Glow-Up and Charm.
 //!
 //! # Rules
 //!
@@ -9,8 +9,14 @@
 //! - It depends on no host or UI crate, and builds for
 //!   `wasm32-unknown-unknown`, so a web build of a plugin stays possible.
 
+pub mod crossover;
+pub mod delay;
 pub mod peak;
 pub mod smooth;
+pub mod svf;
 
+pub use crossover::Crossover;
+pub use delay::{DelayLine, SideBuffer};
 pub use peak::{PeakFollower, RangeFollower};
 pub use smooth::{Glide, Ramp};
+pub use svf::{Svf, SvfOut};

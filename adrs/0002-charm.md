@@ -179,7 +179,9 @@ Charm addresses each of these, and stays a zero-latency effect.
 11. **Measured DSP.** The interpolation for modulated delay reads is
     chosen by measuring aliasing and CPU in a scratch harness, at the
     largest DETUNE and at 44.1, 48 and 96 kHz. The numbers go in the
-    ticket.
+    ticket. Ticket 0026 chose 4-point (third-order) Lagrange: it has the
+    least error of the non-recursive interpolators, for about 0.8 ns a
+    sample more than linear.
 
 ## Prior art
 
