@@ -77,9 +77,9 @@ fn hovering_shows_values_in_their_units() {
 }
 
 #[test]
-fn detect_and_decay_light_up_with_auto_gain() {
+fn auto_gain_lights_its_controls_and_dims_gain() {
     // At rest AUTO is off, so DETECT and DECAY are dimmed (initial_1x);
-    // switched on, they are drawn at full strength.
+    // switched on, they are drawn at full strength and GAIN is dimmed.
     let mut h = Harness::new(beverley::editor, 1.0);
     h.click(ids::AUTO_GAIN);
     assert_snapshot!(h, "auto_on_1x");

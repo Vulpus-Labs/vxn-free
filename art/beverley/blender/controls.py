@@ -2,11 +2,12 @@
 `crates/beverley/beverley.svg`, in the style of a 1990s rack effects unit:
 
 - the knob: black moulded plastic, a fluted grip on a thin flange, a grey
-  cap with a white line. A cycled skin: `knob_pointer.png` (the line
+  cap with a line in the title stripe's orange. A cycled skin: `knob_pointer.png` (the line
   alone, at 12 o'clock), then `knob_body_N.png`, the rest turned evenly
   across one flute period (`FLUTE_PERIOD`);
 - the toggle: a flat grey plastic bat, fanning out from its pivot and
-  bevelled, in a black plastic boss. `toggle2_{0,1}.png` down and up;
+  bevelled, its rim painted the title stripe's orange, in a black
+  plastic boss. `toggle2_{0,1}.png` down and up;
   `toggle3_{0,1,2}.png` down, middle (seen end-on) and up;
 - the button: a grey key in a black bezel, with a red LED in the key.
   `button_0.png` off, `button_1.png` lit.
@@ -49,6 +50,8 @@ TOGGLE_SPAN = 2.6
 BUTTON_SPAN = 1.3
 # How far the bat leans from upright, either way.
 TOGGLE_TILT = 32.0
+# The title stripe's orange, #d9572b (faceplate.py's ACCENT), linear.
+ACCENT = (0.693, 0.0953, 0.0242)
 # An LED's red, linear.
 LED_RED = (1.0, 0.03, 0.01)
 
@@ -104,7 +107,7 @@ def build_knob():
     """The knob, 2 units across; the pointer last."""
     black = plastic("knob plastic", 0.018)
     cap = plastic("cap plastic", 0.09, roughness=0.35)
-    ink = studio.material("white ink", (0.85, 0.85, 0.82), roughness=0.5)
+    ink = studio.material("orange ink", ACCENT, roughness=0.5)
     parts = [
         studio.prism("flange", studio.circle(1.0), 0.0, 0.09, black, bevel=0.03),
         studio.prism("grip", studio.fluted(0.88, 0.055, FLUTES), 0.06, 0.6, black,
@@ -156,13 +159,47 @@ def fan(base, tip, length, round_tip=0.08, n=8):
     return pts
 
 
+def rimmed(m, rim_color):
+    """Paint the rim of a flat part made by `studio.prism`: its sides and
+    bevels take `rim_color`, its two broad faces (normal along the
+    object's Z) keep their own."""
+    nodes, links = m.node_tree.nodes, m.node_tree.links
+    bsdf = nodes["Principled BSDF"]
+    geometry = nodes.new("ShaderNodeNewGeometry")
+    to_object = nodes.new("ShaderNodeVectorTransform")
+    to_object.vector_type = "NORMAL"
+    to_object.convert_from = "WORLD"
+    to_object.convert_to = "OBJECT"
+    xyz = nodes.new("ShaderNodeSeparateXYZ")
+    facing = nodes.new("ShaderNodeMath")
+    facing.operation = "ABSOLUTE"
+    # Fully rim below 0.9 of the face's normal, fully face above 0.97: the
+    # paint's edge sits on the bevel, just short of the face.
+    edge = nodes.new("ShaderNodeMapRange")
+    edge.inputs["From Min"].default_value = 0.9
+    edge.inputs["From Max"].default_value = 0.97
+    edge.inputs["To Min"].default_value = 1.0
+    edge.inputs["To Max"].default_value = 0.0
+    mix = nodes.new("ShaderNodeMix")
+    mix.data_type = "RGBA"
+    mix.inputs["A"].default_value = bsdf.inputs["Base Color"].default_value[:]
+    mix.inputs["B"].default_value = (*rim_color, 1.0)
+    links.new(geometry.outputs["Normal"], to_object.inputs["Vector"])
+    links.new(to_object.outputs["Vector"], xyz.inputs["Vector"])
+    links.new(xyz.outputs["Z"], facing.inputs[0])
+    links.new(facing.outputs["Value"], edge.inputs["Value"])
+    links.new(edge.outputs["Result"], mix.inputs["Factor"])
+    links.new(mix.outputs["Result"], bsdf.inputs["Base Color"])
+    return m
+
+
 def build_toggle():
     """A plastic toggle: a rounded boss with a dark throat, and a flat bat
     that fans out from its pivot, wide across the panel and thin along
     its throw, its edges bevelled. Returns the parts and the pivot, which
     tilts the bat about X."""
     boss_m = plastic("toggle boss", 0.014, roughness=0.36)
-    bat_m = plastic("toggle bat", 0.24, roughness=0.36)
+    bat_m = rimmed(plastic("toggle bat", 0.24, roughness=0.36), ACCENT)
     throat_m = studio.material("throat", (0.004, 0.004, 0.005), roughness=0.8, specular=0.1)
     boss = studio.prism("boss", studio.rounded_rect(0.95, 1.25, 0.22), 0.0, 0.16, boss_m,
                         bevel=0.05, segments=4)

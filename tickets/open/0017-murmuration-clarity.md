@@ -9,27 +9,50 @@ depends: ["0015"]
 
 ## Summary
 
-Voices steer away from delays whose dry + voice comb notches, at
-(2k + 1) / 2d Hz, would land on strong peaks (ADR 0002, point 7). The
-steering is a force in the flock, so DETUNE's speed limit also limits
-how fast a voice moves under it.
+Voices are pushed away from delays whose dry + voice comb notches, at
+(2k + 1) / 2d Hz, would land near strong peaks (ADR 0002, point 7). The
+push is a force in the flock, so DETUNE's speed limit also limits how fast
+a voice moves under it.
+
+Three rules from the ADR apply:
+- the term only repels, and only at short range, so a voice never parks
+- each peak's push scales with its strength
+- the term is gated by how sparse the band is, so it fades out on dense
+  polyphony and noise
 
 ## Acceptance criteria
 
-- [ ] A notch-cost term per voice, summing over peaks weighted by
-      strength and by each peak's distance from the nearest notch, with
-      its gradient in d added to the voice's steering with weight CLARITY.
-- [ ] The cost is computed on the flock tick from the latest peak set, at
+- [ ] A repel-only term per voice: for each peak within a stated range of
+      one of the voice's notches, a push in d away from that alignment,
+      scaled by the peak's strength. Zero beyond the range, and no
+      attraction anywhere.
+- [ ] A sparseness gate per band: either the peak set's share of band
+      energy or one minus spectral flatness, chosen by measurement and
+      smoothed so the gate doesn't flicker. Effective weight =
+      CLARITY × gate.
+- [ ] The term is computed on the flock tick from the latest peak set, at
       a bounded cost (stated, and measured with 8 voices and 8 peaks).
-- [ ] Measurement, recorded in the close-out:
-      - test signals: a sustained chord and a sustained harmonic tone
-        (stated frequencies)
-      - with CLARITY at 0 and at full, measure the time-averaged loss in
-        level at each partial in the mono-summed output
-      - target: at full CLARITY the worst partial loses at least half as
-        many dB as at 0
+- [ ] Measurement, recorded in the close-out, using these test signals at
+      stated frequencies:
+      - a sustained harmonic tone (sparse)
+      - a sustained clean four-note chord
+      - a distorted-guitar chord (dense)
+
+      Measure at CLARITY 0 and at full:
+      - time-averaged level loss at each strong partial in the
+        mono-summed output. Target on the sparse tone: at full CLARITY
+        the worst partial loses at most half as many dB as at 0.
+      - the gate's mean value. Target on the dense chord: near zero
+        (bound stated).
+      - RMS delay velocity across voices (motion). Target: at full
+        CLARITY it is at least 80 % of its value at 0 on every signal, so
+        no voice parks.
 - [ ] Tests:
       - no voice's detune exceeds DETUNE with CLARITY at full
+      - on a sustained tone at full CLARITY, every voice's delay keeps
+        moving: no voice stays within a small window for longer than a
+        stated time
+      - on white noise the gate stays below its dense-material bound
       - with CLARITY at 0 the output is bit-identical to the output
         without the term
       - no allocation

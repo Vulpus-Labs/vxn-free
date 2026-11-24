@@ -71,3 +71,7 @@ washer. It was replaced by the plastic paddle above, which suits the
 panel better. Black on black didn't read from above, so the bat is grey.
 It is a little darker thrown up than down: its visible face then turns
 away from the key light.
+
+Then the bats' rims (sides and bevels, by the normal in object space) and
+the knobs' pointers were painted the title stripe's orange, #d9572b,
+which `controls.py` holds as `ACCENT` alongside `faceplate.py`'s.

@@ -98,11 +98,26 @@ Murmuration addresses each of these, and stays a zero-latency effect.
      turns it off.
    - **Clarity.** Strong spectral peaks in MID and HIGH add a term to the
      flock's steering. For a voice at delay d, the dry + voice comb has
-     notches at (2k + 1) / 2d Hz. The term pushes each voice away from
-     delays whose notches land on strong peaks, weighted by peak strength.
+     notches at (2k + 1) / 2d Hz. Three rules shape the term:
+     - *Repel only.* A peak pushes a voice away only while one of the
+       voice's notches lies within a short range of it. Beyond that range
+       the term is zero. There is no pull towards notch-free delays, so a
+       voice never has a valley to settle in. A voice that stopped moving
+       would leave a fixed comb, which is a static filter and no chorus.
+     - *Weighted by strength.* Each peak's push scales with its strength,
+       so on a chord the strongest partials, usually the fundamentals and
+       low harmonics, get most of the protection.
+     - *Gated by sparseness.* The term's overall weight is CLARITY times
+       how peaky the band is: the share of the band's energy in its peak
+       set, or one minus its spectral flatness, chosen in the ticket.
+       On dense polyphony or noise the gate closes, and the flock moves
+       freely. Comb notches are most audible on sparse, sustained tones
+       and are masked on dense material, so Clarity acts where it matters
+       and backs off where it can't help.
+
      Because the push goes through the flock's dynamics, the detune speed
      limit also limits how fast a voice can be pushed, so steering adds no
-     pitch glitches of its own. CLARITY sets the weight.
+     pitch glitches of its own.
    - **Auto width.** Inter-channel coherence of the input, per band,
      smoothed over about 300 ms. Bands that are already wide get less pan
      spread; narrow bands get the full WIDTH. A guard limits the drop in

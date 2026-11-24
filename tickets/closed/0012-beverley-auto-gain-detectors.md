@@ -82,3 +82,8 @@ With AUTO GAIN off, neither applies: DECAY and DETECT dim.
 - Behaviour to know: RANGE starts at rest at 0, so an input with an
   offset takes a few DECAY times to settle on its swing. Between peaks
   the range sags by DECAY's rate, and the crushed output's height with it.
+
+## Follow-up (2026-11-24)
+
+GAIN dims while AUTO is on, as DETECT and DECAY dim while it is off:
+fixed gain does nothing while auto gain sets it. `auto_on_1x` shows it.

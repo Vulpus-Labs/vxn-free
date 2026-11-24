@@ -89,10 +89,15 @@ fn auto_off(model: &Model) -> bool {
     model.get(AUTO_GAIN) < 0.5
 }
 
+fn auto_on(model: &Model) -> bool {
+    !auto_off(model)
+}
+
 /// The editor's long-lived state, bound to the engine through `link`.
 pub fn state(link: Box<dyn EngineLink>) -> EditorState {
     let controls = faceplate::Controls::<Box<dyn Binding>> {
-        gain: Box::new(ParamKnob::new(GAIN)),
+        // Fixed gain does nothing while auto gain sets it.
+        gain: Box::new(ParamKnob::new(GAIN).dimmed_when(&[AUTO_GAIN], auto_on)),
         auto_gain: Box::new(ParamToggle::new(AUTO_GAIN)),
         // Auto gain's detector and its DECAY do nothing with AUTO off.
         detect: Box::new(ParamToggle::new(DETECT).dimmed_when(&[AUTO_GAIN], auto_off)),
