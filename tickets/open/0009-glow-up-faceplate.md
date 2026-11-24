@@ -9,6 +9,11 @@ depends: ["0008"]
 
 ## Acceptance criteria
 
+- [ ] Looks like a guitar pedal: a portrait enclosure, painted, with its
+      edges and screws showing; the main knobs (+7, +12, +24, RESONANCE,
+      FOCUS, MIX) in pedal-style rows; the rest smaller, as trim controls
+      would be; a footswitch-style button and status LED for something
+      that earns it (bypass, if the host contract allows, or DRY CUT).
 - [ ] Faceplate SVG drawn from scratch with the controls in 0008.
 - [ ] A display of what the engine is doing: the found peaks and the
       filters' targets and levels, fed by bridge telemetry.
