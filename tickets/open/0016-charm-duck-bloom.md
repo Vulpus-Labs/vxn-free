@@ -16,6 +16,11 @@ voice.
 
 ## Acceptance criteria
 
+- [ ] The bench (0023) reports transient peak and crest factor, dry
+      against wet. Before/after numbers on the bench's test set are
+      recorded in the close-out.
+- [ ] The new params are exposed in the plugin (0020) in the same
+      change, on the plain faceplate until 0019.
 - [ ] DUCK (0–100 %): wet gain at an onset falls by DUCK and recovers over
       a set time (draft 30 ms; settled by ear).
 - [ ] BLOOM (0 = off, up to 2 s): after an onset, wet depth rises from

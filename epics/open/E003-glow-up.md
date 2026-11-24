@@ -18,7 +18,8 @@ analysed once, each channel filtered).
 
 | Ticket | What |
 |---|---|
-| 0007 | Analysis DSP: STFT, peak detection, partial tracking, TPT SVF |
+| 0007 | Analysis DSP: FFT, streaming STFT, peak detection (shared with E004) |
+| 0025 | Partial tracking, TPT SVF |
 | 0008 | Engine: the filter bank, grids and control mapping |
 | 0009 | Faceplate, editor and tracking display |
 | 0010 | CLAP plugin: params, state, tests, clap-validator |
@@ -26,5 +27,5 @@ analysed once, each channel filtered).
 
 ## Dependency order
 
-0007 after 0001; 0008 after 0007; 0009 after 0008; 0010 after 0009;
+0007 after 0001; 0025 after 0007; 0008 after 0025; 0009 after 0008; 0010 after 0009;
 0011 after 0010. E003 can run beside E002.

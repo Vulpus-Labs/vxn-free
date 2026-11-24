@@ -28,6 +28,12 @@ small job. They are to be given away, with their source.
    - `crates/vxn-free-dsp`: DSP the plugins share (filters, smoothing,
      the STFT and peak tracking Glow-Up needs). Builds for
      `wasm32-unknown-unknown`, so a web page stays possible.
+   - The real FFT is copied from public Patches
+     (<https://github.com/Vulpus-Labs/patches>, `patches-dsp/src/fft.rs`,
+     MIT) into `vxn-free-dsp`. Its author relicenses the copy under
+     MIT OR Apache-2.0. It is the only code taken from Patches, and this
+     repo has no dependency on Patches. The copy keeps runtime SIMD
+     dispatch (AVX2+FMA, NEON, scalar).
    - Per plugin, an editor/engine crate and a `-clap` crate, as
      silkscreen's template lays them out.
 6. **Adaptation, not emulation.** The ports keep each module's sound and
@@ -47,7 +53,11 @@ small job. They are to be given away, with their source.
 
 ## Consequences
 
-- Glow-Up's analysis (STFT, peak detection, partial tracking) is ported
-  into `vxn-free-dsp` rather than shared with other code.
+- Glow-Up's analysis is written in `vxn-free-dsp`: the STFT framing,
+  peak detection and partial tracking, on the copied FFT.
+- Fixes to the FFT are made in both copies by hand. It is small and
+  stable, so it is rarely touched.
+- Patches is public, so naming and linking it is allowed under the
+  public-repo rule.
 - Without CV, modulated sweeps rely on the host; each plugin's
   parameters are smoothed so automation doesn't zipper.

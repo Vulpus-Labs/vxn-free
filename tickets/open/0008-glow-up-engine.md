@@ -4,7 +4,7 @@ title: "Glow-Up engine: filter bank, grids, mapping"
 priority: medium
 created: 2026-11-24
 epic: E003
-depends: ["0007"]
+depends: ["0025"]
 ---
 
 ## Summary

@@ -59,3 +59,10 @@ then `cargo silkscreen bundle <package>`.
   crate. It must not allocate or lock.
 - Prefer generated, typed code over runtime lookup. Build-time errors must
   name the offending element and the fix.
+- The real FFT in `vxn-free-dsp` is a copy of public Patches'
+  (`~/src/patches`, `patches-dsp/src/fft.rs`). A fix made to one copy is
+  made to the other.
+- Bit-exact tests compare outputs within a run, for example the same
+  input split into different block sizes, never against stored values.
+  The FFT picks a SIMD path (AVX2+FMA, NEON or scalar) at runtime, and
+  the paths round differently.

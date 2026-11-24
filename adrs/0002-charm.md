@@ -216,8 +216,8 @@ first adaptive or flock-driven chorus.
 ## Consequences
 
 - `vxn-free-dsp` gains a modulated delay line, Linkwitz-Riley crossovers
-  and a gain side-buffer. Its STFT (from Glow-Up, ticket 0007) gains
-  window sizes down to 128.
+  and a gain side-buffer. Charm uses Glow-Up's streaming STFT (ticket
+  0007), built on the FFT copied from Patches, at windows of 128 or 256.
 - The flock is a small physics simulation. Its parameters interact, so
   its controls need tuning by ear before the ranges are fixed.
 - Charm needs a silkscreen release with telemetry frames before its

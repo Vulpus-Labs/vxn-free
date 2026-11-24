@@ -1,5 +1,5 @@
 ---
-id: "0013"
+id: "0026"
 title: "Charm DSP: modulated delay, LR4 crossovers, side-buffer"
 priority: medium
 created: 2026-11-24

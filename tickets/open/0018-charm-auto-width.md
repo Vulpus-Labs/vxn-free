@@ -14,6 +14,11 @@ WIDTH. The output's mono sum is kept from collapsing (ADR 0002, point 7).
 
 ## Acceptance criteria
 
+- [ ] The bench (0023) reports per-band coherence and mono-sum level
+      loss. Before/after numbers on the bench's test set are recorded
+      in the close-out.
+- [ ] The new params are exposed in the plugin (0020) in the same
+      change, on the plain faceplate until 0019.
 - [ ] AUTO WIDTH (on/off): per band, the flock's pan bound becomes WIDTH
       scaled by a function of input coherence (stated in the close-out).
       Changes are slewed so the image never jumps.

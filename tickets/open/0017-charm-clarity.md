@@ -22,6 +22,11 @@ Three rules from the ADR apply:
 
 ## Acceptance criteria
 
+- [ ] The bench (0023) reports per-partial level loss in the mono sum,
+      the gate value and RMS delay velocity. Before/after numbers on
+      the bench's test set are recorded in the close-out.
+- [ ] The new params are exposed in the plugin (0020) in the same
+      change, on the plain faceplate until 0019.
 - [ ] A repel-only term per voice: for each peak within a stated range of
       one of the voice's notches, a push in d away from that alignment,
       scaled by the peak's strength. Zero beyond the range, and no

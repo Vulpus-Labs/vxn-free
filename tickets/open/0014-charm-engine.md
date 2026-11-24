@@ -4,7 +4,7 @@ title: "Charm engine core: flock, bands, mix"
 priority: medium
 created: 2026-11-24
 epic: E004
-depends: ["0013"]
+depends: ["0026"]
 ---
 
 ## Summary
@@ -23,16 +23,20 @@ analysis is added. It has the flock (ADR 0002, point 3), the bands
       velocity is clamped to DETUNE, delay is bounded softly within
       SPREAD above the 7 ms floor, and pan is bounded within ±WIDTH.
       Turbulence comes from a seeded generator.
-- [ ] Bands: LOW/MID/HIGH from LR4 crossovers. LOW is never chorused. The MID/HIGH crossover is
-      fixed (draft 2.5 kHz), settled by ear and recorded.
+- [ ] Bands: LOW/MID/HIGH from LR4 crossovers. LOW is never chorused.
+      The MID/HIGH crossover is fixed (draft 2.5 kHz; 0024 settles it).
       MID and HIGH have their own depth. Voices read each band's mid
       signal. Dry is the unfiltered input.
 - [ ] Params with fixed ids, ranges and defaults: VOICES, DETUNE, SPREAD,
       COHESION, SEPARATION, TURBULENCE, WIDTH, LOW XOVER, MID DEPTH,
       HIGH DEPTH, MIX. Ids are reserved now for CLARITY, DUCK, BLOOM and
-      AUTO WIDTH. Every param is smoothed.
-- [ ] Ranges and defaults tuned by ear on pads, guitar, voice and a drum
-      loop. Notes on the tuning go in the close-out.
+      AUTO WIDTH. Every param is smoothed. Ranges and defaults are
+      provisional until 0024.
+- [ ] An observation struct, filled once per flock tick without
+      allocation: every voice's delay, pan, velocity and gain per flock,
+      with room reserved for each band's peaks, gate, onset and
+      coherence (filled by 0015 onwards). The bench (0023), telemetry
+      frames (0022) and the display (0019) all read this one struct.
 - [ ] Tests:
       - no voice's instantaneous detune exceeds DETUNE, across settings
       - no voice's delay leaves [floor, floor + SPREAD]

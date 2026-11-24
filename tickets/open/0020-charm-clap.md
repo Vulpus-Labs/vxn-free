@@ -4,8 +4,14 @@ title: "Charm CLAP plugin"
 priority: medium
 created: 2026-11-24
 epic: E004
-depends: ["0019"]
+depends: ["0024"]
 ---
+
+## Summary
+
+The plugin plumbing, early, so Charm can be heard in a DAW from milestone
+M1. It starts with a plain faceplate, which 0019 replaces. Release checks
+are in 0021.
 
 ## Acceptance criteria
 
@@ -20,9 +26,10 @@ depends: ["0019"]
 - [ ] Charm must report its latency accurately. It reports zero,
       and a test-host test confirms zero at 44.1, 48 and 96 kHz across
       settings.
-- [ ] A trademark search for "Charm" in class 9 (USPTO and EUIPO) finds
-      no conflict for audio software, recorded here. If it does find one,
-      the plugin is renamed before release, while the id can still change.
 - [ ] clap-validator passes.
-- [ ] Hand check in a DAW: pads, clean guitar, vocals and a drum bus;
-      automation of DETUNE, WIDTH and MIX; mono sum checked.
+- [ ] A plain faceplate: an original SVG grid of labelled knobs and
+      switches, one per param, enough for silkscreen to build the editor.
+      It is not the design. Params added later (0016–0018) are added to it
+      in their own tickets.
+- [ ] Loads and plays in a DAW: a quick listen on real material with
+      automation of DETUNE and MIX.

@@ -4,12 +4,14 @@ title: "Charm faceplate, editor and flock display"
 priority: medium
 created: 2026-11-24
 epic: E004
-depends: ["0016", "0017", "0018", "0022"]
+depends: ["0016", "0017", "0018", "0020", "0022"]
 ---
 
 ## Summary
 
-An original SVG faceplate and an editor showing the flock at work.
+An original SVG faceplate, replacing 0020's plain one, and an editor
+showing the flock at work. The display can be developed against recorded
+bench traces (0023) before it is connected to live frames.
 
 ## Acceptance criteria
 
