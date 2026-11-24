@@ -5,9 +5,9 @@
   cap with a white line. A cycled skin: `knob_pointer.png` (the line
   alone, at 12 o'clock), then `knob_body_N.png`, the rest turned evenly
   across one flute period (`FLUTE_PERIOD`);
-- the bat toggle: a chrome lever in a threaded bushing, held by a hex nut
-  on a washer. `toggle2_{0,1}.png` down and up; `toggle3_{0,1,2}.png`
-  down, middle (end-on) and up;
+- the toggle: a flat grey plastic bat, fanning out from its pivot and
+  bevelled, in a black plastic boss. `toggle2_{0,1}.png` down and up;
+  `toggle3_{0,1,2}.png` down, middle (seen end-on) and up;
 - the button: a grey key in a black bezel, with a red LED in the key.
   `button_0.png` off, `button_1.png` lit.
 
@@ -40,15 +40,15 @@ FLUTE_PERIOD = 360.0 / FLUTES
 STEPS = 6
 # Rendered sizes, px: at least twice the controls' largest use (2× scale).
 KNOB_PX = 256
-TOGGLE_PX = 176
+TOGGLE_PX = 192
 BUTTON_PX = 128
 # Scene units across each frame. The knob is 2 units across, the toggle's
-# washer 1.4, the button's bezel 1.
+# boss 1.25 tall, the button's bezel 1.
 KNOB_SPAN = 2.5
-TOGGLE_SPAN = 2.2
+TOGGLE_SPAN = 2.6
 BUTTON_SPAN = 1.3
 # How far the bat leans from upright, either way.
-TOGGLE_TILT = 30.0
+TOGGLE_TILT = 32.0
 # An LED's red, linear.
 LED_RED = (1.0, 0.03, 0.01)
 
@@ -142,32 +142,39 @@ def knob(out, look):
 # ---- bat toggle --------------------------------------------------------------
 
 
+def fan(base, tip, length, round_tip=0.08, n=8):
+    """A paddle's outline in the XY plane: `base` wide at y = 0, fanning
+    out to `tip` wide at y = `length`, its tip corners rounded."""
+    r = round_tip
+    pts = [(-base / 2, 0.0), (base / 2, 0.0)]
+    # Up the right side to where the tip's corner starts, round it, along
+    # the tip, round the left corner, and back down.
+    for cx, a0 in ((tip / 2 - r, 0.0), (-tip / 2 + r, 90.0)):
+        for i in range(n + 1):
+            a = math.radians(a0 + 90.0 * i / n)
+            pts.append((cx + r * math.cos(a), length - r + r * math.sin(a)))
+    return pts
+
+
 def build_toggle():
-    """A miniature toggle: washer, hex nut, threaded bushing and a chrome
-    bat on a pivot at the bushing's top. Returns the parts and the pivot,
-    which tilts about X."""
-    steel = chrome("nut", roughness=0.18)
-    bright = chrome("bat")
-    dark = studio.material("bushing shadow", (0.05, 0.05, 0.055), metallic=1.0, roughness=0.3)
-    parts = [
-        studio.prism("washer", studio.circle(0.7), 0.0, 0.05, steel, bevel=0.015),
-        studio.prism("nut", studio.polygon(0.52, 6, math.pi / 6), 0.05, 0.25, steel, bevel=0.04),
-        studio.prism("bushing", studio.circle(0.3), 0.25, 0.42, steel, bevel=0.03),
-        studio.prism("bore", studio.circle(0.2), 0.42, 0.43, dark),
-    ]
-    bat = studio.prism("bat", studio.circle(0.085, 32), 0.0, 1.05, bright, taper=1.6, bevel=0.0)
-    tip = bpy.data.meshes.new("tip")
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.15, location=(0, 0, 1.05), segments=48,
-                                         ring_count=24)
-    ball = bpy.context.active_object
-    ball.name = "tip"
-    ball.data.materials.append(bright)
-    for poly in ball.data.polygons:
-        poly.use_smooth = True
-    del tip
-    lever = studio.pivot([bat, ball], "lever")
-    lever.location.z = 0.36
-    return parts + [bat, ball], lever
+    """A plastic toggle: a rounded boss with a dark throat, and a flat bat
+    that fans out from its pivot, wide across the panel and thin along
+    its throw, its edges bevelled. Returns the parts and the pivot, which
+    tilts the bat about X."""
+    boss_m = plastic("toggle boss", 0.014, roughness=0.36)
+    bat_m = plastic("toggle bat", 0.24, roughness=0.36)
+    throat_m = studio.material("throat", (0.004, 0.004, 0.005), roughness=0.8, specular=0.1)
+    boss = studio.prism("boss", studio.rounded_rect(0.95, 1.25, 0.22), 0.0, 0.16, boss_m,
+                        bevel=0.05, segments=4)
+    throat = studio.prism("throat", studio.rounded_rect(0.62, 0.3, 0.1), 0.16, 0.165, throat_m)
+    # The paddle's outline lies in XY; standing it up turns its length
+    # into height and its thickness into depth along the throw.
+    bat = studio.prism("bat", fan(0.26, 0.62, 1.0), -0.06, 0.06, bat_m, bevel=0.035,
+                       segments=4, bottom_bevel=True)
+    bat.rotation_euler.x = math.radians(90)
+    lever = studio.pivot([bat], "lever")
+    lever.location.z = 0.1
+    return [boss, throat, bat], lever
 
 
 def toggle(out, look):

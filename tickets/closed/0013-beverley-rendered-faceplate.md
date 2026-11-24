@@ -42,8 +42,10 @@ panel's relief rendered as maps blended over the vector print.
   - Knob: black moulded plastic with 24 flutes, a grey cap and a white
     line. Cycled across 15°, with 6 body frames and the pointer, at 256
     px (2× its 2× use).
-  - Chrome bat toggle with a hex nut and washer: two and three
-    positions, at 176 px.
+  - Toggle: a flat grey plastic bat that fans out from its pivot, with
+    bevelled edges, in a black plastic boss with a dark throat. Two and
+    three positions (the middle seen end-on), at 192 px; the markers are
+    46 px.
   - Grey key in a black bezel, with a red LED off and lit, at 128 px.
   - `--inspect` renders 45° product shots.
 - `blender/panel.py`, about 40 s at 2× (2180 × 300): the shade and sheen
@@ -61,3 +63,11 @@ panel's relief rendered as maps blended over the vector print.
 - `crates/beverley/build.rs` registers the skins and reruns on the maps.
   The art is 0.9 MB of PNGs. Snapshots re-blessed; the editor tests
   still pass unchanged.
+
+## Follow-up (2026-11-24)
+
+The first toggle was chrome: a round bat in a bushing, with a hex nut and
+washer. It was replaced by the plastic paddle above, which suits the
+panel better. Black on black didn't read from above, so the bat is grey.
+It is a little darker thrown up than down: its visible face then turns
+away from the key light.

@@ -144,8 +144,8 @@
     <rect id="knob.smoothing" x="716.0" y="60.0" width="64" height="64" data-skin="knob" fill="#f0f"/>
     <rect id="knob.mix" x="960.0" y="60.0" width="64" height="64" data-skin="knob" fill="#f0f"/>
     <rect id="button.auto_gain" x="297.0" y="77.0" width="30" height="30" data-skin="button" fill="#f0f"/>
-    <rect id="toggle.detect" x="352.0" y="72.0" width="40" height="40" data-skin="toggle2" fill="#f0f"/>
-    <rect id="toggle.crush_mode" x="826.0" y="72.0" width="40" height="40" data-skin="toggle2" fill="#f0f"/>
-    <rect id="toggle.stereo" x="888.0" y="72.0" width="40" height="40" data-skin="toggle3" fill="#f0f"/>
+    <rect id="toggle.detect" x="349.0" y="69.0" width="46" height="46" data-skin="toggle2" fill="#f0f"/>
+    <rect id="toggle.crush_mode" x="823.0" y="69.0" width="46" height="46" data-skin="toggle2" fill="#f0f"/>
+    <rect id="toggle.stereo" x="885.0" y="69.0" width="46" height="46" data-skin="toggle3" fill="#f0f"/>
   </g>
 </svg>
