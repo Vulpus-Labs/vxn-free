@@ -28,6 +28,7 @@ sounding, faded over 10 ms when stolen.
       - STEREO reads both inputs, analyses their mid signal
         ((L + R) / 2) once, and runs a separate filter bank on each
         channel, both banks following the same targets.
+      MODE loads at MONO: Glow-Up is chiefly a guitar effect.
       CPU measured in each mode.
 - [ ] Tests: a sine passes almost untouched; a sawtooth's even partials
       rise with +12; MONO ignores the right input and copies left to
