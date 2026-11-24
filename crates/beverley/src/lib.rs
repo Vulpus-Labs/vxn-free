@@ -7,8 +7,8 @@
 
 use silkscreen::model::Taper;
 use silkscreen::{
-    Binding, Editor, EditorState, EngineLink, ParamIndex, ParamKnob, ParamSelector, ParamSpec,
-    ParamToggle, PluginUi,
+    Binding, BindingExt, Editor, EditorState, EngineLink, Model, ParamIndex, ParamKnob,
+    ParamSelector, ParamSpec, ParamToggle, PluginUi,
 };
 
 pub mod crush;
@@ -27,6 +27,8 @@ pub const SMOOTHING: ParamIndex = ParamIndex(4);
 pub const CRUSH_MODE: ParamIndex = ParamIndex(5);
 pub const MIX: ParamIndex = ParamIndex(6);
 pub const STEREO: ParamIndex = ParamIndex(7);
+pub const DECAY: ParamIndex = ParamIndex(8);
+pub const DETECT: ParamIndex = ParamIndex(9);
 
 /// GAMMA's knob runs from −1 to 1; the power it sets is ten to that.
 fn gamma_from_knob(knob: f32) -> f32 {
@@ -39,7 +41,7 @@ fn gamma_to_knob(gamma: f32) -> f32 {
 
 /// The parameter table: index `i` is `ParamIndex(i)`. Each `id` is what
 /// presets and host projects store, so never change or reuse one.
-pub static PARAMS: [ParamSpec; 8] = [
+pub static PARAMS: [ParamSpec; 10] = [
     ParamSpec::new("Gain", 0.0, 20.0, 0.0)
         .unit("dB")
         .decimals(1)
@@ -69,13 +71,32 @@ pub static PARAMS: [ParamSpec; 8] = [
         .id(7),
     // How the two channels are crushed (`engine::Stereo`).
     ParamSpec::stepped("Stereo", &["Mono", "Separate", "Linked"], 2).id(8),
+    // Auto gain's detector lets go 20 dB in this time. Geometric over the
+    // whole travel: the middle is √(1 × 5000) ms. The default is the
+    // module's release (a 50 ms time constant).
+    ParamSpec::new("Decay", 1.0, 5000.0, 115.0)
+        .taper(Taper::Exp { mid: 70.710_68 })
+        .unit("ms")
+        .decimals(0)
+        .id(9),
+    // How auto gain follows the input (`engine::Detect`).
+    ParamSpec::toggle("Detect", true)
+        .labels(&["Peak", "Range"])
+        .id(10),
 ];
+
+fn auto_off(model: &Model) -> bool {
+    model.get(AUTO_GAIN) < 0.5
+}
 
 /// The editor's long-lived state, bound to the engine through `link`.
 pub fn state(link: Box<dyn EngineLink>) -> EditorState {
     let controls = faceplate::Controls::<Box<dyn Binding>> {
         gain: Box::new(ParamKnob::new(GAIN)),
         auto_gain: Box::new(ParamToggle::new(AUTO_GAIN)),
+        // Auto gain's detector and its DECAY do nothing with AUTO off.
+        detect: Box::new(ParamToggle::new(DETECT).dimmed_when(&[AUTO_GAIN], auto_off)),
+        decay: Box::new(ParamKnob::new(DECAY).dimmed_when(&[AUTO_GAIN], auto_off)),
         gamma: Box::new(ParamKnob::new(GAMMA)),
         bit_depth: Box::new(ParamKnob::new(BIT_DEPTH)),
         smoothing: Box::new(ParamKnob::new(SMOOTHING)),

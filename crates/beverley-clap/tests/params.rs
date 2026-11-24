@@ -31,7 +31,11 @@ fn every_param_is_listed_with_its_id_name_and_range() {
         );
         ids.push(spec.id);
     }
-    assert_eq!(ids, [1, 2, 3, 4, 5, 6, 7, 8], "ids never change or move");
+    assert_eq!(
+        ids,
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        "ids never change or move"
+    );
 }
 
 #[test]
@@ -47,6 +51,8 @@ fn values_read_in_their_units() {
         (5, 20.0, "20 %"),
         (6, 1.0, "Symmetric"),
         (8, 0.0, "Mono"),
+        (9, 115.0, "115 ms"),
+        (10, 0.0, "Peak"),
     ] {
         let got = params
             .value_to_text(&mut handle, ClapId::new(id), value, &mut text)

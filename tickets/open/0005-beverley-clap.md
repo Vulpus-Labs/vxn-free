@@ -44,6 +44,8 @@ that is done.
   per-instance latency.
 - `cargo silkscreen bundle beverley-clap` builds
   `target/bundled/Beverley.clap` (silkscreen-tool from tag v0.2.1).
+- 0012 added DECAY (id 9) and DETECT (id 10); the tests below cover
+  them.
 - Tests through the test host:
   - `params`: ids 1–8, names, ranges and defaults as `PARAMS`; text in
     units both ways; automation reaching the audio and the model.
@@ -54,9 +56,9 @@ that is done.
     `BeverleyEngine::LATENCY`. Impulses and steps through the plugin, at
     five settings, land on the sample it reports.
 - clap-validator 0.3.2: 16 passed, 5 skipped (preset discovery and note
-  ports, which Beverley doesn't have), 0 failed. The first run, straight
-  after the bundle was built, reported 20 tests and 1 warning, and its
-  text wasn't kept. Ten runs after it were all clean, 21 tests and no
-  warnings.
+  ports, which Beverley doesn't have), 0 failed. The first run after
+  each fresh bundle warns on `scan-time` (416 ms against 100 ms): the
+  first load of a new unsigned binary. Every later run is clean (21
+  tests, no warnings). Worth checking again once 0002 signs the bundle.
 - Hand check in a DAW: to do. `cargo silkscreen bundle beverley-clap
   --install` puts the plugin in the user's CLAP folder.

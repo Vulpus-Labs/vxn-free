@@ -3,7 +3,9 @@
 //! re-bless them with `SILKSCREEN_BLESS=1 cargo test` and look at the diffs.
 
 use beverley::faceplate::ids;
-use beverley::{AUTO_GAIN, BIT_DEPTH, CRUSH_MODE, GAIN, GAMMA, MIX, SMOOTHING, STEREO};
+use beverley::{
+    AUTO_GAIN, BIT_DEPTH, CRUSH_MODE, DECAY, DETECT, GAIN, GAMMA, MIX, SMOOTHING, STEREO,
+};
 use silkscreen::ControlId;
 use silkscreen_harness::{Harness, assert_snapshot};
 
@@ -34,6 +36,7 @@ fn every_control_moves_its_param() {
         (ids::GAMMA, GAMMA),
         (ids::BIT_DEPTH, BIT_DEPTH),
         (ids::SMOOTHING, SMOOTHING),
+        (ids::DECAY, DECAY),
     ] {
         let before = h.model().get(param);
         h.drag(control, -40.0);
@@ -44,6 +47,10 @@ fn every_control_moves_its_param() {
 
     h.click(ids::AUTO_GAIN);
     assert_eq!(h.model().get(AUTO_GAIN), 1.0);
+    // DETECT starts at RANGE; a click flips it to PEAK.
+    assert_eq!(h.model().get(DETECT), 1.0);
+    h.click(ids::DETECT);
+    assert_eq!(h.model().get(DETECT), 0.0);
     h.click(ids::CRUSH_MODE);
     assert_eq!(h.model().get(CRUSH_MODE), 1.0);
     // STEREO starts at LINKED, the top; dragging down steps to MONO.
@@ -64,5 +71,16 @@ fn hovering_shows_values_in_their_units() {
     assert_eq!(tip(&mut h, ids::CRUSH_MODE), "Crush Mode  Asymmetric");
     assert_eq!(tip(&mut h, ids::STEREO), "Stereo  Linked");
     assert_eq!(tip(&mut h, ids::AUTO_GAIN), "Auto Gain  Off");
+    assert_eq!(tip(&mut h, ids::DECAY), "Decay  115 ms");
+    assert_eq!(tip(&mut h, ids::DETECT), "Detect  Range");
     assert_snapshot!(h, "tooltip_auto_1x");
+}
+
+#[test]
+fn detect_and_decay_light_up_with_auto_gain() {
+    // At rest AUTO is off, so DETECT and DECAY are dimmed (initial_1x);
+    // switched on, they are drawn at full strength.
+    let mut h = Harness::new(beverley::editor, 1.0);
+    h.click(ids::AUTO_GAIN);
+    assert_snapshot!(h, "auto_on_1x");
 }

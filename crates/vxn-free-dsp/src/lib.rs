@@ -12,5 +12,5 @@
 pub mod peak;
 pub mod smooth;
 
-pub use peak::PeakFollower;
+pub use peak::{PeakFollower, RangeFollower};
 pub use smooth::{Glide, Ramp};

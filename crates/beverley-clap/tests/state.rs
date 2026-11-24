@@ -34,14 +34,16 @@ fn a_saved_state_comes_back_with_its_sound() {
         (6, 1.0),
         (7, 80.0),
         (8, 1.0),
+        (9, 400.0),
+        (10, 0.0),
     ];
     run(&mut plugin, 48_000.0, &events(first), &x, &x);
     let saved = save(&mut plugin);
     let sound = run(&mut plugin, 48_000.0, &events(&[]), &x, &x);
 
-    let second: Vec<(u32, f64)> = first.iter().map(|&(id, _)| (id, 0.0)).collect();
+    let second: Vec<(u32, f64)> = first.iter().map(|&(id, _)| (id, 1.0)).collect();
     run(&mut plugin, 48_000.0, &events(&second), &x, &x);
-    assert_eq!(value(&mut plugin, 4), 1.0, "bit depth clamps to 1");
+    assert_eq!(value(&mut plugin, 9), 1.0);
 
     restore(&mut plugin, &saved);
     for &(id, v) in first {

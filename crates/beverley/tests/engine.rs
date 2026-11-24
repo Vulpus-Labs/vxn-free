@@ -1,12 +1,15 @@
 //! The engine end to end: settings reach the chain, stereo modes, mix,
 //! smoothing and latency.
 
-use beverley::crush::{ATTACK_MS, Mode, Prepared, RELEASE_MS, Settings, auto_gain};
+use beverley::crush::{ATTACK_MS, Mode, Prepared, Settings, auto_gain};
 use beverley::engine::{BeverleyEngine, TICK};
-use beverley::{AUTO_GAIN, BIT_DEPTH, CRUSH_MODE, GAIN, GAMMA, MIX, SMOOTHING, STEREO};
+use beverley::{
+    AUTO_GAIN, BIT_DEPTH, CRUSH_MODE, DECAY, DETECT, GAIN, GAMMA, MIX, SMOOTHING, STEREO,
+};
 use silkscreen::ParamIndex;
 use silkscreen::bridge::Engine;
-use vxn_free_dsp::PeakFollower;
+use vxn_free_dsp::peak::fall;
+use vxn_free_dsp::{PeakFollower, RangeFollower};
 
 const RATE: f32 = 48_000.0;
 
@@ -94,21 +97,39 @@ fn mono_feeds_both_outputs_from_either_input() {
     assert_eq!((l2, r2), (l, r), "and so does right alone");
 }
 
-/// Auto gain on a loud left and quiet right channel.
-fn auto(stereo_mode: f32) -> (Vec<f32>, Vec<f32>, Vec<f32>, Vec<f32>) {
-    let mut e = engine(RATE, &[(AUTO_GAIN, 1.0), (STEREO, stereo_mode)]);
+const PEAK: f32 = 0.0;
+const RANGE: f32 = 1.0;
+
+/// Auto gain with `detect`, on a loud left and quiet right channel.
+fn auto(stereo_mode: f32, detect: f32) -> (Vec<f32>, Vec<f32>, Vec<f32>, Vec<f32>) {
+    let mut e = engine(
+        RATE,
+        &[
+            (AUTO_GAIN, 1.0),
+            (STEREO, stereo_mode),
+            (DETECT, detect),
+            (DECAY, 40.0),
+        ],
+    );
     let l = sine(0.8, 300.0, 4800);
     let r = sine(0.1, 300.0, 4800);
     let (ol, or) = stereo(&mut e, &l, &r);
     (l, r, ol, or)
 }
 
+fn peak() -> PeakFollower {
+    PeakFollower::new(ATTACK_MS, fall(0.040, RATE), RATE)
+}
+
+fn range() -> RangeFollower {
+    RangeFollower::new(fall(0.040, RATE))
+}
+
 #[test]
-fn separate_auto_gain_follows_each_channel() {
-    let (l, r, ol, or) = auto(1.0);
+fn separate_peak_follows_each_channel() {
+    let (l, r, ol, or) = auto(1.0, PEAK);
     let chain = Prepared::new(&Settings::default());
-    let mut pl = PeakFollower::new(ATTACK_MS, RELEASE_MS, RATE);
-    let mut pr = PeakFollower::new(ATTACK_MS, RELEASE_MS, RATE);
+    let (mut pl, mut pr) = (peak(), peak());
     for i in 0..l.len() {
         let wl = chain.crush(l[i], auto_gain(pl.next(l[i].abs())));
         let wr = chain.crush(r[i], auto_gain(pr.next(r[i].abs())));
@@ -117,10 +138,10 @@ fn separate_auto_gain_follows_each_channel() {
 }
 
 #[test]
-fn linked_auto_gain_follows_the_mid_for_both() {
-    let (l, r, ol, or) = auto(2.0);
+fn linked_peak_follows_the_mid_for_both() {
+    let (l, r, ol, or) = auto(2.0, PEAK);
     let chain = Prepared::new(&Settings::default());
-    let mut mid = PeakFollower::new(ATTACK_MS, RELEASE_MS, RATE);
+    let mut mid = peak();
     for i in 0..l.len() {
         let gain = auto_gain(mid.next((0.5 * (l[i] + r[i])).abs()));
         assert_eq!(
@@ -130,8 +151,136 @@ fn linked_auto_gain_follows_the_mid_for_both() {
         );
     }
     // Not the same as separate: the quiet channel is crushed harder.
-    let (_, _, _, separate_r) = auto(1.0);
+    let (_, _, _, separate_r) = auto(1.0, PEAK);
     assert_ne!(or, separate_r);
+}
+
+#[test]
+fn separate_range_crushes_each_channel_about_its_midpoint() {
+    let (l, r, ol, or) = auto(1.0, RANGE);
+    let chain = Prepared::new(&Settings::default());
+    let (mut fl, mut fr) = (range(), range());
+    for i in 0..l.len() {
+        fl.next(l[i]);
+        fr.next(r[i]);
+        let wl = chain.crush(l[i] - fl.mid(), auto_gain(fl.half_range())) + fl.mid();
+        let wr = chain.crush(r[i] - fr.mid(), auto_gain(fr.half_range())) + fr.mid();
+        assert_eq!((ol[i], or[i]), (wl, wr), "sample {i}");
+    }
+}
+
+#[test]
+fn linked_range_follows_both_channels_as_one() {
+    let (l, r, ol, or) = auto(2.0, RANGE);
+    let chain = Prepared::new(&Settings::default());
+    let mut f = range();
+    for i in 0..l.len() {
+        f.decay();
+        f.push(l[i]);
+        f.push(r[i]);
+        let (mid, gain) = (f.mid(), auto_gain(f.half_range()));
+        assert_eq!(
+            (ol[i], or[i]),
+            (
+                chain.crush(l[i] - mid, gain) + mid,
+                chain.crush(r[i] - mid, gain) + mid
+            ),
+            "sample {i}"
+        );
+    }
+}
+
+#[test]
+fn linked_range_hears_out_of_phase_stereo() {
+    // L = −R: the mid signal is silent, so PEAK gates at its ceiling
+    // gain and clips both channels to full-scale squares (scaled back
+    // down by the gain: ±1/200). RANGE sees the swing.
+    let l = sine(0.5, 300.0, 4800);
+    let r: Vec<f32> = l.iter().map(|x| -x).collect();
+    let smooth = [(SMOOTHING, 100.0), (AUTO_GAIN, 1.0), (STEREO, 2.0)];
+    let mut by_peak = engine(RATE, &[smooth[0], smooth[1], smooth[2], (DETECT, PEAK)]);
+    let mut by_range = engine(RATE, &[smooth[0], smooth[1], smooth[2], (DETECT, RANGE)]);
+    let (pl, _) = stereo(&mut by_peak, &l, &r);
+    let (rl, _) = stereo(&mut by_range, &l, &r);
+    let peak_out = pl[2400..].iter().fold(0.0f32, |m, x| m.max(x.abs()));
+    assert!(peak_out < 0.01, "{peak_out}");
+    // Smoothing 100 % makes the chain transparent: RANGE gives the input
+    // back.
+    for i in 2400..4800 {
+        assert!((rl[i] - l[i]).abs() < 1e-4, "sample {i}");
+    }
+}
+
+#[test]
+fn range_crushes_an_offset_signal_about_its_offset() {
+    // 0.5 + 0.1 sin: PEAK would see 0.6 and crush about zero; RANGE
+    // crushes the ±0.1 swing to full scale and puts the 0.5 back.
+    let x: Vec<f32> = sine(0.1, 300.0, 48_000).iter().map(|s| 0.5 + s).collect();
+    let mut e = engine(
+        RATE,
+        &[
+            (AUTO_GAIN, 1.0),
+            (DETECT, RANGE),
+            (BIT_DEPTH, 1.0),
+            (STEREO, 1.0),
+        ],
+    );
+    let (y, _) = stereo(&mut e, &x, &x);
+    // One bit, asymmetric: the swing becomes a square about 0.5, ±0.1
+    // once the range, which starts at rest at 0, has settled on it.
+    // Between peaks the range sags (7 % a cycle at 100 ms), and the
+    // square's height with it. Never clipped near 1.
+    let tail = &y[36_000..];
+    let (lo, hi) = tail
+        .iter()
+        .fold((f32::MAX, f32::MIN), |(lo, hi), &v| (lo.min(v), hi.max(v)));
+    assert!(
+        (hi - 0.6).abs() < 0.01 && (lo - 0.4).abs() < 0.01,
+        "{lo} {hi}"
+    );
+    let near = |c: f32| tail.iter().filter(|&&v| (v - c).abs() < 0.01).count();
+    assert!(near(0.4) + near(0.6) > tail.len() * 9 / 10);
+}
+
+#[test]
+fn decay_reaches_both_detectors() {
+    // How fast each detector falls is tested in vxn-free-dsp; here, that
+    // DECAY sets it: the output matches followers falling 20 dB in DECAY.
+    let input: Vec<f32> = sine(0.8, 300.0, 960)
+        .into_iter()
+        .chain(sine(0.05, 300.0, 3840))
+        .collect();
+    let chain = Prepared::new(&Settings::default());
+    for decay_ms in [2.0f32, 300.0] {
+        let falls = fall(decay_ms * 0.001, RATE);
+        for detect in [PEAK, RANGE] {
+            let mut beverley = engine(
+                RATE,
+                &[
+                    (AUTO_GAIN, 1.0),
+                    (DETECT, detect),
+                    (DECAY, decay_ms),
+                    (STEREO, 1.0),
+                ],
+            );
+            let (out, _) = stereo(&mut beverley, &input, &input);
+            let mut by_peak = PeakFollower::new(ATTACK_MS, falls, RATE);
+            let mut by_range = RangeFollower::new(falls);
+            for (i, &s) in input.iter().enumerate() {
+                let want = if detect == PEAK {
+                    chain.crush(s, auto_gain(by_peak.next(s.abs())))
+                } else {
+                    by_range.next(s);
+                    chain.crush(s - by_range.mid(), auto_gain(by_range.half_range()))
+                        + by_range.mid()
+                };
+                assert_eq!(
+                    out[i], want,
+                    "DECAY {decay_ms} ms, detect {detect}, sample {i}"
+                );
+            }
+        }
+    }
 }
 
 #[test]
@@ -209,13 +358,21 @@ fn block_splits_do_not_change_the_output() {
 fn every_setting() -> Vec<Vec<(ParamIndex, f32)>> {
     let mut all = Vec::new();
     for stereo in [0.0, 1.0, 2.0] {
-        for auto in [0.0, 1.0] {
+        for (auto, detect, decay) in [
+            (0.0, RANGE, 115.0),
+            (1.0, PEAK, 1.0),
+            (1.0, PEAK, 5000.0),
+            (1.0, RANGE, 1.0),
+            (1.0, RANGE, 5000.0),
+        ] {
             for mode in [0.0, 1.0] {
                 for (bits, smoothing) in [(1.0, 0.0), (4.0, 0.0), (5.5, 50.0), (16.0, 100.0)] {
                     for mix in [0.0, 50.0, 100.0] {
                         all.push(vec![
                             (STEREO, stereo),
                             (AUTO_GAIN, auto),
+                            (DETECT, detect),
+                            (DECAY, decay),
                             (CRUSH_MODE, mode),
                             (BIT_DEPTH, bits),
                             (SMOOTHING, smoothing),

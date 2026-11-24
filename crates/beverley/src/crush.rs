@@ -32,9 +32,8 @@ const GATE: f32 = 0.005;
 pub fn auto_gain(level: f32) -> f32 {
     1.0 / level.max(GATE)
 }
-/// Auto gain's envelope time constants.
+/// The peak detector's attack time constant.
 pub const ATTACK_MS: f32 = 0.5;
-pub const RELEASE_MS: f32 = 50.0;
 
 /// Which grid quantisation snaps to (see the module docs).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -327,7 +326,11 @@ mod tests {
             ..Settings::default()
         };
         let p = Prepared::new(&s);
-        let mut peak = PeakFollower::new(ATTACK_MS, RELEASE_MS, 48_000.0);
+        let mut peak = PeakFollower::new(
+            ATTACK_MS,
+            vxn_free_dsp::peak::fall(0.115, 48_000.0),
+            48_000.0,
+        );
         // A steady 0.1 drives the peak to 0.1, so the gain to 10: the
         // quantiser sees 1, and the output is 0.1 again.
         let mut out = 0.0;
