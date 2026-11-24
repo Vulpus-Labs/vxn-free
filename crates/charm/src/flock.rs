@@ -25,9 +25,9 @@
 use crate::MAX_VOICES;
 
 /// The shortest delay any voice has, seconds: longer than the analysis's
-/// lag (a window and a hop, plus a sample for the interpolator) at every
-/// rate, so the analysis has seen each sample before a voice plays it
-/// (ADR 0002, point 6). At 44.1 kHz the lag is 7.28 ms.
+/// lag plus a sample for the interpolator, at every rate, so the analysis
+/// has seen each sample before a voice plays it (ADR 0002, point 6). The
+/// engine checks it when built.
 pub const FLOOR: f64 = 0.0075;
 
 /// Cohesion's pull at 100 %.

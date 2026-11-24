@@ -120,7 +120,6 @@ impl Band {
 
 /// The dry input of one stretch (at most a tick), for the analysis.
 struct Heard {
-    mid: [f32; TICK],
     side: [f32; TICK],
     bands: [[f32; BANDS]; TICK],
 }
@@ -128,7 +127,6 @@ struct Heard {
 impl Default for Heard {
     fn default() -> Self {
         Self {
-            mid: [0.0; TICK],
             side: [0.0; TICK],
             bands: [[0.0; BANDS]; TICK],
         }
@@ -325,7 +323,6 @@ impl CharmEngine {
             let i = offset + n;
             let dry = *s;
             let (wl, wr, bands) = self.voices_at(i, dry);
-            heard.mid[n] = dry;
             heard.bands[n] = bands;
             // Summed to one channel, equal-power pans would favour the
             // centre; each voice's left and right add to at most √2, so
@@ -333,8 +330,7 @@ impl CharmEngine {
             *s = dry + self.mix_ramp.at(i) * (wl + wr) * std::f32::consts::FRAC_1_SQRT_2;
         }
         let n = x.len();
-        self.analysis
-            .push(&heard.mid[..n], &heard.bands[..n], &heard.side[..n]);
+        self.analysis.push(&heard.bands[..n], &heard.side[..n]);
     }
 
     /// Render from `offset` into the tick: two channels.
@@ -345,7 +341,6 @@ impl CharmEngine {
             let (dl, dr) = (*l, *r);
             let mid = 0.5 * (dl + dr);
             let (wl, wr, bands) = self.voices_at(i, mid);
-            heard.mid[n] = mid;
             heard.side[n] = 0.5 * (dl - dr);
             heard.bands[n] = bands;
             let mix = self.mix_ramp.at(i);
@@ -353,8 +348,7 @@ impl CharmEngine {
             *r = dr + mix * wr;
         }
         let n = left.len().min(right.len());
-        self.analysis
-            .push(&heard.mid[..n], &heard.bands[..n], &heard.side[..n]);
+        self.analysis.push(&heard.bands[..n], &heard.side[..n]);
     }
 }
 

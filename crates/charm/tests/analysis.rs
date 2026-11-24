@@ -1,6 +1,6 @@
 //! Charm's analysis sidechain against ticket 0015's acceptance criteria.
 
-use charm::analysis::window_for;
+use charm::analysis::REFERENCE_SECONDS;
 use charm::engine::{CharmEngine, TICK};
 use charm::observe::{HIGH, MID, Observation};
 use charm::{LOW_XOVER, MIX};
@@ -37,9 +37,8 @@ fn noise(len: usize, mut seed: u32) -> Vec<f32> {
 }
 
 #[test]
-fn an_impulse_trains_onsets_are_found_in_frames_that_hold_them() {
+fn an_impulse_trains_onsets_are_found_promptly_and_once() {
     for rate in [44_100.0f32, 48_000.0, 96_000.0] {
-        let window = window_for(rate) as u64;
         let every = (rate * 0.25) as usize;
         let mut x = vec![0.0f32; every * 8];
         let clicks: Vec<usize> = (1..8).map(|k| k * every + 17 * k).collect();
@@ -48,19 +47,20 @@ fn an_impulse_trains_onsets_are_found_in_frames_that_hold_them() {
         }
         let obs = observe(rate, &x, &x);
         for band in [MID, HIGH] {
-            let mut found: Vec<u64> = obs
+            let found: Vec<(u64, u64)> = obs
                 .iter()
                 .filter(|o| o.bands[band].onset > 0.0)
-                .map(|o| o.bands[band].onset_start)
+                .map(|o| (o.bands[band].onset_start, o.tick * TICK as u64))
                 .collect();
-            found.dedup();
             assert_eq!(found.len(), clicks.len(), "{rate} band {band}: {found:?}");
-            for (&start, &t) in found.iter().zip(&clicks) {
-                // The onset's frame holds the click.
+            for (&(start, seen), &t) in found.iter().zip(&clicks) {
+                // Marked as starting before the click, and reported within
+                // 3 ms of it.
                 let t = t as u64;
+                assert!(start <= t, "{rate}: click {t}, marked from {start}");
                 assert!(
-                    start <= t && t < start + window,
-                    "{rate}: click {t}, frame {start}"
+                    seen > t && seen - t <= (0.003 * rate) as u64,
+                    "{rate}: click {t}, seen at {seen}"
                 );
             }
         }
@@ -68,24 +68,30 @@ fn an_impulse_trains_onsets_are_found_in_frames_that_hold_them() {
 }
 
 #[test]
-fn sines_above_the_crossover_are_peaks_within_a_bin() {
+fn sustained_sounds_give_no_onsets_after_their_start() {
     let rate = 48_000.0;
-    let bin = rate / window_for(rate) as f32;
-    let (f_mid, f_high) = (1234.0f32, 6789.0f32);
-    let x: Vec<f32> = (0..rate as usize)
+    let len = rate as usize * 3;
+    // A harmonic tone whose partials beat in shared bands, and noise.
+    let tone: Vec<f32> = (0..len)
         .map(|n| {
             let t = n as f32 / rate;
-            0.3 * (TAU * f_mid * t).sin() + 0.2 * (TAU * f_high * t).sin()
+            (1..=12)
+                .map(|k| 0.4 / k as f32 * (TAU * 220.0 * k as f32 * t).sin())
+                .sum()
         })
         .collect();
-    let obs = observe(rate, &x, &x);
-    let last = obs.last().unwrap();
-    let mid = last.bands[MID].peaks[0];
-    let high = last.bands[HIGH].peaks[0];
-    assert!((mid.hz - f_mid).abs() < bin, "{mid:?}");
-    assert!((high.hz - f_high).abs() < bin, "{high:?}");
-    assert!((mid.strength - 0.3).abs() < 0.05, "{mid:?}");
-    assert!((high.strength - 0.2).abs() < 0.05, "{high:?}");
+    let noise = noise(len, 7);
+    for x in [&tone, &noise] {
+        let obs = observe(rate, x, x);
+        let after_start = (2.0 * REFERENCE_SECONDS * rate) as u64 / TICK as u64;
+        for band in [MID, HIGH] {
+            let late = obs
+                .iter()
+                .filter(|o| o.tick > after_start && o.bands[band].onset > 0.0)
+                .count();
+            assert_eq!(late, 0, "band {band}");
+        }
+    }
 }
 
 #[test]

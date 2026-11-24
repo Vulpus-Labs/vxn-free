@@ -49,8 +49,6 @@ pub struct AnalysisMetrics {
     pub onsets: usize,
     pub onsets_per_second: f32,
     pub mean_coherence: f32,
-    /// Peaks found per tick, on average.
-    pub mean_peaks: f32,
 }
 
 /// How much the known partials of a harmonic signal dip in the output's
@@ -77,9 +75,21 @@ pub struct Comb {
     pub ripple_db: f32,
 }
 
+/// Onsets found against known ones, in one band.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct OnsetScore {
+    pub truth: usize,
+    pub hits: usize,
+    pub false_onsets: usize,
+    /// From the true onset to the tick that reported it, ms.
+    pub mean_delay_ms: f32,
+    pub max_delay_ms: f32,
+}
+
 /// Everything about one render.
 #[derive(Clone, Debug, Default)]
 pub struct Metrics {
+    pub onset_scores: [Option<OnsetScore>; BANDS],
     pub comb: Comb,
     pub partial_loss: Option<PartialLoss>,
     pub flocks: [FlockMetrics; BANDS],
@@ -173,17 +183,14 @@ pub fn analysis(obs: &[Observation], rate: f32) -> [AnalysisMetrics; BANDS] {
     let samples = obs.last().map_or(1, |o| o.tick) as f32 * charm::engine::TICK as f32;
     for (b, a) in out.iter_mut().enumerate() {
         let mut coherence = 0.0f32;
-        let mut peaks = 0usize;
         for o in obs {
             let band = &o.bands[b];
             if band.onset > 0.0 {
                 a.onsets += 1;
             }
             coherence += band.coherence;
-            peaks += band.peaks.iter().filter(|p| p.strength > 0.0).count();
         }
         a.mean_coherence = coherence / ticks;
-        a.mean_peaks = peaks as f32 / ticks;
         a.onsets_per_second = a.onsets as f32 / (samples / rate);
     }
     out
@@ -311,4 +318,49 @@ pub fn comb(input: &[f32], output: &[f32], rate: f32, spread: f32) -> Comb {
         out.ripple_db = (sum2 / count as f64 - mean * mean).max(0.0).sqrt() as f32;
     }
     out
+}
+
+/// Each reported onset matched to the first unmatched true onset it
+/// follows by at most 40 ms; the rest are false.
+pub fn score_onsets(
+    obs: &[Observation],
+    truth: &[Option<Vec<usize>>; 2],
+    rate: f32,
+) -> [Option<OnsetScore>; BANDS] {
+    let tick = charm::engine::TICK as f32;
+    let tolerance = (0.04 * rate) as usize;
+    std::array::from_fn(|b| {
+        let truth = truth[b].as_ref()?;
+        let found: Vec<usize> = obs
+            .iter()
+            .filter(|o| o.bands[b].onset > 0.0)
+            .map(|o| (o.tick as f32 * tick) as usize)
+            .collect();
+        let mut used = vec![false; truth.len()];
+        let mut score = OnsetScore {
+            truth: truth.len(),
+            ..OnsetScore::default()
+        };
+        let mut delay_sum = 0.0f32;
+        for &at in &found {
+            let hit = truth
+                .iter()
+                .enumerate()
+                .find(|&(i, &t)| !used[i] && at >= t && at - t <= tolerance);
+            match hit {
+                Some((i, &t)) => {
+                    used[i] = true;
+                    score.hits += 1;
+                    let ms = (at - t) as f32 / rate * 1000.0;
+                    delay_sum += ms;
+                    score.max_delay_ms = score.max_delay_ms.max(ms);
+                }
+                None => score.false_onsets += 1,
+            }
+        }
+        if score.hits > 0 {
+            score.mean_delay_ms = delay_sum / score.hits as f32;
+        }
+        Some(score)
+    })
 }

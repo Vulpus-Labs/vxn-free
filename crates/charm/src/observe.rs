@@ -13,8 +13,6 @@ pub const BANDS: usize = 2;
 pub const MID: usize = 0;
 /// Index of the HIGH band.
 pub const HIGH: usize = 1;
-/// Spectral peaks kept per band (ticket 0015).
-pub const PEAKS: usize = 8;
 
 /// One voice at the end of a tick.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -37,23 +35,12 @@ impl VoiceObs {
     }
 }
 
-/// One spectral peak (ticket 0015).
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct PeakObs {
-    /// Hz.
-    pub hz: f32,
-    /// Linear magnitude.
-    pub strength: f32,
-}
-
 /// One band's flock and analysis.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct BandObs {
     /// Voices in use (VOICES); the rest of `voices` are silent.
     pub active: u8,
     pub voices: [VoiceObs; MAX_VOICES],
-    /// Strongest peaks, strongest first; unused ones are zero (0015).
-    pub peaks: [PeakObs; PEAKS],
     /// Onset strength this tick (the frame's relative rise in
     /// magnitude), 0 when none (0015, 0016).
     pub onset: f32,

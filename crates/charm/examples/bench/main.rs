@@ -24,7 +24,7 @@
 //!
 //! For each input it writes `NAME.wav` (the output, stereo float),
 //! `NAME-mono.wav` (its mono sum), `NAME-voices.csv` (every voice at every
-//! tick) and `NAME-analysis.csv` (onsets, coherence and peaks per band at
+//! tick) and `NAME-analysis.csv` (onsets and coherence per band at
 //! every tick), and adds a section to `metrics.txt` and `metrics.json`.
 
 mod metrics;
@@ -335,6 +335,9 @@ fn run(
             output: metrics::mono_loss(l, r, input.rate, xover),
         },
         split_identical: identical,
+        onset_scores: signals::onsets(&input.name, input.rate, len).map_or([None, None], |truth| {
+            metrics::score_onsets(&obs, &truth, input.rate)
+        }),
         comb: {
             let mono_in: Vec<f32> = input.channels[0]
                 .iter()
@@ -382,11 +385,7 @@ fn write_csv(path: &Path, obs: &[Observation], rate: f32) -> Result<(), String> 
 
 /// One row per band per tick: the analysis as the engine saw it.
 fn write_analysis_csv(path: &Path, obs: &[Observation], rate: f32) -> Result<(), String> {
-    let mut s = String::from("tick,seconds,band,onset,onset_start,coherence");
-    for i in 1..=charm::observe::PEAKS {
-        let _ = write!(s, ",peak{i}_hz,peak{i}_amp");
-    }
-    s.push('\n');
+    let mut s = String::from("tick,seconds,band,onset,onset_start,coherence\n");
     for o in obs {
         let secs = o.tick as f32 * TICK as f32 / rate;
         for (b, band) in o.bands.iter().enumerate() {
@@ -399,9 +398,6 @@ fn write_analysis_csv(path: &Path, obs: &[Observation], rate: f32) -> Result<(),
                 band.onset_start,
                 band.coherence
             );
-            for p in &band.peaks {
-                let _ = write!(s, ",{:.2},{:.5}", p.hz, p.strength);
-            }
             s.push('\n');
         }
     }
@@ -444,13 +440,65 @@ fn write_report(report: &mut String, json: &mut Vec<String>, name: &str, m: &Met
     for (b, a) in m.analysis.iter().enumerate() {
         let _ = writeln!(
             report,
-            "  {:<4} onsets {} ({:.1} a second); coherence mean {:.2}; peaks a tick {:.1}",
+            "  {:<4} onsets {} ({:.1} a second); coherence mean {:.2}",
             ["MID", "HIGH"][b],
             a.onsets,
             a.onsets_per_second,
-            a.mean_coherence,
-            a.mean_peaks
+            a.mean_coherence
         );
+    }
+    write_measures(report, json, name, m);
+    let bands = ["LOW", "MID", "HIGH"];
+    let _ = write!(report, "  mono-sum loss dB (in → out):");
+    for ((band, input), output) in bands.iter().zip(m.mono.input).zip(m.mono.output) {
+        let _ = write!(report, " {band} {input:.2} → {output:.2};");
+    }
+    let _ = writeln!(report);
+    let analysis: Vec<String> = m
+        .analysis
+        .iter()
+        .zip(["mid", "high"])
+        .map(|(a, band)| {
+            format!(
+                "\"{band}\":{{\"onsets\":{},\"onsets_per_second\":{},\"mean_coherence\":{}}}",
+                a.onsets, a.onsets_per_second, a.mean_coherence
+            )
+        })
+        .collect();
+    json.push(format!(
+        "\"{name}\":{{\"split_identical\":{},{},\"analysis\":{{{}}},\"mono_loss_db\":{{\"input\":{:?},\"output\":{:?}}}}}",
+        m.split_identical,
+        flocks.join(","),
+        analysis.join(","),
+        m.mono.input,
+        m.mono.output
+    ));
+}
+
+/// The onset scores, partial loss and comb, where measured.
+fn write_measures(report: &mut String, json: &mut Vec<String>, name: &str, m: &Metrics) {
+    for (b, s) in m.onset_scores.iter().enumerate() {
+        if let Some(s) = s {
+            let _ = writeln!(
+                report,
+                "  {:<4} onsets against truth: {} of {} found, {} false; delay mean {:.1} ms, max {:.1} ms",
+                ["MID", "HIGH"][b],
+                s.hits,
+                s.truth,
+                s.false_onsets,
+                s.mean_delay_ms,
+                s.max_delay_ms
+            );
+            json.push(format!(
+                "\"{name}-onsets-{}\":{{\"truth\":{},\"hits\":{},\"false\":{},\"mean_delay_ms\":{},\"max_delay_ms\":{}}}",
+                ["mid", "high"][b],
+                s.truth,
+                s.hits,
+                s.false_onsets,
+                s.mean_delay_ms,
+                s.max_delay_ms
+            ));
+        }
     }
     if let Some(p) = m.partial_loss {
         let _ = writeln!(
@@ -471,34 +519,6 @@ fn write_report(report: &mut String, json: &mut Vec<String>, name: &str, m: &Met
     json.push(format!(
         "\"{name}-comb\":{{\"cepstral_peak\":{},\"peak_ms\":{},\"ripple_db\":{}}}",
         m.comb.cepstral_peak, m.comb.peak_ms, m.comb.ripple_db
-    ));
-    let bands = ["LOW", "MID", "HIGH"];
-    let _ = write!(report, "  mono-sum loss dB (in → out):");
-    for ((band, input), output) in bands.iter().zip(m.mono.input).zip(m.mono.output) {
-        let _ = write!(report, " {band} {input:.2} → {output:.2};");
-    }
-    let _ = writeln!(report);
-    let analysis: Vec<String> = m
-        .analysis
-        .iter()
-        .zip(["mid", "high"])
-        .map(|(a, band)| {
-            format!(
-                "\"{band}\":{{\"onsets\":{},\"onsets_per_second\":{},\"mean_coherence\":{},\"mean_peaks\":{}}}",
-                a.onsets,
-                a.onsets_per_second,
-                a.mean_coherence,
-                a.mean_peaks
-            )
-        })
-        .collect();
-    json.push(format!(
-        "\"{name}\":{{\"split_identical\":{},{},\"analysis\":{{{}}},\"mono_loss_db\":{{\"input\":{:?},\"output\":{:?}}}}}",
-        m.split_identical,
-        flocks.join(","),
-        analysis.join(","),
-        m.mono.input,
-        m.mono.output
     ));
 }
 

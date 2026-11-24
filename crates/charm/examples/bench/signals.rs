@@ -4,7 +4,7 @@
 use std::f32::consts::TAU;
 
 /// Names, in the order `all` runs them.
-pub const NAMES: [&str; 7] = [
+pub const NAMES: [&str; 8] = [
     "tone",
     "chord",
     "dist-chord",
@@ -12,6 +12,7 @@ pub const NAMES: [&str; 7] = [
     "white",
     "clicks",
     "drums",
+    "legato",
 ];
 
 /// The signal called `name`, `seconds` long at `rate`, as stereo (both
@@ -41,9 +42,60 @@ pub fn make(name: &str, rate: f32, seconds: f32) -> Option<[Vec<f32>; 2]> {
         // A loop at 120 bpm: kick on 1 and 3, snare on 2 and 4, hats on
         // the eighths.
         "drums" => drums(rate, len),
+        // A line at a steady level, changing note every half second.
+        "legato" => legato(rate, len),
         _ => return None,
     };
     Some([mono.clone(), mono])
+}
+
+/// The notes of `legato`, Hz, half a second each, cycling.
+const LEGATO: [f32; 6] = [220.0, 261.63, 329.63, 392.0, 329.63, 261.63];
+
+fn legato(rate: f32, len: usize) -> Vec<f32> {
+    let note = (rate * 0.5) as usize;
+    let mut phase = [0.0f32; 10];
+    (0..len)
+        .map(|n| {
+            let f0 = LEGATO[(n / note) % LEGATO.len()];
+            let mut s = 0.0;
+            for (k, p) in phase.iter_mut().enumerate() {
+                let hz = f0 * (k + 1) as f32;
+                *p = (*p + TAU * hz / rate) % TAU;
+                if hz < 0.45 * rate {
+                    s += 0.4 / (k + 1) as f32 * p.sin();
+                }
+            }
+            s
+        })
+        .collect()
+}
+
+/// Where the onsets in the synthetic signal `name` are, per band (MID,
+/// HIGH), in samples, if they are known.
+pub fn onsets(name: &str, rate: f32, len: usize) -> Option<[Option<Vec<usize>>; 2]> {
+    let every = |step: usize, from: usize, by: usize| -> Vec<usize> {
+        (from..)
+            .step_by(by)
+            .map(|k| k * step)
+            .take_while(|&n| n < len)
+            .collect()
+    };
+    match name {
+        "clicks" => {
+            let all = every((rate / 4.0) as usize, 0, 1);
+            Some([Some(all.clone()), Some(all)])
+        }
+        "drums" => {
+            // A hit on every eighth: hats, with a kick or snare on the
+            // beats. Every hit reaches MID: the hats are broadband noise,
+            // and the kick sweeps down from 120 Hz.
+            let all = every((rate * 0.25) as usize, 0, 1);
+            Some([Some(all.clone()), Some(all)])
+        }
+        "legato" => Some([Some(every((rate * 0.5) as usize, 0, 1)), None]),
+        _ => None,
+    }
 }
 
 /// The partials the synthetic signal `name` is built from, Hz, if it is a

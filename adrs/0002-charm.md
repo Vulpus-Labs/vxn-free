@@ -105,30 +105,37 @@ Charm addresses each of these, and stays a zero-latency effect.
    which works against point 8.
 
 6. **Analysis runs behind and still looks ahead.** A sidechain analyses the
-   dry input on a fixed internal hop, independent of the host's block
-   size. Its window is about 5 ms (256 samples at 48 kHz, scaled to the
-   next power of two at other rates), with a hop of a quarter-window.
-   - The analysis lags the input by at most one window plus one hop. Every
-     voice reads at least that far into the past, so the analysis sees
-     each sample before any voice plays it. The plugin gets this
-     lookahead for free and still reports zero latency.
+   dry input's MID and HIGH bands on a fixed schedule (blocks of 16
+   samples), independent of the host's block size. It uses no FFT: onsets
+   come from each band's energy envelope (point 7), and coherence from
+   each band's mid and side signals.
+   - The analysis lags the input by a few milliseconds (an onset is
+     marked as starting 3 ms and a block before it was found: 3.7 ms at
+     44.1 kHz). Every voice reads further into the past than that, so the
+     analysis sees each sample before any voice plays it. The plugin gets
+     this lookahead for free and still reports zero latency.
    - Results reach the voices through a **side-buffer** that runs
      alongside each delay line: the analysis writes gain values there
      after the fact, at the positions it has just examined, and each
      voice reads them at the same position as its audio tap.
-   - The minimum voice delay must exceed window + hop plus one sample
-     for the interpolator's reach (7.28 ms at 44.1 kHz, the worst rate).
-     It is a fixed 7.5 ms at every rate, so Charm sounds the same at any
-     rate, and the engine checks it when built (ticket 0015).
-   - Small windows give coarse bins (about 190 Hz at 48 kHz). That is
-     acceptable because the analysis only serves MID and HIGH: LOW, where
-     fine resolution would matter, is never chorused.
+   - The minimum voice delay must exceed the analysis's lag plus one
+     sample for the interpolator's reach. It is a fixed 7.5 ms at every
+     rate, so Charm sounds the same at any rate, and the engine checks it
+     when built. 7.5 ms was set when the analysis was a 5 ms STFT, which
+     lagged 7.28 ms at 44.1 kHz (ticket 0015). The envelope detector
+     (ticket 0029) lags far less, but the floor stays: lowering it would
+     change the sound and edge towards flanging.
 
 7. **What the analysis drives.**
-   - **Duck.** Onsets (spectral flux per band) lower wet gain over the
-     attack. They are written into the side-buffer from the start of the
-     frame in which the onset was found, so the duck begins before the
-     attack reaches any voice. DUCK sets the depth.
+   - **Duck.** Onsets lower wet gain over the attack. An onset is a 16-
+     sample block whose band energy (a 1 ms follower) rises about 4 dB
+     over the largest the band has been in the last 30 ms; the 30 ms
+     reference keeps beating partials and buzzes from firing. It is
+     written into the side-buffer from 3 ms before it was found, so the
+     duck begins before the attack reaches any voice. DUCK sets the
+     depth. Spectral flux from a 5 ms STFT was built first (ticket 0015)
+     and compared (ticket 0029): the envelope found more drum hits, sooner,
+     for less CPU, and neither caught a legato line's note changes.
    - **Bloom.** After an onset, wet depth rises from zero over BLOOM
      time, the way a singer brings in vibrato late in a note. BLOOM = 0
      turns it off.
@@ -231,9 +238,9 @@ first adaptive or flock-driven chorus.
 
 ## Consequences
 
-- `vxn-free-dsp` gains a modulated delay line, Linkwitz-Riley crossovers
-  and a gain side-buffer. Charm uses Glow-Up's streaming STFT (ticket
-  0007), built on the FFT copied from Patches, at windows of 128 or 256.
+- `vxn-free-dsp` gains a modulated delay line, Linkwitz-Riley crossovers,
+  allpass filters and a gain side-buffer. Charm uses no FFT; the streaming
+  STFT built for it (ticket 0007) serves Glow-Up.
 - The flock is a small physics simulation. Its parameters interact, so
   its controls need tuning by ear before the ranges are fixed.
 - Charm needs a silkscreen release with telemetry frames before its
