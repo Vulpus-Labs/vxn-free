@@ -34,6 +34,23 @@ library (<https://github.com/Vulpus-Labs/silkscreen>, checked out at
 - Both repos pin the same toolchain (`rust-toolchain.toml`): snapshots
   depend on it. Bump them together.
 
+## Verification
+
+CI (`.github/workflows/ci.yml`) runs these; run them before committing.
+
+```sh
+cargo fmt --all --check
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
+cargo build -p vxn-free-dsp --target wasm32-unknown-unknown
+```
+
+Bundles are built with silkscreen's tool, installed from the same tag as
+the crates:
+`cargo install --locked --git https://github.com/Vulpus-Labs/silkscreen --tag v0.2.1 silkscreen-tool`,
+then `cargo silkscreen bundle <package>`.
+
 ## Code
 
 - DSP is measured before it is changed: quantify aliasing and CPU with a

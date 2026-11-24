@@ -1,0 +1,63 @@
+# Checks every push and pull request. The full list runs on ARM64 macOS,
+# the platform silkscreen's bit-exact snapshot tests are blessed on;
+# elsewhere those tests skip themselves, and clippy and the rest of the
+# tests run.
+
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  macos:
+    name: Full (macOS)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      # rust-toolchain.toml pins the compiler; rustup installs it on first use.
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Test
+        run: cargo test --workspace --no-fail-fast
+      - name: Docs
+        run: cargo doc --workspace --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
+      - name: Build the DSP crate for wasm32
+        run: cargo build -p vxn-free-dsp --target wasm32-unknown-unknown
+
+  others:
+    name: Clippy and tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025]
+    steps:
+      - uses: actions/checkout@v4
+      # What silkscreen's native host and editor windows link against.
+      - name: Linux packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config libasound2-dev libx11-dev libx11-xcb-dev libxcb1-dev \
+            libxcb-icccm4-dev libxcursor-dev libxkbcommon-dev libgl1-mesa-dev \
+            libwayland-dev
+      - run: rustup toolchain install
+      - uses: Swatinem/rust-cache@v2
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Test
+        run: cargo test --workspace --no-fail-fast

@@ -14,7 +14,7 @@ Decisions: [ADR 0001](../../adrs/0001-vxn-free.md).
 
 | Ticket | What |
 |---|---|
-| 0001 | Workspace on silkscreen v0.2.1, `vxn-free-dsp`, CI |
+| 0001 (closed) | Workspace on silkscreen v0.2.1, `vxn-free-dsp`, CI |
 | 0002 | Release builds: signed and notarized macOS, Windows, Linux, on GitHub releases |
 
 ## Dependency order

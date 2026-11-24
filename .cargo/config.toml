@@ -1,0 +1,4 @@
+# wasm SIMD: every current browser has it, and engine DSP runs markedly
+# faster with it.
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "target-feature=+simd128"]

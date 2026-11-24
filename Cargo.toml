@@ -1,0 +1,71 @@
+# vxn-free: Vulpus Labs' free CLAP effects, built on silkscreen.
+[workspace]
+resolver = "3"
+members = [
+    "crates/vxn-free-dsp",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Vulpus-Labs/vxn-free"
+publish = false
+
+[workspace.dependencies]
+vxn-free-dsp = { path = "crates/vxn-free-dsp" }
+
+# Every silkscreen crate from one tag. Bump them together, and keep
+# rust-toolchain.toml equal to silkscreen's at that tag (snapshots depend
+# on it).
+silkscreen = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.1" }
+silkscreen-bridge = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.1" }
+silkscreen-build = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.1" }
+silkscreen-clap = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.1" }
+silkscreen-harness = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.1" }
+silkscreen-host-native = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.1" }
+
+# clack: the rev silkscreen-clap pins at the tag above.
+clack-plugin = { git = "https://github.com/prokopyl/clack", rev = "f874e858ad576c601367b3038af5088a4e671744" }
+clack-extensions = { git = "https://github.com/prokopyl/clack", rev = "f874e858ad576c601367b3038af5088a4e671744" }
+
+# Working across both repos: uncomment to build against a silkscreen
+# checkout beside this one. Don't commit it uncommented.
+# [patch."https://github.com/Vulpus-Labs/silkscreen"]
+# silkscreen = { path = "../silkscreen/crates/silkscreen" }
+# silkscreen-bridge = { path = "../silkscreen/crates/silkscreen-bridge" }
+# silkscreen-build = { path = "../silkscreen/crates/silkscreen-build" }
+# silkscreen-clap = { path = "../silkscreen/crates/silkscreen-clap" }
+# silkscreen-harness = { path = "../silkscreen/crates/silkscreen-harness" }
+# silkscreen-host-native = { path = "../silkscreen/crates/silkscreen-host-native" }
+
+# As silkscreen's own.
+[workspace.lints.rust]
+unsafe_code = "deny"
+missing_debug_implementations = "warn"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+# DSP and pixel code casts between float and integer types constantly; the
+# conversions are deliberate and range-checked where it matters.
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+cast_precision_loss = "allow"
+cast_possible_wrap = "allow"
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+return_self_not_must_use = "allow"
+# Exact float equality is usually intended (clamped values, bit-exact
+# round trips, test expectations); use to_bits() where identity matters.
+float_cmp = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+
+# Build scripts render faceplates (silkscreen-build): unoptimised, that
+# takes many times longer.
+[profile.dev.build-override]
+opt-level = 3
+
+[profile.release.build-override]
+opt-level = 3
