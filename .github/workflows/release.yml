@@ -176,7 +176,10 @@ jobs:
           if [ "${GITHUB_REF_TYPE}" != tag ]; then version="dev-${GITHUB_SHA::7}"; fi
           mkdir -p target/dist
           for b in target/bundled/*.clap; do
-            name="$(basename "$b" .clap)-$version-${{ matrix.name }}.clap.zip"
+            # Lower case, as downloads.vulpuslabs.com names its files:
+            # beverley-0.1.0-macos.clap.zip.
+            product=$(basename "$b" .clap | tr '[:upper:]' '[:lower:]')
+            name="$product-$version-${{ matrix.name }}.clap.zip"
             if [ "${{ runner.os }}" = macOS ]; then
               ditto -c -k --keepParent "$b" "target/dist/$name"
             elif [ "${{ runner.os }}" = Windows ]; then

@@ -31,7 +31,8 @@ Three rules from the ADR apply:
       smoothed so the gate doesn't flicker. Effective weight =
       CLARITY × gate.
 - [ ] The term is computed on the flock tick from the latest peak set, at
-      a bounded cost (stated, and measured with 8 voices and 8 peaks).
+      a bounded cost (stated, and measured with 8 voices and 8 peaks per
+      flock). Each flock uses only its own band's peaks.
 - [ ] Measurement, recorded in the close-out, using these test signals at
       stated frequencies:
       - a sustained harmonic tone (sparse)

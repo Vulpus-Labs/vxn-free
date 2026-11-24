@@ -16,12 +16,15 @@ analysis is added. It has the flock (ADR 0002, point 3), the bands
 
 ## Acceptance criteria
 
+- [ ] Two flocks, one for MID and one for HIGH, each with its own delay
+      line and seed and sharing the flock controls.
 - [ ] Flock: 2–8 voices in (delay, pan) with cohesion, separation,
       alignment and turbulence, updated on a fixed control tick. Delay
       velocity is clamped to DETUNE, delay is bounded softly within
       SPREAD above the 7 ms floor, and pan is bounded within ±WIDTH.
       Turbulence comes from a seeded generator.
-- [ ] Bands: LOW/MID/HIGH from LR4 crossovers. LOW is never chorused.
+- [ ] Bands: LOW/MID/HIGH from LR4 crossovers. LOW is never chorused. The MID/HIGH crossover is
+      fixed (draft 2.5 kHz), settled by ear and recorded.
       MID and HIGH have their own depth. Voices read each band's mid
       signal. Dry is the unfiltered input.
 - [ ] Params with fixed ids, ranges and defaults: VOICES, DETUNE, SPREAD,
@@ -40,4 +43,4 @@ analysis is added. It has the flock (ADR 0002, point 3), the bands
         part
       - latency is zero at every setting and at 44.1, 48 and 96 kHz
       - no allocation
-- [ ] CPU for 8 voices at 96 kHz measured and recorded.
+- [ ] CPU for two flocks of 8 voices at 96 kHz measured and recorded.

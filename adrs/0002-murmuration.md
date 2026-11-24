@@ -32,7 +32,7 @@ Murmuration addresses each of these, and stays a zero-latency effect.
    audio path and steers it (point 6); it never sits in it.
 
 3. **Voices are a flock.** Two to eight voices each read a modulated delay
-   line. A voice is an agent in a two-dimensional space of (delay, pan):
+   line. Each chorused band has its own flock (point 4). A voice is an agent in a two-dimensional space of (delay, pan):
    - Its position on the delay axis is its delay time. Its velocity on
      that axis is its pitch shift: a voice whose delay changes at rate
      d′ plays at ratio 1 − d′. Detune is therefore a speed limit. DETUNE
@@ -58,6 +58,14 @@ Murmuration addresses each of these, and stays a zero-latency effect.
    - Voices are fed from MID and HIGH only. LOW is never chorused, so
      the bass stays tight and central. The LOW crossover is a control
      (default 150 Hz).
+   - The MID/HIGH crossover is fixed (draft 2.5 kHz, settled in the
+     engine ticket), not a control.
+   - MID and HIGH each have **their own flock**: their own delay line,
+     VOICES voices and seed. The flock controls apply to both. Each
+     flock responds only to its own band's analysis (onsets, peaks,
+     coherence), so Clarity weighs only the peaks its voices' combs can
+     actually notch. Two flocks also decorrelate the bands from each
+     other, at the cost of twice the taps.
    - MID and HIGH have separate depth, so the upper band can be
      decorrelated more, as in a real section.
    - The dry signal is the unfiltered input. The wet signal is the sum of
