@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="150" viewBox="0 0 900 150">
+  <!-- Beverley's faceplate: a two-unit rack panel, drawn from scratch.
+       Everything outside the "controls" layer is pre-rendered; each shape
+       inside it marks one control's bounds. Legends are Jost. -->
+  <defs>
+    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a3d42"/>
+      <stop offset="0.5" stop-color="#2c2f33"/>
+      <stop offset="1" stop-color="#25272b"/>
+    </linearGradient>
+    <linearGradient id="ear" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#55585d"/>
+      <stop offset="1" stop-color="#3b3e42"/>
+    </linearGradient>
+    <radialGradient id="screw" cx="0.35" cy="0.35" r="0.8">
+      <stop offset="0" stop-color="#c9cbcf"/>
+      <stop offset="1" stop-color="#6d7075"/>
+    </radialGradient>
+    <!-- Brushing: noise stretched along the panel, laid over thinly. -->
+    <filter id="brush" x="0" y="0" width="1" height="1">
+      <feTurbulence type="fractalNoise" baseFrequency="0.004 0.9" numOctaves="2" seed="7"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0.6 0 0 0 -0.25"/>
+    </filter>
+  </defs>
+
+  <rect width="900" height="150" fill="#101113"/>
+  <rect x="0" y="0" width="36" height="150" fill="url(#ear)"/>
+  <rect x="864" y="0" width="36" height="150" fill="url(#ear)"/>
+  <rect x="36" y="2" width="828" height="146" rx="2" fill="url(#face)"/>
+  <rect x="36" y="2" width="828" height="146" rx="2" filter="url(#brush)" opacity="0.07"/>
+  <rect x="36.5" y="2.5" width="827" height="145" rx="2" fill="none" stroke="#4d5056" stroke-width="1"/>
+  <line x1="37" y1="3.5" x2="863" y2="3.5" stroke="#5c6066" stroke-width="1"/>
+  <rect x="9.0" y="20.5" width="18" height="11" rx="5.5" fill="#0b0c0d"/>
+  <circle cx="16.0" cy="26" r="5.2" fill="url(#screw)" stroke="#2b2c2f" stroke-width="0.6"/>
+  <line x1="13.0" y1="24.8" x2="19.0" y2="27.2" stroke="#3a3b3e" stroke-width="1.4" stroke-linecap="round"/>
+  <rect x="9.0" y="118.5" width="18" height="11" rx="5.5" fill="#0b0c0d"/>
+  <circle cx="16.0" cy="124" r="5.2" fill="url(#screw)" stroke="#2b2c2f" stroke-width="0.6"/>
+  <line x1="13.0" y1="122.8" x2="19.0" y2="125.2" stroke="#3a3b3e" stroke-width="1.4" stroke-linecap="round"/>
+  <rect x="873.0" y="20.5" width="18" height="11" rx="5.5" fill="#0b0c0d"/>
+  <circle cx="880.0" cy="26" r="5.2" fill="url(#screw)" stroke="#2b2c2f" stroke-width="0.6"/>
+  <line x1="877.0" y1="24.8" x2="883.0" y2="27.2" stroke="#3a3b3e" stroke-width="1.4" stroke-linecap="round"/>
+  <rect x="873.0" y="118.5" width="18" height="11" rx="5.5" fill="#0b0c0d"/>
+  <circle cx="880.0" cy="124" r="5.2" fill="url(#screw)" stroke="#2b2c2f" stroke-width="0.6"/>
+  <line x1="877.0" y1="122.8" x2="883.0" y2="125.2" stroke="#3a3b3e" stroke-width="1.4" stroke-linecap="round"/>
+  <g font-family="'Jost*'" font-weight="500">
+  <rect x="50" y="22" width="4" height="106" fill="#c8553d"/>
+  <text x="62.00" y="68.00" font-size="24" text-anchor="start" letter-spacing="2.5" fill="#ece6d6">BEVERLEY</text>
+  <text x="63.00" y="86.00" font-size="9.5" text-anchor="start" letter-spacing="3.2" fill="#a9a497">BITCRUSHER</text>
+  <text x="63.00" y="126.00" font-size="8" text-anchor="start" letter-spacing="2.4" fill="#a9a497">VULPUS LABS</text>
+  <line x1="200" y1="22" x2="200" y2="128" stroke="#17181b" stroke-width="1"/>
+  <line x1="201" y1="22" x2="201" y2="128" stroke="#43464b" stroke-width="1"/>
+  <text x="250.00" y="30.00" font-size="10.5" text-anchor="middle" letter-spacing="1.6" fill="#ece6d6">GAIN</text>
+  <circle cx="250" cy="92" r="29" fill="#141518"/>
+  <line x1="228.08" y1="113.92" x2="224.54" y2="117.46" stroke="#ece6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="220.52" y1="101.58" x2="217.66" y2="102.51" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="219.38" y1="87.15" x2="216.42" y2="86.68" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="224.92" y1="73.78" x2="222.49" y2="72.02" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="235.93" y1="64.38" x2="234.56" y2="61.71" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="250.00" y1="61.00" x2="250.00" y2="56.00" stroke="#ece6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="264.07" y1="64.38" x2="265.44" y2="61.71" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="275.08" y1="73.78" x2="277.51" y2="72.02" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="280.62" y1="87.15" x2="283.58" y2="86.68" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="279.48" y1="101.58" x2="282.34" y2="102.51" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="271.92" y1="113.92" x2="275.46" y2="117.46" stroke="#ece6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <text x="222.18" y="126.82" font-size="8" text-anchor="end" letter-spacing="0" fill="#a9a497">0</text>
+  <text x="250.00" y="50.00" font-size="8" text-anchor="middle" letter-spacing="0" fill="#a9a497">10</text>
+  <text x="277.82" y="126.82" font-size="8" text-anchor="start" letter-spacing="0" fill="#a9a497">20 dB</text>
+  <text x="310.00" y="30.00" font-size="10.5" text-anchor="middle" letter-spacing="1.6" fill="#ece6d6">AUTO</text>
+  <rect x="295" y="77" width="30" height="30" rx="4" fill="#141518"/>
+  <text x="380.00" y="30.00" font-size="10.5" text-anchor="middle" letter-spacing="1.6" fill="#ece6d6">GAMMA</text>
+  <circle cx="380" cy="92" r="29" fill="#141518"/>
+  <line x1="358.08" y1="113.92" x2="354.54" y2="117.46" stroke="#ece6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="349.60" y1="98.05" x2="346.65" y2="98.63" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="351.36" y1="80.14" x2="348.59" y2="78.99" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="362.78" y1="66.22" x2="361.11" y2="63.73" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="380.00" y1="61.00" x2="380.00" y2="56.00" stroke="#ece6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="397.22" y1="66.22" x2="398.89" y2="63.73" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="408.64" y1="80.14" x2="411.41" y2="78.99" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="410.40" y1="98.05" x2="413.35" y2="98.63" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="401.92" y1="113.92" x2="405.46" y2="117.46" stroke="#ece6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <text x="352.18" y="126.82" font-size="8" text-anchor="end" letter-spacing="0" fill="#a9a497">0.1</text>
+  <text x="380.00" y="50.00" font-size="8" text-anchor="middle" letter-spacing="0" fill="#a9a497">1</text>
+  <text x="407.82" y="126.82" font-size="8" text-anchor="start" letter-spacing="0" fill="#a9a497">10</text>
+  <text x="478.00" y="30.00" font-size="10.5" text-anchor="middle" letter-spacing="1.6" fill="#ece6d6">BIT DEPTH</text>
+  <circle cx="478" cy="92" r="29" fill="#141518"/>
+  <line x1="456.08" y1="113.92" x2="452.54" y2="117.46" stroke="#ece6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="447.60" y1="98.05" x2="444.65" y2="98.63" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="449.36" y1="80.14" x2="444.74" y2="78.22" stroke="#ece6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="460.78" y1="66.22" x2="459.11" y2="63.73" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="478.00" y1="61.00" x2="478.00" y2="56.00" stroke="#ece6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="495.22" y1="66.22" x2="496.89" y2="63.73" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="506.64" y1="80.14" x2="511.26" y2="78.22" stroke="#ece6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="508.40" y1="98.05" x2="511.35" y2="98.63" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="499.92" y1="113.92" x2="503.46" y2="117.46" stroke="#ece6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <text x="450.18" y="126.82" font-size="8" text-anchor="end" letter-spacing="0" fill="#a9a497">1</text>
+  <text x="440.43" y="77.78" font-size="8" text-anchor="end" letter-spacing="0" fill="#a9a497">2</text>
+  <text x="478.00" y="50.00" font-size="8" text-anchor="middle" letter-spacing="0" fill="#a9a497">4</text>
+  <text x="515.57" y="77.78" font-size="8" text-anchor="start" letter-spacing="0" fill="#a9a497">8</text>
+  <text x="505.82" y="126.82" font-size="8" text-anchor="start" letter-spacing="0" fill="#a9a497">16</text>
+  <text x="576.00" y="30.00" font-size="10.5" text-anchor="middle" letter-spacing="1.6" fill="#ece6d6">SMOOTHING</text>
+  <circle cx="576" cy="92" r="29" fill="#141518"/>
+  <line x1="554.08" y1="113.92" x2="550.54" y2="117.46" stroke="#ece6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="545.60" y1="98.05" x2="542.65" y2="98.63" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="547.36" y1="80.14" x2="544.59" y2="78.99" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="558.78" y1="66.22" x2="557.11" y2="63.73" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="576.00" y1="61.00" x2="576.00" y2="56.00" stroke="#ece6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="593.22" y1="66.22" x2="594.89" y2="63.73" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="604.64" y1="80.14" x2="607.41" y2="78.99" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="606.40" y1="98.05" x2="609.35" y2="98.63" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="597.92" y1="113.92" x2="601.46" y2="117.46" stroke="#ece6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <text x="548.18" y="126.82" font-size="8" text-anchor="end" letter-spacing="0" fill="#a9a497">0</text>
+  <text x="576.00" y="50.00" font-size="8" text-anchor="middle" letter-spacing="0" fill="#a9a497">20</text>
+  <text x="603.82" y="126.82" font-size="8" text-anchor="start" letter-spacing="0" fill="#a9a497">100 %</text>
+  <line x1="636" y1="22" x2="636" y2="128" stroke="#17181b" stroke-width="1"/>
+  <line x1="637" y1="22" x2="637" y2="128" stroke="#43464b" stroke-width="1"/>
+  <text x="672.00" y="30.00" font-size="10.5" text-anchor="middle" letter-spacing="1.6" fill="#ece6d6">CRUSH</text>
+  <circle cx="672" cy="92" r="11" fill="#141518"/>
+  <circle cx="672" cy="92" r="8.5" fill="url(#screw)" opacity="0.55"/>
+  <text x="672.00" y="70.00" font-size="8" text-anchor="middle" letter-spacing="0" fill="#a9a497">SYM</text>
+  <text x="672.00" y="121.00" font-size="8" text-anchor="middle" letter-spacing="0" fill="#a9a497">ASYM</text>
+  <text x="734.00" y="30.00" font-size="10.5" text-anchor="middle" letter-spacing="1.6" fill="#ece6d6">STEREO</text>
+  <circle cx="734" cy="92" r="11" fill="#141518"/>
+  <circle cx="734" cy="92" r="8.5" fill="url(#screw)" opacity="0.55"/>
+  <text x="734.00" y="70.00" font-size="8" text-anchor="middle" letter-spacing="0" fill="#a9a497">LINK</text>
+  <text x="734.00" y="121.00" font-size="8" text-anchor="middle" letter-spacing="0" fill="#a9a497">MONO</text>
+  <text x="749.00" y="95.00" font-size="8" text-anchor="start" letter-spacing="0" fill="#a9a497">SEP</text>
+  <line x1="772" y1="22" x2="772" y2="128" stroke="#17181b" stroke-width="1"/>
+  <line x1="773" y1="22" x2="773" y2="128" stroke="#43464b" stroke-width="1"/>
+  <text x="812.00" y="30.00" font-size="10.5" text-anchor="middle" letter-spacing="1.6" fill="#ece6d6">MIX</text>
+  <circle cx="812" cy="92" r="29" fill="#141518"/>
+  <line x1="790.08" y1="113.92" x2="786.54" y2="117.46" stroke="#ece6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <line x1="782.52" y1="101.58" x2="779.66" y2="102.51" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="781.38" y1="87.15" x2="778.42" y2="86.68" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="786.92" y1="73.78" x2="784.49" y2="72.02" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="797.93" y1="64.38" x2="796.56" y2="61.71" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="812.00" y1="61.00" x2="812.00" y2="58.00" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="826.07" y1="64.38" x2="827.44" y2="61.71" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="837.08" y1="73.78" x2="839.51" y2="72.02" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="842.62" y1="87.15" x2="845.58" y2="86.68" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="841.48" y1="101.58" x2="844.34" y2="102.51" stroke="#a9a497" stroke-width="1" stroke-linecap="round"/>
+  <line x1="833.92" y1="113.92" x2="837.46" y2="117.46" stroke="#ece6d6" stroke-width="1.4" stroke-linecap="round"/>
+  <text x="784.18" y="126.82" font-size="8" text-anchor="end" letter-spacing="0" fill="#a9a497">DRY</text>
+  <text x="839.82" y="126.82" font-size="8" text-anchor="start" letter-spacing="0" fill="#a9a497">WET</text>
+  </g>
+
+  <g id="controls">
+    <rect id="knob.gain" x="224" y="66" width="52" height="52" fill="#f0f"/>
+    <rect id="knob.gamma" x="354" y="66" width="52" height="52" fill="#f0f"/>
+    <rect id="knob.bit_depth" x="452" y="66" width="52" height="52" fill="#f0f"/>
+    <rect id="knob.smoothing" x="550" y="66" width="52" height="52" fill="#f0f"/>
+    <rect id="knob.mix" x="786" y="66" width="52" height="52" fill="#f0f"/>
+    <rect id="button.auto_gain" x="298" y="80" width="24" height="24" fill="#f0f"/>
+    <rect id="toggle.crush_mode" x="654" y="74" width="36" height="36" fill="#f0f"/>
+    <rect id="toggle.stereo" x="716" y="74" width="36" height="36" fill="#f0f"/>
+  </g>
+</svg>

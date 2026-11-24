@@ -16,7 +16,7 @@ asymmetric crush, and mono, separate or linked stereo.
 | Ticket | What |
 |---|---|
 | 0003 (closed) | Engine: the crush chain, ported, with tests |
-| 0004 | Faceplate and editor |
+| 0004 (closed) | Faceplate and editor |
 | 0005 | CLAP plugin: params, state, tests, clap-validator |
 | 0006 | Manual |
 

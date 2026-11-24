@@ -1,11 +1,23 @@
-//! Beverley: a bitcrusher that adds harmonic grit. Its parameters and
-//! engine, shared by every host.
+//! Beverley: a bitcrusher that adds harmonic grit. Its parameters, its
+//! editor and its engine, shared by every host.
+//!
+//! `beverley.svg` is the whole visual design. `build.rs` turns it into
+//! PNGs and the `faceplate` module below; this file declares the params
+//! and binds each control to one.
 
 use silkscreen::model::Taper;
-use silkscreen::{ParamIndex, ParamSpec};
+use silkscreen::{
+    Binding, Editor, EditorState, EngineLink, ParamIndex, ParamKnob, ParamSelector, ParamSpec,
+    ParamToggle, PluginUi,
+};
 
 pub mod crush;
 pub mod engine;
+
+/// Generated from `beverley.svg` by `silkscreen-build`.
+pub mod faceplate {
+    include!(concat!(env!("OUT_DIR"), "/beverley.rs"));
+}
 
 pub const GAIN: ParamIndex = ParamIndex(0);
 pub const AUTO_GAIN: ParamIndex = ParamIndex(1);
@@ -48,7 +60,9 @@ pub static PARAMS: [ParamSpec; 8] = [
         .unit("%")
         .decimals(0)
         .id(5),
-    ParamSpec::stepped("Crush Mode", &["Asymmetric", "Symmetric"], 0).id(6),
+    ParamSpec::toggle("Crush Mode", false)
+        .labels(&["Asymmetric", "Symmetric"])
+        .id(6),
     ParamSpec::new("Mix", 0.0, 100.0, 100.0)
         .unit("%")
         .decimals(0)
@@ -56,3 +70,35 @@ pub static PARAMS: [ParamSpec; 8] = [
     // How the two channels are crushed (`engine::Stereo`).
     ParamSpec::stepped("Stereo", &["Mono", "Separate", "Linked"], 2).id(8),
 ];
+
+/// The editor's long-lived state, bound to the engine through `link`.
+pub fn state(link: Box<dyn EngineLink>) -> EditorState {
+    let controls = faceplate::Controls::<Box<dyn Binding>> {
+        gain: Box::new(ParamKnob::new(GAIN)),
+        auto_gain: Box::new(ParamToggle::new(AUTO_GAIN)),
+        gamma: Box::new(ParamKnob::new(GAMMA)),
+        bit_depth: Box::new(ParamKnob::new(BIT_DEPTH)),
+        smoothing: Box::new(ParamKnob::new(SMOOTHING)),
+        crush_mode: Box::new(ParamToggle::new(CRUSH_MODE)),
+        stereo: Box::new(ParamSelector::new(STEREO)),
+        mix: Box::new(ParamKnob::new(MIX)),
+    };
+    EditorState::new(&faceplate::LAYOUT, &PARAMS, controls.into_array(), link)
+}
+
+/// What every host needs to know about the editor.
+pub const UI: PluginUi = PluginUi {
+    vendor: "Vulpus Labs",
+    product: "Beverley",
+    version: env!("CARGO_PKG_VERSION"),
+    web_prefix: "beverley",
+    specs: &PARAMS,
+    factory: &[],
+    faceplate: &faceplate::FACEPLATE,
+    state,
+};
+
+/// A whole editor, state and view, for hosts that own both.
+pub fn editor(link: Box<dyn EngineLink>) -> Editor {
+    Editor::new(state(link), UI.raster())
+}
