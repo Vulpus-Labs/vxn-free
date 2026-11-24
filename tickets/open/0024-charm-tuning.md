@@ -30,3 +30,44 @@ measured offline.
       made a control, or removed, and ADR 0002 updated.
 - [ ] ADR 0002's draft values (the 2.5 kHz crossover, the 7.5 ms floor) are
       updated if tuning changes them.
+
+## Progress (2026-11-24): first listen
+
+The first listen, in a DAW, found two modes: too subtle to hear, or an
+unmusical warble.
+
+- **Warble.** The bench's voice traces showed MID voices' detune
+  reversing 0.8–2.1 times a second, at 4–7 cents RMS. The pitch changed
+  at 12 cents a second typically, but 60 at the 95th percentile and up
+  to 180: jerks from walls, separation and the hard stop at the delay
+  range's edges, at irregular times. That's tape wow.
+  - Fix: each voice's steering on the delay axis (its acceleration,
+    which is its pitch's rate of change) is smoothed over 0.15 of a
+    crossing time and capped at 2 × the speed limit squared.
+  - Walls start 0.3 of the range in.
+  - A voice within its stopping distance of an edge brakes at the cap,
+    so the hard stop doesn't snap the pitch.
+  - Pan, which carries no pitch, keeps quick steering (cap 10×,
+    unsmoothed), so crowding is resolved across the stereo field.
+  - Result at the defaults: pitch slope 17 cents a second median and
+    95th percentile, 18 at most; reversals 0.56 a second; 7.6 cents
+    RMS. Each voice's pitch ramps, holds near ±DETUNE and eases back,
+    like a triangle-swept chorus but out of step from voice to voice.
+  - Voices can now pass each other in delay. With eight voices and
+    cohesion and separation at full, some pair is within 0.05 (unit
+    square) 3.9 % of the time, for at most 143 ms. At the defaults it's
+    0.5 % of the time. The engine test now checks that (under 10 % of
+    the time, under 250 ms a spell) in place of a minimum distance.
+  - A flock test checks pitch never changes faster than the cap: within
+    1.5 × at the edges, at the most extreme setting.
+- **Subtle.** At MIX 100 % the ensemble sat 2.6–4.6 dB under the dry
+  signal in each channel, and the default MIX of 50 % took it another
+  6 dB down. Equal-power panning leaves each channel half of each voice.
+  - The ensemble gets +3 dB (√2), so MIX 100 % is now level with the dry
+    signal: −1.5 to +0.4 dB on white noise and a chord.
+  - MIX defaults to 100 %, the even blend of a classic chorus.
+  - Mono output takes the mean of left and right.
+- Rate and depth: DETUNE sets how far out of tune the voices go, and
+  with SPREAD, how fast they swing. Pitch reverses about every
+  SPREAD / speed limit (1.45 s at the defaults). A smaller SPREAD
+  swings faster.

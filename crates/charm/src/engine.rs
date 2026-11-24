@@ -157,6 +157,12 @@ impl Default for Heard {
     }
 }
 
+/// The ensemble's make-up gain: each voice is equal-power panned, so each
+/// channel carries half its power; this restores it, so MIX at 100 % puts
+/// the ensemble level with the dry signal in each channel (measured within
+/// 2 dB on noise and a chord: ticket 0024).
+const WET_GAIN: f32 = std::f32::consts::SQRT_2;
+
 /// AUTO WIDTH's glide, ms: the image follows coherence slowly.
 const AUTO_WIDTH_MS: f32 = 200.0;
 /// AUTO WIDTH's share of WIDTH for a band with no correlation between its
@@ -408,7 +414,7 @@ impl CharmEngine {
             wl += bl * depth;
             wr += br * depth;
         }
-        (wl, wr, [m, h])
+        (wl * WET_GAIN, wr * WET_GAIN, [m, h])
     }
 
     /// Render from `offset` into the tick: one channel.
@@ -419,10 +425,10 @@ impl CharmEngine {
             let dry = *s;
             let (wl, wr, bands) = self.voices_at(i, dry);
             heard.bands[n] = bands;
-            // Summed to one channel, equal-power pans would favour the
-            // centre; each voice's left and right add to at most √2, so
-            // scale the sum back to its stereo level.
-            *s = dry + self.mix_ramp.at(i) * (wl + wr) * std::f32::consts::FRAC_1_SQRT_2;
+            // Summed to one channel: the mean of left and right, so a
+            // centred voice is at the level it has in each channel in
+            // stereo.
+            *s = dry + self.mix_ramp.at(i) * 0.5 * (wl + wr);
         }
         let n = x.len();
         self.analysis.push(&heard.bands[..n], &heard.side[..n]);

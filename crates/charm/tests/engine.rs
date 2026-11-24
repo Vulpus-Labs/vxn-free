@@ -90,9 +90,11 @@ fn no_voice_exceeds_detune_or_leaves_its_delay_range() {
 }
 
 #[test]
-fn separated_voices_keep_their_distance() {
-    // Cohesion at full pulls the flock in; separation at full must still
-    // keep every pair apart in the unit square.
+fn crowded_voices_only_pass_each_other_briefly() {
+    // Eight voices, cohesion pulling them in at full against separation at
+    // full. Under the acceleration limit (pitch must glide), a pair closing
+    // at speed can't always be stopped in time, so voices may pass each
+    // other; what matters is that none sits on another for long.
     let params = [
         (VOICES, 6.0),
         (COHESION, 100.0),
@@ -103,7 +105,7 @@ fn separated_voices_keep_their_distance() {
     let spread = get(&params, SPREAD) * 0.001;
     let mut e = engine(48_000.0, &params);
     let input = vec![0.0f32; 32];
-    let mut closest = f32::MAX;
+    let (mut close, mut ticks, mut spell, mut longest) = (0usize, 0usize, 0usize, 0usize);
     for t in 0..30_000 {
         let mut l = input.clone();
         let mut r = input.clone();
@@ -111,24 +113,40 @@ fn separated_voices_keep_their_distance() {
         if t < 3000 {
             continue; // settling, two seconds
         }
+        let mut nearest = f32::MAX;
         for band in &e.observation().bands {
             let v = &band.voices[..band.active as usize];
             for i in 0..v.len() {
                 for j in i + 1..v.len() {
                     let du = (v[i].delay - v[j].delay) / spread;
                     let dp = 0.5 * (v[i].pan - v[j].pan);
-                    closest = closest.min((du * du + dp * dp).sqrt());
+                    nearest = nearest.min((du * du + dp * dp).sqrt());
                 }
             }
         }
+        ticks += 1;
+        if nearest < NEAR {
+            close += 1;
+            spell += 1;
+            longest = longest.max(spell);
+        } else {
+            spell = 0;
+        }
     }
-    assert!(closest > MIN_SPACING, "closest pair {closest}");
+    let share = close as f32 / ticks as f32;
+    let longest_ms = longest as f32 * 32.0 / 48.0;
+    assert!(
+        share < 0.10,
+        "some pair near {:.1} % of the time",
+        share * 100.0
+    );
+    assert!(longest_ms < 250.0, "a pair stayed near for {longest_ms} ms");
 }
 
-/// The least distance two voices come within, in the unit square, with
-/// eight voices and cohesion and separation at full. Measured at 0.12
-/// (ticket 0014).
-const MIN_SPACING: f32 = 0.1;
+/// Two voices this close in the unit square are passing each other.
+/// Measured with the flock's acceleration limit (ticket 0024): near 3.9 %
+/// of the time at most, for at most 143 ms at a time.
+const NEAR: f32 = 0.05;
 
 #[test]
 fn output_is_the_same_however_the_host_splits_blocks() {

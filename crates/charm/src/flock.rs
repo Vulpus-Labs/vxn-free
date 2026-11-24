@@ -46,10 +46,24 @@ const TURBULENCE: f64 = 8.0;
 /// Turbulence's noise changes over this share of the time a voice takes
 /// to cross the square at full speed.
 const NOISE_TIME: f64 = 0.25;
-/// Walls push back within this distance of an edge.
-const WALL_MARGIN: f64 = 0.1;
+/// Walls push back within this distance of an edge: far enough in that a
+/// voice at full speed can turn round within the acceleration limit.
+const WALL_MARGIN: f64 = 0.3;
 /// The walls' push at the edge.
 const WALL: f64 = 30.0;
+/// The steering is smoothed over this share of the time a voice takes to
+/// cross the square at full speed, so pitch eases in and out of its
+/// changes rather than jerking (a voice's acceleration is how fast its
+/// pitch changes).
+const ACCEL_TIME: f64 = 0.15;
+/// The most a voice may accelerate along its delay, as a share of the
+/// speed limit squared: at 2, a voice goes from still to full speed in half
+/// a crossing time.
+const MAX_ACCEL: f64 = 2.0;
+/// The same for pan, which carries no pitch: crowding is resolved mostly
+/// across the stereo field, quickly, rather than in pitch.
+const MAX_PAN_ACCEL: f64 = 10.0;
+
 /// The fastest a voice pans, in widths per second, whatever the delay
 /// axis's speed limit: with a narrow SPREAD that limit is fast in the unit
 /// square, and panning that fast would be heard as tremolo.
@@ -89,6 +103,8 @@ pub struct Voice {
     /// Pan units per second.
     pub pan_velocity: f64,
     noise: [f64; 2],
+    /// The smoothed steering, (delay, pan), in the unit square.
+    accel: [f64; 2],
 }
 
 /// A flock of up to [`MAX_VOICES`] voices.
@@ -109,6 +125,49 @@ fn uniform(state: &mut u32) -> f64 {
     x ^= x << 5;
     *state = x;
     f64::from(x >> 8) * (2.0 / f64::from(1u32 << 24)) - 1.0
+}
+
+/// The walls' push at `at` (0 to 1) along one axis, before scaling.
+fn wall(at: f64) -> f64 {
+    if at < WALL_MARGIN {
+        WALL * (WALL_MARGIN - at) / WALL_MARGIN
+    } else if at > 1.0 - WALL_MARGIN {
+        -WALL * (at - (1.0 - WALL_MARGIN)) / WALL_MARGIN
+    } else {
+        0.0
+    }
+}
+
+/// Smooth and limit one voice's steering `a`, in place: on the delay
+/// axis smoothed (by `keep` a step) so pitch glides and never jerks, and
+/// limited; pan, which carries no pitch, only limited. Then, on each axis,
+/// once an edge is within the stopping distance at the limit, brake at the
+/// limit: the hard stop at the edge would otherwise snap the pitch.
+fn steer(
+    smoothed: &mut [f64; 2],
+    a: &mut [f64; 2],
+    velocity: [f64; 2],
+    at: [f64; 2],
+    accel: f64,
+    keep: f64,
+    dt: f64,
+) {
+    for k in 0..2 {
+        let most = accel * if k == 0 { MAX_ACCEL } else { MAX_PAN_ACCEL };
+        smoothed[k] = if k == 0 {
+            keep * smoothed[k] + (1.0 - keep) * a[k]
+        } else {
+            a[k]
+        };
+        a[k] = smoothed[k].clamp(-most, most);
+        let speed = velocity[k];
+        let room = if speed > 0.0 { 1.0 - at[k] } else { at[k] };
+        let stopping = speed * speed / (2.0 * most) + 2.0 * speed.abs() * dt;
+        if stopping >= room {
+            a[k] = -speed.signum() * most;
+            smoothed[k] = a[k];
+        }
+    }
 }
 
 impl Flock {
@@ -221,13 +280,21 @@ impl Flock {
                 a[k] += accel * TURBULENCE * s.turbulence * v.noise[k] * noise_norm;
             }
             // Walls.
-            for k in 0..2 {
-                if q[i][k] < WALL_MARGIN {
-                    a[k] += accel * WALL * (WALL_MARGIN - q[i][k]) / WALL_MARGIN;
-                } else if q[i][k] > 1.0 - WALL_MARGIN {
-                    a[k] -= accel * WALL * (q[i][k] - (1.0 - WALL_MARGIN)) / WALL_MARGIN;
-                }
+            for (ak, push) in a.iter_mut().zip(q[i]) {
+                *ak += accel * wall(push);
             }
+
+            // Smooth and limit the steering, braking for edges in time.
+            let keep = (-dt * umax / ACCEL_TIME).exp();
+            steer(
+                &mut v.accel,
+                &mut a,
+                self.unit_velocity[i],
+                q[i],
+                accel,
+                keep,
+                dt,
+            );
 
             // Integrate, with the speed limit on each axis.
             let uv = &mut self.unit_velocity[i];
@@ -322,6 +389,39 @@ mod tests {
                         "{v:?}"
                     );
                     assert!(v.pan.abs() <= 1.0);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn pitch_glides_and_never_jumps() {
+        // A voice's velocity is its pitch; its acceleration is how fast its
+        // pitch changes, which must stay within the limit, walls included.
+        for (voices, cents, spread, c, s, t) in [
+            (8, 40.0, 1.0, 1.0, 1.0, 1.0),
+            (4, 12.0, 10.0, 0.5, 0.5, 0.4),
+            (2, 25.0, 3.0, 0.0, 1.0, 1.0),
+        ] {
+            let set = settings(voices, cents, spread, c, s, t);
+            let mut flock = Flock::new(9, set.spread);
+            let limit = MAX_ACCEL * set.max_velocity * set.max_velocity / set.spread;
+            let mut last = [0.0f64; MAX_VOICES];
+            for step in 0..30_000 {
+                flock.step(&set, DT);
+                for (v, l) in flock.voices()[..voices].iter().zip(&mut last) {
+                    let change = (v.delay_velocity - *l).abs() / DT;
+                    // The first steps start from rest at the start positions.
+                    if step > 0 {
+                        // At an edge, discrete braking can leave a sliver of
+                        // speed for the hard stop to take: allow half again,
+                        // far from the hundredfold jumps this guards against.
+                        assert!(
+                            change <= limit * 1.5,
+                            "{cents} cents, {spread} ms: {change} > {limit} at step {step}"
+                        );
+                    }
+                    *l = v.delay_velocity;
                 }
             }
         }

@@ -110,8 +110,8 @@ pub static PARAMS: [ParamSpec; 14] = [
         .decimals(0)
         .id(10),
     // The ensemble's level against the dry signal, which stays at unity:
-    // 100 % is equal level.
-    ParamSpec::new("Mix", 0.0, 100.0, 50.0)
+    // 100 % is equal level, as a classic chorus's even blend.
+    ParamSpec::new("Mix", 0.0, 100.0, 100.0)
         .unit("%")
         .decimals(0)
         .id(11),
