@@ -133,7 +133,8 @@ settings.
 
 #signal-grid("grid-bits", ("1 bit", "2 bits", "4 bits", "8 bits"),
   [Fewer bits, fewer and bigger steps. At 1 bit every wave is a square; at 8 the steps are too
-    small to see here. *CRUSH* on ASYM.])
+    small to see here. *CRUSH* on ASYM, which eases off the steps close to zero (see Crush
+    mode): the bumps in the complex wave's quiet end.])
 
 The knob moves smoothly, not in jumps from one whole number of bits to the next: 2.5 bits sits
 halfway between 2 and 3. Sweeping it, by hand or with automation, morphs gradually from one
@@ -148,14 +149,18 @@ roughness to another.
 
 - *ASYM* (switch down, the default) has no step at silence, so the sound never quite goes
   quiet: as a note fades it keeps buzzing on the steps either side of zero, like an old
-  sampler. Very quiet sounds are let through cleanly rather than buzzing.
+  sampler. In the last stretch before silence (below about a twentieth of full level, or
+  −26 dB) it eases off the steps and lets the sound through as it is, so a dying note slides
+  smoothly to nothing instead of ending on a buzz. On the graphs this shows as a bump: where the
+  complex wave swings close to zero, the blue line leaves its step and dips towards the original.
 - *SYM* (switch up) has a step at silence, so quiet sounds drop out altogether, which works like
   a rough gate. It also has twice as many steps across the wave, so at the same *BIT DEPTH* it
   sounds a little finer.
 
 #signal-grid("grid-modes", ("ASYM", "SYM"),
-  [At 2 bits. ASYM jumps straight past zero and keeps buzzing as the complex wave fades; SYM has
-    a step at zero, where quiet sound becomes silence.])
+  [At 2 bits. ASYM keeps buzzing on the steps either side of zero as the complex wave fades,
+    crossing between them on a short slope; where the wave comes close to zero it leaves the step
+    and dips towards the original. SYM has a step at zero, where quiet sound becomes silence.])
 
 == Smoothing
 
