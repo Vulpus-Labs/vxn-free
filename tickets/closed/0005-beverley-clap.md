@@ -30,7 +30,7 @@ The `beverley-clap` crate: Beverley as a stereo CLAP audio effect.
       host told when it changes (`request_restart` while deactivated, as
       CLAP requires), as a silkscreen release, before this closes.
 - [x] clap-validator passes.
-- [ ] Hand check in a DAW: loads, sounds right, automation works.
+- [x] Hand check in a DAW: loads, sounds right, automation works.
 
 ## Progress (2026-11-24)
 
@@ -62,3 +62,11 @@ that is done.
   tests, no warnings). Worth checking again once 0002 signs the bundle.
 - Hand check in a DAW: to do. `cargo silkscreen bundle beverley-clap
   --install` puts the plugin in the user's CLAP folder.
+
+## Close-out (2026-11-24)
+
+The user ran Beverley as a CLAP plugin in REAPER, and it works. Every
+other criterion closed with the progress notes above. 0012 (detectors,
+DECAY) and 0013 (rendered faceplate) came after the first progress note
+and were in the build checked. The CLAP shipped in Beverley 0.1.0 and
+0.1.1 (0002, 0027).

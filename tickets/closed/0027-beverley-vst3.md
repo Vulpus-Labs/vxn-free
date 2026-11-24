@@ -46,5 +46,5 @@ downloads.vulpuslabs.com.
   zips and `SHA256SUMS`). The files fetched back match, and the
   quarantined macOS VST3 passes Gatekeeper. Linked from vulpuslabs.com
   (vulpus-labs-site 3ad89f2).
-- Still to do in a DAW (0005 and silkscreen 0008): load, play, automate
-  and save, in a CLAP host and in a VST3-only one.
+- The CLAP has been checked in a DAW (REAPER, by the user; 0005). The
+  VST3 is still to be checked in a VST3-only host (silkscreen 0008).
