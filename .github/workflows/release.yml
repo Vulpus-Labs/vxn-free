@@ -1,0 +1,225 @@
+# Builds every plugin as a CLAP bundle on macOS (universal), Windows and
+# Linux, checks each with clap-validator, and zips each per platform.
+#
+# macOS bundles are signed with the Developer ID and notarized when the
+# MACOS_CERT_P12 secret is set; without it they are built unsigned, with a
+# warning. A `v*` tag also gathers every platform's zips into a draft
+# GitHub release (a pre-release for a tag with a hyphen, v0.1.0-rc.1),
+# published by hand. Secrets are never used on pull requests: this runs
+# only on tags and by hand. The secrets are listed in README.md.
+
+name: release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  # free-audio/clap-validator's release; its assets carry the build's own
+  # version in their names.
+  CLAP_VALIDATOR_TAG: "0.4.1"
+  # The plugins' CLAP packages, each with
+  # [package.metadata.silkscreen.clap].
+  PACKAGES: "beverley-clap"
+
+jobs:
+  clap:
+    name: CLAP (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macos
+            os: macos-15
+            bundle: --universal
+            validator: macos-universal
+          - name: windows
+            os: windows-2025
+            bundle: ""
+            validator: windows
+          - name: linux
+            os: ubuntu-24.04
+            bundle: ""
+            validator: ubuntu-22.04
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      # A release tag names the version the plugins report.
+      - name: Tag matches the version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version=$(sed -n '/^\[workspace.package\]/,/^\[/s/^version = "\(.*\)"/\1/p' Cargo.toml)
+          tag="${GITHUB_REF_NAME#v}"
+          if [ "${tag%%-*}" != "$version" ]; then
+            echo "::error::tag $GITHUB_REF_NAME doesn't match the workspace version $version"
+            exit 1
+          fi
+
+      - name: Linux packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pkg-config libasound2-dev libx11-dev libx11-xcb-dev libxcb1-dev \
+            libxcb-icccm4-dev libxcursor-dev libxkbcommon-dev libgl1-mesa-dev \
+            libwayland-dev
+
+      # rust-toolchain.toml pins the compiler; rustup installs it on first use.
+      - name: Toolchain
+        run: |
+          rustup toolchain install
+          if [ "${{ runner.os }}" = macOS ]; then
+            rustup target add aarch64-apple-darwin x86_64-apple-darwin
+          fi
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.name }}
+
+      # silkscreen's build tool, from the tag the workspace's silkscreen
+      # crates come from.
+      - name: silkscreen-tool
+        run: |
+          tag=$(sed -n 's/^silkscreen = .*tag = "\([^"]*\)".*/\1/p' Cargo.toml)
+          if [ -z "$tag" ]; then
+            echo "::error::no silkscreen tag in Cargo.toml"
+            exit 1
+          fi
+          cargo install --locked --git https://github.com/Vulpus-Labs/silkscreen \
+            --tag "$tag" silkscreen-tool
+
+      # The Developer ID certificate and key go into a keychain of this
+      # job's own, deleted at the end; the API key that notarizes goes
+      # beside it.
+      - name: Signing keychain
+        id: signing
+        if: runner.os == 'macOS'
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          NOTARY_KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+        run: |
+          if [ -z "$MACOS_CERT_P12" ]; then
+            echo "::warning::MACOS_CERT_P12 not set; macOS bundles are unsigned"
+            exit 0
+          fi
+          kc="$RUNNER_TEMP/signing.keychain-db"
+          pw=$(uuidgen)
+          security create-keychain -p "$pw" "$kc"
+          security set-keychain-settings -lut 21600 "$kc"
+          security unlock-keychain -p "$pw" "$kc"
+          echo "$MACOS_CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$kc" -P "$MACOS_CERT_PASSWORD" \
+            -T /usr/bin/codesign
+          rm "$RUNNER_TEMP/cert.p12"
+          security set-key-partition-list -S apple-tool:,apple: -k "$pw" "$kc" > /dev/null
+          security list-keychains -d user -s "$kc" $(security list-keychains -d user | tr -d '"')
+          identity=$(security find-identity -v -p codesigning "$kc" \
+            | sed -n 's/.*"\(Developer ID Application: .*\)"/\1/p' | head -n 1)
+          if [ -z "$identity" ]; then
+            echo "::error::no Developer ID Application identity in MACOS_CERT_P12"
+            exit 1
+          fi
+          echo "SILKSCREEN_SIGN_IDENTITY=$identity" >> "$GITHUB_ENV"
+          printf '%s' "$NOTARY_KEY_P8" > "$RUNNER_TEMP/notary.p8"
+          echo "SILKSCREEN_NOTARY_KEY=$RUNNER_TEMP/notary.p8" >> "$GITHUB_ENV"
+          echo "keychain=$kc" >> "$GITHUB_OUTPUT"
+          echo "flags=--notarize" >> "$GITHUB_OUTPUT"
+
+      - name: Bundle
+        env:
+          SILKSCREEN_NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          SILKSCREEN_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER_ID }}
+        run: |
+          # The cache may hold an older run's bundles.
+          rm -rf target/bundled
+          for p in $PACKAGES; do
+            cargo silkscreen bundle "$p" ${{ matrix.bundle }} ${{ steps.signing.outputs.flags }}
+          done
+
+      - name: clap-validator
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          dir="$RUNNER_TEMP/clap-validator"
+          mkdir -p "$dir"
+          gh release download "$CLAP_VALIDATOR_TAG" --repo free-audio/clap-validator \
+            --pattern "*-${{ matrix.validator }}.zip" --dir "$dir"
+          (cd "$dir" && unzip -q ./*.zip && for t in ./*.tar.gz; do
+            if [ -e "$t" ]; then tar -xzf "$t"; fi
+          done)
+          cv=$(find "$dir" -type f \( -name clap-validator -o -name clap-validator.exe \) | head -n 1)
+          chmod +x "$cv"
+          # Validate every bundle before failing, so one doesn't hide another.
+          status=0
+          for b in target/bundled/*.clap; do
+            "$cv" validate "$b" || status=1
+          done
+          exit $status
+
+      # upload-artifact drops file modes and symlinks, so each bundle
+      # travels in a zip of its own; `ditto` on macOS keeps the signature
+      # and stapled ticket intact.
+      - name: Package
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if [ "${GITHUB_REF_TYPE}" != tag ]; then version="dev-${GITHUB_SHA::7}"; fi
+          mkdir -p target/dist
+          for b in target/bundled/*.clap; do
+            name="$(basename "$b" .clap)-$version-${{ matrix.name }}.clap.zip"
+            if [ "${{ runner.os }}" = macOS ]; then
+              ditto -c -k --keepParent "$b" "target/dist/$name"
+            elif [ "${{ runner.os }}" = Windows ]; then
+              (cd target/bundled && 7z a -tzip "../dist/$name" "$(basename "$b")" > /dev/null)
+            else
+              (cd target/bundled && zip -qr "../dist/$name" "$(basename "$b")")
+            fi
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clap-${{ matrix.name }}
+          path: target/dist/*.zip
+          if-no-files-found: error
+
+      - name: Remove signing keychain
+        if: always() && steps.signing.outputs.keychain
+        run: |
+          security delete-keychain "${{ steps.signing.outputs.keychain }}"
+          rm -f "$RUNNER_TEMP/notary.p8"
+
+  # A `v*` tag's zips, from every platform, as a draft release. Drafts are
+  # seen only by the repo's collaborators until published by hand.
+  release:
+    name: Draft release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: clap
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: clap-*
+          path: dist
+          merge-multiple: true
+
+      - name: Create the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pre=""
+          case "$GITHUB_REF_NAME" in *-*) pre="--prerelease" ;; esac
+          gh release create "$GITHUB_REF_NAME" dist/*.zip \
+            --repo "$GITHUB_REPOSITORY" --draft $pre --verify-tag \
+            --title "$GITHUB_REF_NAME" --generate-notes
