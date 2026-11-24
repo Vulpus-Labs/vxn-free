@@ -3,6 +3,7 @@
 resolver = "3"
 members = [
     "crates/vxn-free-dsp",
+    "crates/beverley",
 ]
 
 [workspace.package]
@@ -15,6 +16,7 @@ publish = false
 
 [workspace.dependencies]
 vxn-free-dsp = { path = "crates/vxn-free-dsp" }
+beverley = { path = "crates/beverley" }
 
 # Every silkscreen crate from one tag. Bump them together, and keep
 # rust-toolchain.toml equal to silkscreen's at that tag (snapshots depend

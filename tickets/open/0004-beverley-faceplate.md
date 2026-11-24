@@ -17,7 +17,8 @@ An original faceplate SVG and the editor built from it.
       ears and their screw slots, a painted or brushed front, controls in
       a row with silk-screened labels and scales.
 - [ ] Faceplate SVG drawn from scratch: four knobs (GAIN, GAMMA, BIT
-      DEPTH, SMOOTHING), the AUTO GAIN toggle, the CRUSH MODE switch,
+      DEPTH, SMOOTHING), the AUTO GAIN toggle, the CRUSH MODE switch, the
+      three-way STEREO switch (MONO, SEPARATE, LINKED),
       MIX; labels in silkscreen's print style.
 - [ ] Bindings to the engine's parameters; values shown in units (dB,
       bits) on hover.
