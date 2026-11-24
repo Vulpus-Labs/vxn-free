@@ -35,4 +35,10 @@ sounding, faded over 10 ms when stolen.
       right; STEREO filters each channel; FOCUS fully right tracks a
       glide; resonance past half way sings on a strong note and fades
       with it; no allocation.
-- [ ] Zero latency: the signal path never waits for the analysis.
+- [ ] Latency is known exactly. The design is zero: the signal path
+      never waits for the analysis, and the dry path is not delayed.
+      A test measures it: an impulse (and a step) through the engine at
+      every WINDOW, MODE, sample rate and MIX setting, with the
+      filters' contribution separated out, shows the output's dry
+      component at the sample the engine says. The engine exposes its
+      latency in samples as a function of its settings and rate.
