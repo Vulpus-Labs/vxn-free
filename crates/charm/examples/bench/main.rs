@@ -17,7 +17,8 @@
 //! - `--ramp NAME=FROM:TO`: move a param in a straight line over the run.
 //! - `--rate HZ`: the synthetic signals' rate (default 48000).
 //! - `--seconds S`: the synthetic signals' length (default 10).
-//! - `--out DIR`: where results go (default `target/charm-bench`).
+//! - `--out DIR`: where results go (default the workspace's
+//!   `target/charm-bench`).
 //! - `--cpu`: measure CPU per block at 16, 32, 64 and 512 samples, 96 kHz.
 //!
 //! For each input it writes `NAME.wav` (the output, stereo float),
@@ -102,7 +103,8 @@ fn parse_args() -> Result<Args, String> {
     let mut args = Args {
         rate: 48_000.0,
         seconds: 10.0,
-        out: PathBuf::from("target/charm-bench"),
+        // The workspace's target folder, wherever the bench is run from.
+        out: Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/charm-bench"),
         ..Args::default()
     };
     let mut it = std::env::args().skip(1);
