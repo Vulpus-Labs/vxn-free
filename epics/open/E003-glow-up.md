@@ -11,6 +11,8 @@ Glow-Up as a CLAP effect that keeps the rebuilt module's behaviour: peaks
 found by a running spectrum, a bank of twelve narrow filters boosting
 their fifths, octaves and double octaves, resonance up to
 self-oscillation, GRID to TRACK focus, and a display of what it is doing.
+A MODE switch picks MONO (left in, copied to both outputs) or STEREO (mid
+analysed once, each channel filtered).
 
 ## Tickets
 
