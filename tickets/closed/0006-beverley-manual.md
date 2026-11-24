@@ -55,3 +55,22 @@ Labs' instrument manuals are, with graphs generated from the engine
   −25.2 dBc here against −25.6 there.
 - Published at vulpuslabs.com/manuals/beverley/, linked from Beverley's
   product page and the README.
+
+## Follow-up (2026-11-24)
+
+- At the user's request, the manual was rewritten for players: a quick
+  start and tips, and nothing about how it was made.
+- Its graphs no longer superimpose settings. Each control has a grid:
+  settings side by side, and three rows of test signals (a linear ramp,
+  which traces the transfer curve; a sine; and a complex wave that fades
+  from loud to quiet). The auto-gain and offset figures have one panel per
+  setting. `measure.rs` writes `grid-*.csv` in place of the transfer and
+  waveform CSVs.
+- The grids exposed two errors in the prose, both corrected in the manual
+  and on Beverley's web page:
+  - GAMMA below 1 makes the steps coarse near silence, not fine. What it
+    does to the sound, tails breaking up first, was right; the
+    explanation was inverted.
+  - GAIN doesn't keep loud parts at their level. A clipped peak comes out
+    quieter: at 20 dB, a full-level peak comes out at a tenth of full
+    level.

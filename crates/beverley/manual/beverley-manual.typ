@@ -14,12 +14,31 @@
 #let right-group = (808, 0, 282, 150)
 
 #let unit-axis(title) = (min: -1, max: 1, ticks: (-1, -0.5, 0, 0.5, 1), title: title)
-#let curve(t, name, i, label) = (data: column(t, name), color: cat.at(i), label: label,
-  width: 1pt)
-#let ramp-curve(t, name, i, n, label) = (data: column(t, name), color: ramp.at(str(n)).at(i),
-  label: label, width: 1pt)
-#let transfer(t, series, height: 50mm) = plot(height: height, x: unit-axis("Level in"),
-  y: unit-axis("Level out"), series: series)
+
+// Settings side by side (columns), each through the three test signals (rows): a ramp from
+// −1 to 1, which traces the transfer curve; a sine; and a complex wave that fades. The original
+// is grey and dashed, the result in colour.
+#let signal-grid(name, labels, caption) = {
+  let t = data(name)
+  let signals = (("ramp", "Ramp"), ("sine", "Sine"), ("complex", "Complex"))
+  let cell(sig, i) = plot(height: 27mm, legend: false,
+    x: (min: 0, max: 1, ticks: ()),
+    y: (min: -1, max: 1, ticks: (-1, 0, 1)),
+    series: (
+      (data: column(t, sig), color: ink-3, width: 0.6pt, dash: "dashed"),
+      (data: column(t, str(i) + "_" + sig), color: cat.at(0), width: 0.9pt),
+    ))
+  figure(
+    grid(columns: (5mm,) + (1fr,) * labels.len(), column-gutter: 1mm, row-gutter: 0.5mm,
+      [], ..labels.map(l => align(center, text(font: sans, size: 7.5pt, weight: "semibold", l))),
+      ..signals.map(((sig, sname)) => (
+        align(horizon, rotate(-90deg, reflow: true,
+          text(font: sans, size: 7pt, fill: ink-2, sname))),
+        ..range(labels.len()).map(i => cell(sig, i)),
+      )).flatten(),
+    ),
+    caption: caption)
+}
 
 // --- Title page ----------------------------------------------------------------------------------
 
@@ -90,21 +109,19 @@ then adjusts itself to the level, so quiet and loud passages are crushed alike.
 
 == Reading the graphs
 
-Most graphs in this manual show what Beverley does to a level going in (along the bottom) by
-the level that comes out (up the side). Full scale is ±1. A straight diagonal line would mean
-no change; Beverley's lines are staircases, and each control changes the stairs.
+Each control's graphs put its settings side by side, and show each one with three test
+signals, one per row. The original is the grey dashed line, the result is in blue.
+
+- *Ramp*: a straight line from the bottom to the top of the range. What comes out is
+  Beverley's staircase: how each level going in is turned into a step.
+- *Sine*: a pure tone, as one smooth wave.
+- *Complex*: a richer wave that fades from loud to quiet, closer to an instrument. It shows
+  what a setting does as a sound dies away.
 
 = The crush
 
-#let tb = data("transfer-bits")
-#let tm = data("transfer-modes")
-#let ts = data("transfer-smoothing")
-#let tg = data("transfer-gamma")
-#let tf = data("transfer-fraction")
-
 #summary[*BIT DEPTH* sets how coarse the steps are, *CRUSH* where they sit, *SMOOTHING* how sharp
-  their edges are, and *GAMMA* whether they bunch up where the sound is quiet or where it is
-  loud.]
+  their edges are, and *GAMMA* whether quiet or loud parts of the sound break up first.]
 
 == Bit depth
 
@@ -114,25 +131,16 @@ crushed, and from about 8 bits it is a fine grain; at 16 bits you will hear almo
 knob's scale reads 1, 2, 4, 8 and 16 bits, so most of its travel is in the rough, low
 settings.
 
-#figure(
-  transfer(tb, (
-    curve(tb, "b1", 0, "1 bit"), curve(tb, "b2", 1, "2 bits"), curve(tb, "b3", 2, "3 bits"),
-    curve(tb, "b4", 3, "4 bits"),
-  )),
-  caption: [Fewer bits, fewer and bigger steps. *CRUSH* on ASYM.],
-)
+#signal-grid("grid-bits", ("1 bit", "2 bits", "4 bits", "8 bits"),
+  [Fewer bits, fewer and bigger steps. At 1 bit every wave is a square; at 8 the steps are too
+    small to see here. *CRUSH* on ASYM.])
 
 The knob moves smoothly, not in jumps from one whole number of bits to the next: 2.5 bits sits
 halfway between 2 and 3. Sweeping it, by hand or with automation, morphs gradually from one
 roughness to another.
 
-#figure(
-  transfer(tf, (
-    curve(tf, "b2", 0, "2 bits"), curve(tf, "b25", 1, "2.5 bits"), curve(tf, "b3", 2, "3 bits"),
-  ), height: 44mm),
-  caption: [Between whole numbers of bits, the steps blend from one set to the next. *CRUSH* on
-    SYM.],
-)
+#signal-grid("grid-fraction", ("2 bits", "2.5 bits", "3 bits"),
+  [Between whole numbers of bits the steps change gradually. *CRUSH* on SYM.])
 
 == Crush mode
 
@@ -145,11 +153,9 @@ roughness to another.
   a rough gate. It also has twice as many steps across the wave, so at the same *BIT DEPTH* it
   sounds a little finer.
 
-#figure(
-  transfer(tm, (curve(tm, "asym", 0, "ASYM"), curve(tm, "sym", 1, "SYM")), height: 44mm),
-  caption: [At 2 bits. Near the middle (quiet sound), ASYM jumps straight past zero; SYM has a
-    flat step there, where quiet sound becomes silence.],
-)
+#signal-grid("grid-modes", ("ASYM", "SYM"),
+  [At 2 bits. ASYM jumps straight past zero and keeps buzzing as the complex wave fades; SYM has
+    a step at zero, where quiet sound becomes silence.])
 
 == Smoothing
 
@@ -158,14 +164,8 @@ fizziest crush. Around 20 to 50% the edges become curves and the sound turns war
 harsh while keeping its crunch. At 100% the steps disappear and the sound passes unchanged. Most
 of the knob's character is in its first half: its centre reads 20%.
 
-#figure(
-  transfer(ts, (
-    ramp-curve(ts, "s0", 0, 5, "0%"), ramp-curve(ts, "s25", 1, 5, "25%"),
-    ramp-curve(ts, "s50", 2, 5, "50%"), ramp-curve(ts, "s75", 3, 5, "75%"),
-    ramp-curve(ts, "s100", 4, 5, "100%"),
-  )),
-  caption: [From sharp steps (0%) to none (100%), at 2 bits, *CRUSH* on SYM.],
-)
+#signal-grid("grid-smoothing", ("0%", "25%", "50%", "100%"),
+  [From sharp steps (0%) to none (100%), at 2 bits, *CRUSH* on SYM.])
 
 Sharp steps also make a high, out-of-tune whine on top of the note, called aliasing (see Fizz
 and whine, below). Smoothing is the cure.
@@ -175,35 +175,18 @@ and whine, below). Smoothing is the cure.
 *GAMMA* chooses which parts of the sound break up first. At 1 (the knob's centre) the steps are
 evenly spaced.
 
-- Turned down (towards 0.1), the steps bunch up where the sound is quiet. Fades, tails and soft
-  notes grit up, while loud peaks stay comparatively clean.
-- Turned up (towards 10), the steps bunch up where the sound is loud. Attacks and peaks break up,
-  while quieter material passes more cleanly.
+- Turned down (towards 0.1), the steps are coarse where the sound is quiet and fine where it is
+  loud. Fades, tails and soft notes grit up or drop away, while loud peaks stay comparatively
+  clean.
+- Turned up (towards 10), the steps are fine where the sound is quiet and coarse where it is
+  loud. Attacks and peaks break up, while quieter material keeps its detail.
 
-#figure(
-  transfer(tg, (
-    curve(tg, "g032", 0, "0.32"), curve(tg, "g1", 1, "1"), curve(tg, "g316", 2, "3.16"),
-  )),
-  caption: [*GAMMA* at 0.32, 1 and 3.16, at 3 bits, *CRUSH* on SYM: the same number of steps,
-    placed differently.],
-)
+#signal-grid("grid-gamma", ("0.32", "1", "3.16"),
+  [*GAMMA* at 3 bits, *CRUSH* on SYM: the same number of steps, placed differently. At 0.32 the
+    steps are coarse near silence, so the fading tail drops away; at 3.16 they are fine near
+    silence and coarse near full level.])
 
-== What it sounds like
-
-#let wv = data("waves")
-#figure(
-  plot(height: 50mm, x: (min: 0, max: 1, ticks: ((0, "0"), (0.5, "½"), (1, "1")),
-      title: "One cycle of the wave"), y: unit-axis("Level"),
-    series: (
-      (data: column(wv, "input"), color: ink-3, label: "Original", width: 0.8pt, dash: "dashed"),
-      (data: column(wv, "default"), color: cat.at(0), label: "Defaults (4 bits, ASYM)",
-        width: 1pt),
-      (data: column(wv, "sym2"), color: cat.at(1), label: "2 bits, SYM", width: 1pt),
-      (data: column(wv, "smooth50"), color: cat.at(2), label: "2 bits, SYM, smoothing 50%",
-        width: 1pt),
-    )),
-  caption: [A pure tone through three settings. The steps are what you hear as grit.],
-)
+== What it adds to the sound
 
 #let sp = data("spectra")
 #figure(
@@ -262,22 +245,20 @@ every 20 dB is ten times quieter). Your project's sample rate makes little diffe
 
 == Gain
 
-*GAIN* drives the sound harder into the crush and turns it back down afterwards, so the output
-level stays about the same. Use it when your sound is quiet: a quiet sound only touches the
-first few steps and comes out very coarse, or (with *CRUSH* on SYM) not at all. Turning *GAIN*
-up spreads it over more steps. Pushed far enough, the loudest parts are also clipped flat, for
-a harder, fuzzier edge. At its maximum, 20 dB, a sound at a tenth of full level uses the whole
-range.
+*GAIN* drives the sound harder into the crush and turns it back down afterwards, so a sound
+that doesn't clip comes out at about its own level. Use it when your sound is quiet: a quiet
+sound only touches the first few steps and comes out very coarse, or (with *CRUSH* on SYM) not
+at all. Turning *GAIN* up spreads it over more steps. At its maximum, 20 dB, a sound at a tenth
+of full level uses the whole range.
 
-#let tgn = data("transfer-gain")
-#figure(
-  transfer(tgn, (
-    curve(tgn, "g0", 0, "0 dB"), curve(tgn, "g6", 1, "6 dB"), curve(tgn, "g12", 2, "12 dB"),
-    curve(tgn, "g20", 3, "20 dB"),
-  )),
-  caption: [More *GAIN*: finer steps for quiet sound, and the loudest parts clipped flat. At 3
-    bits, *CRUSH* on SYM.],
-)
+Anything pushed past full level is clipped flat, for a harder, fuzzier edge, and since the gain
+is taken off again afterwards, the clipped parts come out quieter than they went in: at 20 dB,
+a full-level peak comes out at a tenth of full level. With a loud source, keep *GAIN* low or
+use *AUTO*.
+
+#signal-grid("grid-gain", ("0 dB", "6 dB", "12 dB", "20 dB"),
+  [More *GAIN*: finer steps for quiet sound, and the loudest parts clipped flat and quieter.
+    At 3 bits, *CRUSH* on SYM.])
 
 == Auto gain
 
@@ -302,36 +283,37 @@ gently for a while, a little like a compressor's release. Its centre reads about
 
 #let ag = data("autogain")
 #figure(
-  plot(height: 50mm, x: (min: 0, max: 400, ticks: (0, 60, 100, 200, 300, 400), title: "Time (ms)"),
-    y: (min: 0, max: 30, ticks: (0, 10, 20, 30), title: "Gain (dB)"),
-    series: (
-      (data: column(ag, "peak20"), color: ramp.at("3").at(0), label: "PEAK, DECAY 20 ms",
-        width: 1pt),
-      (data: column(ag, "peak115"), color: ramp.at("3").at(1), label: "PEAK, 115 ms",
-        width: 1pt),
-      (data: column(ag, "peak500"), color: ramp.at("3").at(2), label: "PEAK, 500 ms",
-        width: 1pt),
-      (data: column(ag, "range115"), color: cat.at(1), label: "RANGE, 115 ms", width: 1pt),
-    ),
-    notes: ((x: 30, y: 4, body: [loud], anchor: "center"),
-      (x: 230, y: 4, body: [20 dB quieter], anchor: "center"))),
-  caption: [How auto gain responds when a loud passage gives way to a quieter one. The longer
-    *DECAY*, the more slowly the gain rises to suit the quiet part. At very short settings
-    PEAK wobbles with the wave itself, which you hear as extra roughness.],
+  grid(columns: 4, column-gutter: 2mm,
+    ..(("peak20", "PEAK, DECAY 20 ms"), ("peak115", "PEAK, 115 ms"), ("peak500", "PEAK, 500 ms"),
+      ("range115", "RANGE, 115 ms")).map(((c, name)) => {
+        align(center, text(font: sans, size: 7.5pt, weight: "semibold", name))
+        plot(height: 38mm, legend: false,
+          x: (min: 0, max: 400, ticks: (0, 200, 400), title: "ms"),
+          y: (min: 0, max: 30, ticks: (0, 10, 20, 30), title: if c == "peak20" { "Gain (dB)" }),
+          series: ((data: column(ag, c), color: cat.at(0), width: 0.9pt),))
+      }),
+  ),
+  caption: [How auto gain responds when a loud passage (the first 60 ms) gives way to one 20 dB
+    quieter. The longer *DECAY*, the more slowly the gain rises to suit the quiet part. At very
+    short settings PEAK wobbles with the wave itself, which you hear as extra roughness.],
 )
 
 #let os = data("offset")
 #figure(
-  plot(height: 44mm, x: (min: 0, max: 3.33, ticks: (0, 1, 2, 3), title: "Time (ms)"),
-    y: (min: 0, max: 1, ticks: (0, 0.25, 0.5, 0.75, 1), title: "Level"),
-    series: (
-      (data: column(os, "input"), color: ink-3, label: "Original", width: 0.8pt,
-        dash: "dashed"),
-      (data: column(os, "peak"), color: cat.at(0), label: "PEAK", width: 1pt),
-      (data: column(os, "range"), color: cat.at(1), label: "RANGE", width: 1pt),
-    )),
-  caption: [A wave that isn't centred on zero, at 1 bit. PEAK squashes it almost flat; RANGE
-    crushes it around its own centre and keeps it moving.],
+  grid(columns: 2, column-gutter: 4mm,
+    ..(("peak", "PEAK"), ("range", "RANGE")).map(((c, name)) => {
+        align(center, text(font: sans, size: 7.5pt, weight: "semibold", name))
+        plot(height: 36mm, legend: false,
+          x: (min: 0, max: 3.33, ticks: (0, 1, 2, 3), title: "ms"),
+          y: (min: 0, max: 1, ticks: (0, 0.5, 1), title: if c == "peak" { "Level" }),
+          series: (
+            (data: column(os, "input"), color: ink-3, width: 0.6pt, dash: "dashed"),
+            (data: column(os, c), color: cat.at(0), width: 0.9pt),
+          ))
+      }),
+  ),
+  caption: [A wave that isn't centred on zero, at 1 bit with auto gain. PEAK squashes it almost
+    flat; RANGE crushes it around its own centre and keeps it moving.],
 )
 
 = Stereo and mix

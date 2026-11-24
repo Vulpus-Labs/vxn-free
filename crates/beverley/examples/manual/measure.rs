@@ -21,8 +21,7 @@ const TAU: f32 = std::f32::consts::TAU;
 const SEPARATE: f32 = 1.0;
 
 pub fn write(out: &Path) {
-    transfers(out);
-    waves(out);
+    grids(out);
     spectra(out);
     aliasing(out);
     auto_gain_traces(out);
@@ -70,102 +69,90 @@ fn rows(columns: &[Vec<f32>]) -> Vec<Vec<f32>> {
         .collect()
 }
 
-/// The chain is memoryless with AUTO off, so a slow ramp from −1 to 1
-/// through it traces its transfer curve: output against input.
-fn transfer(values: &[(ParamIndex, f32)]) -> (Vec<f32>, Vec<f32>) {
-    const N: usize = 801;
-    let x: Vec<f32> = (0..N)
-        .map(|i| -1.0 + 2.0 * i as f32 / (N - 1) as f32)
+/// Samples in each test signal.
+const SIGNAL: usize = 480;
+
+/// The three test signals, each `SIGNAL` samples: a linear ramp from −1
+/// to 1 (output against it is the transfer curve), one cycle of a sine at
+/// 0.8, and a complex wave (a fundamental with its second and third
+/// harmonics, two cycles) fading from loud to a sixth of that.
+fn signals() -> [Vec<f32>; 3] {
+    let n = SIGNAL as f32;
+    let ramp = (0..SIGNAL)
+        .map(|i| -1.0 + 2.0 * i as f32 / (n - 1.0))
         .collect();
-    let y = run(RATE, values, &x);
-    (x, y)
+    let sine = (0..SIGNAL)
+        .map(|i| 0.8 * (TAU * i as f32 / n).sin())
+        .collect();
+    let complex = (0..SIGNAL)
+        .map(|i| {
+            let phase = 2.0 * TAU * i as f32 / n;
+            let fade = 1.0 - 0.85 * i as f32 / n;
+            fade * (0.6 * phase.sin() + 0.3 * (2.0 * phase).sin() + 0.2 * (3.0 * phase + 1.0).sin())
+        })
+        .collect();
+    [ramp, sine, complex]
 }
 
-fn transfers(out: &Path) {
-    type Set<'a> = (&'a str, &'a [&'a str], Vec<Vec<(ParamIndex, f32)>>);
-    let sets: Vec<Set> = vec![
-        (
-            "transfer-bits",
-            &["x", "b1", "b2", "b3", "b4"],
-            [1.0, 2.0, 3.0, 4.0]
-                .iter()
-                .map(|&b| vec![(BIT_DEPTH, b)])
-                .collect(),
-        ),
-        (
-            "transfer-modes",
-            &["x", "asym", "sym"],
-            [0.0, 1.0]
-                .iter()
-                .map(|&m| vec![(BIT_DEPTH, 2.0), (CRUSH_MODE, m)])
-                .collect(),
-        ),
-        (
-            "transfer-smoothing",
-            &["x", "s0", "s25", "s50", "s75", "s100"],
-            [0.0, 25.0, 50.0, 75.0, 100.0]
-                .iter()
-                .map(|&s| vec![(BIT_DEPTH, 2.0), (CRUSH_MODE, 1.0), (SMOOTHING, s)])
-                .collect(),
-        ),
-        (
-            "transfer-gamma",
-            &["x", "g032", "g1", "g316"],
-            [-0.5, 0.0, 0.5]
-                .iter()
-                .map(|&g| vec![(BIT_DEPTH, 3.0), (CRUSH_MODE, 1.0), (GAMMA, g)])
-                .collect(),
-        ),
-        (
-            "transfer-fraction",
-            &["x", "b2", "b25", "b3"],
-            [2.0, 2.5, 3.0]
-                .iter()
-                .map(|&b| vec![(BIT_DEPTH, b), (CRUSH_MODE, 1.0)])
-                .collect(),
-        ),
-        (
-            "transfer-gain",
-            &["x", "g0", "g6", "g12", "g20"],
-            [0.0, 6.0, 12.0, 20.0]
-                .iter()
-                .map(|&g| vec![(BIT_DEPTH, 3.0), (CRUSH_MODE, 1.0), (GAIN, g)])
-                .collect(),
-        ),
+/// A grid for one control: each test signal through each of `settings`.
+/// Columns: `t`, the three inputs, then for setting `i`,
+/// `{i}_ramp`, `{i}_sine` and `{i}_complex`. With AUTO off the chain is
+/// memoryless, so each signal runs through a fresh engine.
+fn grid(out: &Path, name: &str, settings: &[Vec<(ParamIndex, f32)>]) {
+    let inputs = signals();
+    let mut header = vec![
+        "t".to_owned(),
+        "ramp".into(),
+        "sine".into(),
+        "complex".into(),
     ];
-    for (name, header, settings) in sets {
-        let mut columns = Vec::new();
-        for values in &settings {
-            let (x, y) = transfer(values);
-            if columns.is_empty() {
-                columns.push(x);
-            }
-            columns.push(y);
+    let mut columns = vec![
+        (0..SIGNAL)
+            .map(|i| i as f32 / (SIGNAL - 1) as f32)
+            .collect(),
+    ];
+    columns.extend(inputs.iter().cloned());
+    for (i, values) in settings.iter().enumerate() {
+        for (signal, x) in ["ramp", "sine", "complex"].iter().zip(&inputs) {
+            header.push(format!("{i}_{signal}"));
+            columns.push(run(RATE, values, x));
         }
-        csv(out, name, header, &rows(&columns));
     }
+    let header: Vec<&str> = header.iter().map(String::as_str).collect();
+    csv(out, name, &header, &rows(&columns));
 }
 
-/// One cycle of a 0.8 sine at 100 Hz (480 samples), through three
-/// settings.
-fn waves(out: &Path) {
-    let n = 480;
-    let x: Vec<f32> = (0..n)
-        .map(|i| 0.8 * (TAU * i as f32 / n as f32).sin())
-        .collect();
-    let t: Vec<f32> = (0..n).map(|i| i as f32 / n as f32).collect();
-    let default = run(RATE, &[], &x);
-    let sym2 = run(RATE, &[(BIT_DEPTH, 2.0), (CRUSH_MODE, 1.0)], &x);
-    let smooth = run(
-        RATE,
-        &[(BIT_DEPTH, 2.0), (CRUSH_MODE, 1.0), (SMOOTHING, 50.0)],
-        &x,
-    );
-    csv(
+fn grids(out: &Path) {
+    let sym = (CRUSH_MODE, 1.0);
+    grid(
         out,
-        "waves",
-        &["t", "input", "default", "sym2", "smooth50"],
-        &rows(&[t, x, default, sym2, smooth]),
+        "grid-bits",
+        &[1.0, 2.0, 4.0, 8.0].map(|b| vec![(BIT_DEPTH, b)]),
+    );
+    grid(
+        out,
+        "grid-fraction",
+        &[2.0, 2.5, 3.0].map(|b| vec![(BIT_DEPTH, b), sym]),
+    );
+    grid(
+        out,
+        "grid-modes",
+        &[0.0, 1.0].map(|m| vec![(BIT_DEPTH, 2.0), (CRUSH_MODE, m)]),
+    );
+    grid(
+        out,
+        "grid-smoothing",
+        &[0.0, 25.0, 50.0, 100.0].map(|v| vec![(BIT_DEPTH, 2.0), sym, (SMOOTHING, v)]),
+    );
+    grid(
+        out,
+        "grid-gamma",
+        &[-0.5, 0.0, 0.5].map(|g| vec![(BIT_DEPTH, 3.0), sym, (GAMMA, g)]),
+    );
+    grid(
+        out,
+        "grid-gain",
+        &[0.0, 6.0, 12.0, 20.0].map(|g| vec![(BIT_DEPTH, 3.0), sym, (GAIN, g)]),
     );
 }
 
