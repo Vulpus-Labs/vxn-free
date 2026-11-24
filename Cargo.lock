@@ -180,7 +180,23 @@ dependencies = [
  "hound",
  "silkscreen",
  "silkscreen-bridge",
+ "silkscreen-build",
+ "silkscreen-harness",
  "vxn-free-dsp",
+]
+
+[[package]]
+name = "charm-clap"
+version = "0.1.1"
+dependencies = [
+ "charm",
+ "clack-extensions",
+ "clack-host",
+ "clack-plugin",
+ "silkscreen",
+ "silkscreen-bridge",
+ "silkscreen-build",
+ "silkscreen-clap",
 ]
 
 [[package]]

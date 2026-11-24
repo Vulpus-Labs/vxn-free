@@ -50,8 +50,8 @@ Phase 3: the product around it.
 
 ## Dependency order
 
-0026 after 0001; 0014 after 0026; 0023 after 0014; 0024 after 0023;
-0020 after 0024; 0015 after 0007 and 0023; 0017 after 0015 (dropped);
+0026 after 0001; 0014 after 0026; 0023 after 0014; 0024 after 0023 and 0020;
+0020 after 0018 (moved ahead of tuning, to tune in a DAW); 0015 after 0007 and 0023; 0017 after 0015 (dropped);
 0028 after 0023; 0029 after 0015; 0016 after 0029; 0018 after 0015;
 0022 after 0014; 0019 after 0016, 0018, 0020, 0022 and 0028; 0021
 after 0019.

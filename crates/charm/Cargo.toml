@@ -1,6 +1,6 @@
 [package]
 name = "charm"
-description = "Charm's params and engine: a listening ensemble chorus"
+description = "Charm's params, editor and engine: a listening ensemble chorus"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -12,8 +12,17 @@ publish.workspace = true
 silkscreen.workspace = true
 vxn-free-dsp.workspace = true
 
+[features]
+# Name the faceplate's PNGs by URL instead of embedding them, for a web
+# page to fetch (silkscreen's design/hosts.md). Unused for now.
+fetch = []
+
+[build-dependencies]
+silkscreen-build.workspace = true
+
 [dev-dependencies]
 silkscreen-bridge = { workspace = true, features = ["testing"] }
+silkscreen-harness.workspace = true
 # WAV in and out for the bench (examples/bench); never in the engine.
 hound = "3.5"
 

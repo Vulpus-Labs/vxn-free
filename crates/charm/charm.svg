@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="300" viewBox="0 0 720 300">
+  <!-- Charm's plain faceplate (ticket 0020): a grid of the params, enough to
+       play it in a DAW. Ticket 0019 replaces it with the real design and
+       the flock display. Each shape in the "controls" layer marks one
+       control; its id is kind.name. -->
+  <defs>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b2f3a"/>
+      <stop offset="1" stop-color="#1b1e26"/>
+    </linearGradient>
+  </defs>
+  <rect width="720" height="300" fill="#101217"/>
+  <rect x="4" y="4" width="712" height="292" rx="6" fill="url(#panel)" stroke="#3b4050"/>
+  <g font-family="'Jost*'" font-weight="500">
+    <text x="24" y="38" font-size="22" letter-spacing="4" fill="#f1e9d2">CHARM</text>
+    <text x="136" y="38" font-size="9" letter-spacing="2.6" fill="#d8b45a">ENSEMBLE CHORUS</text>
+    <text x="696" y="38" font-size="8" letter-spacing="2.4" fill="#8a8f9c" text-anchor="end">VULPUS LABS</text>
+    <line x1="24" y1="52" x2="696" y2="52" stroke="#3b4050" stroke-width="1"/>
+  </g>
+  <g font-family="'Jost*'" font-weight="500" font-size="9" letter-spacing="1.4" fill="#d9dbe2" text-anchor="middle">
+    <text x="72" y="166">VOICES</text>
+    <text x="168" y="166">DETUNE</text>
+    <text x="264" y="166">SPREAD</text>
+    <text x="360" y="166">COHESION</text>
+    <text x="456" y="166">SEPARATION</text>
+    <text x="552" y="166">TURBULENCE</text>
+    <text x="648" y="166">MIX</text>
+    <text x="72" y="280">WIDTH</text>
+    <text x="168" y="280">AUTO WIDTH</text>
+    <text x="264" y="280">LOW XOVER</text>
+    <text x="360" y="280">MID DEPTH</text>
+    <text x="456" y="280">HIGH DEPTH</text>
+    <text x="552" y="280">DUCK</text>
+    <text x="648" y="280">BLOOM</text>
+  </g>
+  <g fill="none" stroke="#565c6c" stroke-width="2">
+    <circle cx="72" cy="118" r="34"/>
+    <circle cx="168" cy="118" r="34"/>
+    <circle cx="264" cy="118" r="34"/>
+    <circle cx="360" cy="118" r="34"/>
+    <circle cx="456" cy="118" r="34"/>
+    <circle cx="552" cy="118" r="34"/>
+    <circle cx="648" cy="118" r="34"/>
+    <circle cx="72" cy="232" r="34"/>
+    <rect x="142" y="216" width="52" height="32" rx="8"/>
+    <circle cx="264" cy="232" r="34"/>
+    <circle cx="360" cy="232" r="34"/>
+    <circle cx="456" cy="232" r="34"/>
+    <circle cx="552" cy="232" r="34"/>
+    <circle cx="648" cy="232" r="34"/>
+  </g>
+  <g id="controls">
+    <circle id="knob.voices" cx="72" cy="118" r="28" fill="#ff00ff"/>
+    <circle id="knob.detune" cx="168" cy="118" r="28" fill="#ff00ff"/>
+    <circle id="knob.spread" cx="264" cy="118" r="28" fill="#ff00ff"/>
+    <circle id="knob.cohesion" cx="360" cy="118" r="28" fill="#ff00ff"/>
+    <circle id="knob.separation" cx="456" cy="118" r="28" fill="#ff00ff"/>
+    <circle id="knob.turbulence" cx="552" cy="118" r="28" fill="#ff00ff"/>
+    <circle id="knob.mix" cx="648" cy="118" r="28" fill="#ff00ff"/>
+    <circle id="knob.width" cx="72" cy="232" r="28" fill="#ff00ff"/>
+    <rect id="toggle.auto_width" x="146" y="220" width="44" height="24" fill="#ff00ff"/>
+    <circle id="knob.low_xover" cx="264" cy="232" r="28" fill="#ff00ff"/>
+    <circle id="knob.mid_depth" cx="360" cy="232" r="28" fill="#ff00ff"/>
+    <circle id="knob.high_depth" cx="456" cy="232" r="28" fill="#ff00ff"/>
+    <circle id="knob.duck" cx="552" cy="232" r="28" fill="#ff00ff"/>
+    <circle id="knob.bloom" cx="648" cy="232" r="28" fill="#ff00ff"/>
+  </g>
+</svg>

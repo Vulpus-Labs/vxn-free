@@ -14,8 +14,10 @@
 //! (CLARITY, which steered voices' comb notches off strong partials, was
 //! dropped after measurement: ticket 0017.)
 
-use silkscreen::ParamIndex;
 use silkscreen::model::{ParamSpec, Taper};
+use silkscreen::{
+    Binding, Editor, EditorState, EngineLink, ParamIndex, ParamKnob, ParamToggle, PluginUi,
+};
 
 pub mod analysis;
 pub mod decorrelate;
@@ -23,6 +25,12 @@ pub mod engine;
 pub mod flock;
 pub mod observe;
 pub mod wet;
+
+/// Generated from `charm.svg` by `silkscreen-build`: the plain faceplate
+/// (ticket 0020), until 0019's design replaces it.
+pub mod faceplate {
+    include!(concat!(env!("OUT_DIR"), "/charm.rs"));
+}
 
 pub const VOICES: ParamIndex = ParamIndex(0);
 pub const DETUNE: ParamIndex = ParamIndex(1);
@@ -124,6 +132,45 @@ pub static PARAMS: [ParamSpec; 14] = [
     // point 7).
     ParamSpec::toggle("Auto Width", true).id(14),
 ];
+
+/// The editor's long-lived state, bound to the engine through `link`.
+pub fn state(link: Box<dyn EngineLink>) -> EditorState {
+    let knob = |p| -> Box<dyn Binding> { Box::new(ParamKnob::new(p)) };
+    let controls = faceplate::Controls::<Box<dyn Binding>> {
+        voices: knob(VOICES),
+        detune: knob(DETUNE),
+        spread: knob(SPREAD),
+        cohesion: knob(COHESION),
+        separation: knob(SEPARATION),
+        turbulence: knob(TURBULENCE),
+        mix: knob(MIX),
+        width: knob(WIDTH),
+        auto_width: Box::new(ParamToggle::new(AUTO_WIDTH)),
+        low_xover: knob(LOW_XOVER),
+        mid_depth: knob(MID_DEPTH),
+        high_depth: knob(HIGH_DEPTH),
+        duck: knob(DUCK),
+        bloom: knob(BLOOM),
+    };
+    EditorState::new(&faceplate::LAYOUT, &PARAMS, controls.into_array(), link)
+}
+
+/// What every host needs to know about the editor.
+pub const UI: PluginUi = PluginUi {
+    vendor: "Vulpus Labs",
+    product: "Charm",
+    version: env!("CARGO_PKG_VERSION"),
+    web_prefix: "charm",
+    specs: &PARAMS,
+    factory: &[],
+    faceplate: &faceplate::FACEPLATE,
+    state,
+};
+
+/// A whole editor, state and view, for hosts that own both.
+pub fn editor(link: Box<dyn EngineLink>) -> Editor {
+    Editor::new(state(link), UI.raster())
+}
 
 #[cfg(test)]
 mod tests {

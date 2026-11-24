@@ -4,7 +4,7 @@ title: "Charm first tuning pass: ranges and defaults"
 priority: medium
 created: 2026-11-24
 epic: E004
-depends: ["0023"]
+depends: ["0023", "0020"]
 ---
 
 ## Summary
