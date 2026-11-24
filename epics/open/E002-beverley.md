@@ -1,0 +1,25 @@
+---
+id: E002
+title: "Beverley: the bitcrusher as a CLAP effect"
+status: open
+created: 2026-11-24
+---
+
+## Goal
+
+Beverley as a stereo CLAP effect that sounds like the module: gain or
+auto-gain, gamma, fractional bit depth, smoothing, symmetric or
+asymmetric crush.
+
+## Tickets
+
+| Ticket | What |
+|---|---|
+| 0003 | Engine: the crush chain, ported, with tests |
+| 0004 | Faceplate and editor |
+| 0005 | CLAP plugin: params, state, tests, clap-validator |
+| 0006 | Manual |
+
+## Dependency order
+
+0003 after 0001; 0004 after 0003; 0005 after 0004; 0006 after 0005.

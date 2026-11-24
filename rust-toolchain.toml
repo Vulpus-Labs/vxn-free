@@ -1,0 +1,7 @@
+# Pinned so pixel snapshot tests are reproducible across machines: float
+# rasterization results can shift between compiler versions. Bump this
+# deliberately and re-bless snapshots (SILKSCREEN_BLESS=1) in the same commit.
+[toolchain]
+channel = "1.95.0"
+components = ["clippy", "rustfmt"]
+targets = ["wasm32-unknown-unknown"]
