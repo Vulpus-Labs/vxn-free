@@ -42,6 +42,17 @@ macOS part.
   keychain. Without `MACOS_CERT_P12` the macOS build is unsigned, with a
   warning.
 - README: a release section naming the five secrets.
-- To do: the secrets, then a dry run on a pre-release tag
-  (`v0.1.0-rc.1`). The tag check means the workspace version must stay
-  0.1.0 until then.
+- The secrets are organisation secrets, shared with this repository.
+- A run by hand on main (run 45409480558, 58555bd) passed on all three
+  platforms, and clap-validator passed on each:
+  - macOS: signed, then notarized (status Accepted) and stapled, and
+    `spctl` assessed it as "Notarized Developer ID".
+  - The zip, downloaded and unpacked with `ditto`, checked again here:
+    `spctl` accepted it, the stapled ticket validates, the signature has
+    the hardened runtime and team 357M9JY6XD, and the binary is
+    x86_64 + arm64.
+  - The Windows and Linux zips each hold `Beverley.clap`.
+- The first CI run on GitHub (all three jobs) passed.
+- To do: a run on a pre-release tag (`v0.1.0-rc.1`), for the tag check
+  and the draft release. The workspace version must stay 0.1.0 until
+  then.
