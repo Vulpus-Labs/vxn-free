@@ -16,6 +16,6 @@ depends: ["0019"]
       no conflict for audio software, recorded here. If it does find one,
       the plugin is renamed before release, while the id can still change.
 - [ ] Final hand check in a DAW with the finished faceplate: pads, clean
-      guitar, vocals and a drum bus; automation of DETUNE, WIDTH, CLARITY
+      guitar, vocals and a drum bus; automation of DETUNE, WIDTH, DUCK
       and MIX; mono sum checked.
 - [ ] Ticket 0002 (releases) includes Charm in its builds.

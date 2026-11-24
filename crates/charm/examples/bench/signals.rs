@@ -4,7 +4,15 @@
 use std::f32::consts::TAU;
 
 /// Names, in the order `all` runs them.
-pub const NAMES: [&str; 6] = ["tone", "chord", "dist-chord", "pink", "clicks", "drums"];
+pub const NAMES: [&str; 7] = [
+    "tone",
+    "chord",
+    "dist-chord",
+    "pink",
+    "white",
+    "clicks",
+    "drums",
+];
 
 /// The signal called `name`, `seconds` long at `rate`, as stereo (both
 /// channels equal, except pink noise, whose channels are independent).
@@ -23,6 +31,11 @@ pub fn make(name: &str, rate: f32, seconds: f32) -> Option<[Vec<f32>; 2]> {
         "pink" => {
             return Some([pink(len, 0x1234_5678, 0.25), pink(len, 0x8765_4321, 0.25)]);
         }
+        // White noise, the same on both channels.
+        "white" => {
+            let mut state = 0x5EED;
+            (0..len).map(|_| 0.25 * uniform(&mut state)).collect()
+        }
         // A click train at 4 Hz: short decaying bursts.
         "clicks" => clicks(rate, len),
         // A loop at 120 bpm: kick on 1 and 3, snare on 2 and 4, hats on
@@ -31,6 +44,24 @@ pub fn make(name: &str, rate: f32, seconds: f32) -> Option<[Vec<f32>; 2]> {
         _ => return None,
     };
     Some([mono.clone(), mono])
+}
+
+/// The partials the synthetic signal `name` is built from, Hz, if it is a
+/// harmonic one.
+pub fn partials(name: &str, rate: f32) -> Option<Vec<f32>> {
+    let (fundamentals, harmonics): (&[f32], usize) = match name {
+        "tone" => (&[220.0], 12),
+        "chord" => (&[261.63, 329.63, 392.0, 493.88], 8),
+        "dist-chord" => (&[82.41, 123.47, 164.81], 6),
+        _ => return None,
+    };
+    let mut out: Vec<f32> = fundamentals
+        .iter()
+        .flat_map(|&f| (1..=harmonics).map(move |k| f * k as f32))
+        .filter(|&hz| hz < 0.45 * rate)
+        .collect();
+    out.sort_by(f32::total_cmp);
+    Some(out)
 }
 
 fn harmonic(fundamentals: &[f32], harmonics: usize, rate: f32, len: usize, level: f32) -> Vec<f32> {

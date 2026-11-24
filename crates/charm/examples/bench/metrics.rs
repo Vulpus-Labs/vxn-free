@@ -53,9 +53,23 @@ pub struct AnalysisMetrics {
     pub mean_peaks: f32,
 }
 
+/// How much the known partials of a harmonic signal dip in the output's
+/// mono sum, against the input's: the time-averaged loss in dB (gains
+/// count as 0), per partial above LOW XOVER.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct PartialLoss {
+    pub partials: usize,
+    /// The partial that lost most, and its loss (≤ 0).
+    pub worst_hz: f32,
+    pub worst_db: f32,
+    /// The mean loss over the partials.
+    pub mean_db: f32,
+}
+
 /// Everything about one render.
 #[derive(Clone, Debug, Default)]
 pub struct Metrics {
+    pub partial_loss: Option<PartialLoss>,
     pub flocks: [FlockMetrics; BANDS],
     pub analysis: [AnalysisMetrics; BANDS],
     pub mono: MonoLoss,
@@ -159,6 +173,64 @@ pub fn analysis(obs: &[Observation], rate: f32) -> [AnalysisMetrics; BANDS] {
         a.mean_coherence = coherence / ticks;
         a.mean_peaks = peaks as f32 / ticks;
         a.onsets_per_second = a.onsets as f32 / (samples / rate);
+    }
+    out
+}
+
+/// Each partial's level in `input` and `output` (mono), in Hann-windowed
+/// stretches of 4096 samples every 2048, from half a second in.
+pub fn partial_loss(
+    input: &[f32],
+    output: &[f32],
+    partials: &[f32],
+    rate: f32,
+    low_xover: f32,
+) -> PartialLoss {
+    const N: usize = 4096;
+    let window: Vec<f32> = (0..N)
+        .map(|k| 0.5 - 0.5 * (std::f32::consts::TAU * k as f32 / N as f32).cos())
+        .collect();
+    let level = |x: &[f32], hz: f32| {
+        let w = std::f64::consts::TAU * f64::from(hz) / f64::from(rate);
+        let (mut re, mut im) = (0.0f64, 0.0f64);
+        for (n, (&s, &h)) in x.iter().zip(&window).enumerate() {
+            let v = f64::from(s * h);
+            re += v * (w * n as f64).cos();
+            im -= v * (w * n as f64).sin();
+        }
+        (re * re + im * im).sqrt()
+    };
+    let start = (rate * 0.5) as usize;
+    let mut out = PartialLoss {
+        worst_db: 0.0,
+        ..PartialLoss::default()
+    };
+    let mut sum = 0.0f32;
+    for &hz in partials.iter().filter(|&&hz| hz > low_xover * 1.5) {
+        let (mut loss, mut count) = (0.0f64, 0usize);
+        let mut at = start;
+        while at + N <= input.len().min(output.len()) {
+            let x = level(&input[at..at + N], hz);
+            if x > 1.0e-9 {
+                let gain = 20.0 * (level(&output[at..at + N], hz) / x).log10();
+                loss += gain.min(0.0);
+                count += 1;
+            }
+            at += N / 2;
+        }
+        if count == 0 {
+            continue;
+        }
+        let mean = (loss / count as f64) as f32;
+        out.partials += 1;
+        sum += mean;
+        if mean < out.worst_db {
+            out.worst_db = mean;
+            out.worst_hz = hz;
+        }
+    }
+    if out.partials > 0 {
+        out.mean_db = sum / out.partials as f32;
     }
     out
 }

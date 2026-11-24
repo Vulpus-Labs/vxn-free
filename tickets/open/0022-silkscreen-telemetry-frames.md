@@ -11,9 +11,9 @@ depends: ["0014"]
 
 Charm's flock display (ADR 0002, point 10) needs, per tick:
 - two flocks × 8 voices × (delay, pan, velocity, gain)
-- up to 8 peaks per band, and each band's gate
+- each band's onset and coherence
 
-about 100 f32 values in all, as one consistent snapshot. Silkscreen's
+about 70 f32 values in all, as one consistent snapshot. Silkscreen's
 telemetry carries 16 separate engine values, written one at a time. The
 library gains telemetry frames, made and released in `~/src/silkscreen`
 by its own process, and this repo moves to the new tag.

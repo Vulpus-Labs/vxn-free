@@ -4,7 +4,7 @@ title: "Charm DUCK and BLOOM through the side-buffer"
 priority: medium
 created: 2026-11-24
 epic: E004
-depends: ["0015"]
+depends: ["0029"]
 ---
 
 ## Summary

@@ -54,8 +54,6 @@ pub struct BandObs {
     pub voices: [VoiceObs; MAX_VOICES],
     /// Strongest peaks, strongest first; unused ones are zero (0015).
     pub peaks: [PeakObs; PEAKS],
-    /// Clarity's sparseness gate, 0 to 1 (0017).
-    pub gate: f32,
     /// Onset strength this tick (the frame's relative rise in
     /// magnitude), 0 when none (0015, 0016).
     pub onset: f32,

@@ -331,6 +331,14 @@ fn run(
         },
         split_identical: identical,
         analysis: metrics::analysis(&obs, input.rate),
+        partial_loss: signals::partials(&input.name, input.rate).map(|p| {
+            let mono_in: Vec<f32> = input.channels[0]
+                .iter()
+                .zip(&input.channels[1])
+                .map(|(a, b)| 0.5 * (a + b))
+                .collect();
+            metrics::partial_loss(&mono_in, &mono, &p, input.rate, xover)
+        }),
     };
     write_report(report, json, &input.name, &m);
     Ok(())
@@ -430,6 +438,17 @@ fn write_report(report: &mut String, json: &mut Vec<String>, name: &str, m: &Met
             a.mean_peaks
         );
     }
+    if let Some(p) = m.partial_loss {
+        let _ = writeln!(
+            report,
+            "  partials (mono): {} above LOW XOVER; mean loss {:.2} dB; worst {:.2} dB at {:.0} Hz",
+            p.partials, p.mean_db, p.worst_db, p.worst_hz
+        );
+        json.push(format!(
+            "\"{name}-partials\":{{\"count\":{},\"mean_db\":{},\"worst_db\":{},\"worst_hz\":{}}}",
+            p.partials, p.mean_db, p.worst_db, p.worst_hz
+        ));
+    }
     let bands = ["LOW", "MID", "HIGH"];
     let _ = write!(report, "  mono-sum loss dB (in → out):");
     for ((band, input), output) in bands.iter().zip(m.mono.input).zip(m.mono.output) {
@@ -443,7 +462,10 @@ fn write_report(report: &mut String, json: &mut Vec<String>, name: &str, m: &Met
         .map(|(a, band)| {
             format!(
                 "\"{band}\":{{\"onsets\":{},\"onsets_per_second\":{},\"mean_coherence\":{},\"mean_peaks\":{}}}",
-                a.onsets, a.onsets_per_second, a.mean_coherence, a.mean_peaks
+                a.onsets,
+                a.onsets_per_second,
+                a.mean_coherence,
+                a.mean_peaks
             )
         })
         .collect();

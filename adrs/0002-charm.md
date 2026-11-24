@@ -77,10 +77,9 @@ Charm addresses each of these, and stays a zero-latency effect.
      engine ticket), not a control.
    - MID and HIGH each have **their own flock**: their own delay line,
      VOICES voices and seed. The flock controls apply to both. Each
-     flock responds only to its own band's analysis (onsets, peaks,
-     coherence), so Clarity weighs only the peaks its voices' combs can
-     actually notch. Two flocks also decorrelate the bands from each
-     other, at the cost of twice the taps.
+     flock responds only to its own band's analysis (onsets and
+     coherence). Two flocks also decorrelate the bands from each other,
+     at the cost of twice the taps.
    - MID and HIGH have separate depth, so the upper band can be
      decorrelated more, as in a real section.
    - The dry signal is the unfiltered input. The wet signal is the sum of
@@ -124,28 +123,26 @@ Charm addresses each of these, and stays a zero-latency effect.
    - **Bloom.** After an onset, wet depth rises from zero over BLOOM
      time, the way a singer brings in vibrato late in a note. BLOOM = 0
      turns it off.
-   - **Clarity.** Strong spectral peaks in MID and HIGH add a term to the
-     flock's steering. For a voice at delay d, the dry + voice comb has
-     notches at (2k + 1) / 2d Hz. Three rules shape the term:
-     - *Repel only.* A peak pushes a voice away only while one of the
-       voice's notches lies within a short range of it. Beyond that range
-       the term is zero. There is no pull towards notch-free delays, so a
-       voice never has a valley to settle in. A voice that stopped moving
-       would leave a fixed comb, which is a static filter and no chorus.
-     - *Weighted by strength.* Each peak's push scales with its strength,
-       so on a chord the strongest partials, usually the fundamentals and
-       low harmonics, get most of the protection.
-     - *Gated by sparseness.* The term's overall weight is CLARITY times
-       how peaky the band is: the share of the band's energy in its peak
-       set, or one minus its spectral flatness, chosen in the ticket.
-       On dense polyphony or noise the gate closes, and the flock moves
-       freely. Comb notches are most audible on sparse, sustained tones
-       and are masked on dense material, so Clarity acts where it matters
-       and backs off where it can't help.
+   - **Clarity: dropped (ticket 0017).** Clarity was to steer voices so
+     their comb notches missed strong partials. It was built and measured
+     three ways and doesn't work well enough to keep:
+     - Pushing each voice off its own notch with the dry signal, as first
+       designed, pushed voices *into* notches: each voice is its band's
+       signal, and the band filters turn its phase by a good part of a
+       cycle.
+     - With that phase allowed for, a chord's partials fenced the voices
+       in. Motion fell to half, and an unprotected partial sat in a
+       standing dip 5.5 dB deep.
+     - Pushing only while a partial's actual sum (dry plus every voice)
+       dipped kept the motion, but improved the worst partial on a
+       harmonic tone by 20–30 % (the target was 50 %), and made chords'
+       unprotected partials worse.
 
-     Because the push goes through the flock's dynamics, the detune speed
-     limit also limits how fast a voice can be pushed, so steering adds no
-     pitch glitches of its own.
+     The limit is physical. Voices moving within DETUNE sweep their combs
+     through several dips a second at 1 kHz: that sweep is the chorus's
+     beating, and steering bounded by the same speed limit can't outrun
+     it. Comb colouring is handled instead by decorrelating the voices
+     (ticket 0028).
    - **Auto width.** Inter-channel coherence of the input, per band,
      smoothed over about 300 ms. Bands that are already wide get less pan
      spread; narrow bands get the full WIDTH. A guard limits the drop in
@@ -159,7 +156,7 @@ Charm addresses each of these, and stays a zero-latency effect.
 
 9. **Controls (first draft).** VOICES, DETUNE, SPREAD, COHESION,
    SEPARATION, TURBULENCE, WIDTH, AUTO WIDTH, LOW XOVER, MID DEPTH, HIGH
-   DEPTH, CLARITY, DUCK, BLOOM, MIX. The engine ticket fixes ranges,
+   DEPTH, DUCK, BLOOM, MIX. The engine ticket fixes ranges,
    defaults and ids. The faceplate ticket may group or merge controls.
 
 10. **The flock display.** The editor plots what the engine is doing. It
@@ -171,15 +168,12 @@ Charm addresses each of these, and stays a zero-latency effect.
     - Each voice is a dot, MID and HIGH in two colours. A tail shows its
       velocity on the delay axis, which is its detune, as a fraction of
       DETUNE.
-    - Clarity's no-go bands are shaded horizontally in the flock's
-      colour, at d ≈ (k + ½) / p ± r / p for each peak p, with intensity
-      = strength × sparseness gate.
     - Duck and Bloom scale each dot's size and brightness, so an onset
       shows as a pulse across the flock.
 
     The engine publishes one consistent frame per flock tick: every
-    voice's delay, pan, velocity and gain, plus each band's peaks and
-    gate. Silkscreen's telemetry holds 16 separate values with no
+    voice's delay, pan, velocity and gain, plus each band's onset and
+    coherence. Silkscreen's telemetry holds 16 separate values with no
     consistent snapshot, which is not enough for this. Silkscreen
     therefore gains telemetry frames: a fixed-size block per instance,
     published as one snapshot, with no allocation or lock on the audio
@@ -201,6 +195,7 @@ Each building block has been done before:
 - Many voices with random modulation: Caelum Audio Choric.
 - Constant detune: triangle-swept bucket-brigade choruses.
 - Fixed per-voice decorrelation against combing: Acon Digital Multiply.
+  Charm's allpass decorrelation (ticket 0028) is that idea.
 - Flocks driving the modulation of time-based effects: ToneCarver Boids,
   where boids drive grains and delay taps, and Harmonico DSP Murmuration,
   where a flock replaces an FDN reverb's LFO.
@@ -208,7 +203,6 @@ Each building block has been done before:
 As far as searches found, these parts are original:
 - treating the flock's velocity on the delay axis as detune, so that
   DETUNE is a speed limit for every steering force
-- Clarity
 - ducking with lookahead at zero latency, using the wet path's own delay
 - width driven by per-band coherence, with a mono guard
 
@@ -220,8 +214,9 @@ first adaptive or flock-driven chorus.
 - Spectral resynthesis of partials (per-partial ensembles in the
   frequency domain). It needs block latency and is not wanted.
 - Pitch (f0) detection and pitch-locked modulation. Specifying detune in
-  cents already makes beating follow pitch, and peak picking serves
-  Clarity without an f0.
+  cents already makes beating follow pitch.
+- Steering voices away from comb notches (Clarity): built, measured and
+  dropped (point 7, ticket 0017).
 - A frequency-shift layer, odd/even harmonic splitting, and a diffusion
   network. Candidates for later, each with its own ADR if taken up.
 

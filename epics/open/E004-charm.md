@@ -34,7 +34,9 @@ Phase 2: the analysis features, each measured on the bench.
 |---|---|
 | 0007 | (E003) FFT, streaming STFT, peaks |
 | 0015 | Analysis sidechain: onsets, peaks, coherence, traced |
-| 0017 | Clarity: comb-notch avoidance (riskiest, so first) |
+| 0017 | Clarity: comb-notch avoidance (dropped after measurement) |
+| 0028 | Allpass decorrelation of the voices |
+| 0029 | Onset detection: spectral flux against band envelopes |
 | 0016 | Duck and Bloom through the side-buffer |
 | 0018 | Auto width and the mono guard (milestone M2) |
 
@@ -49,9 +51,10 @@ Phase 3: the product around it.
 ## Dependency order
 
 0026 after 0001; 0014 after 0026; 0023 after 0014; 0024 after 0023;
-0020 after 0024; 0015 after 0007 and 0023; 0016, 0017 and 0018 after
-0015, worked in the order 0017, 0016, 0018; 0022 after 0014; 0019 after
-0016, 0017, 0018, 0020 and 0022; 0021 after 0019.
+0020 after 0024; 0015 after 0007 and 0023; 0017 after 0015 (dropped);
+0028 after 0023; 0029 after 0015; 0016 after 0029; 0018 after 0015;
+0022 after 0014; 0019 after 0016, 0018, 0020, 0022 and 0028; 0021
+after 0019.
 
 0007 belongs to E003, which can run beside E004. Glow-Up's own analysis
 work is in 0025, so Charm doesn't wait on it.

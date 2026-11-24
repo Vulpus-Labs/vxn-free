@@ -7,9 +7,10 @@
 //! axis, so no voice is ever further out of tune than DETUNE. The dry
 //! input passes at unity; MIX sets the ensemble's level against it.
 //!
-//! The editor arrives with the plugin (ticket 0020); the analysis features
-//! (CLARITY, DUCK, BLOOM, AUTO WIDTH) with tickets 0015–0018, under the ids
-//! reserved below.
+//! The editor arrives with the plugin (ticket 0020); DUCK, BLOOM and AUTO
+//! WIDTH with tickets 0016 and 0018, under the ids reserved below.
+//! (CLARITY, which steered voices' comb notches off strong partials, was
+//! dropped after measurement: ticket 0017.)
 
 use silkscreen::ParamIndex;
 use silkscreen::model::{ParamSpec, Taper};
@@ -32,8 +33,8 @@ pub const HIGH_DEPTH: ParamIndex = ParamIndex(9);
 pub const MIX: ParamIndex = ParamIndex(10);
 
 /// Ids reserved for params later tickets add, so none is taken by
-/// anything else: CLARITY (0017), DUCK and BLOOM (0016), AUTO WIDTH
-/// (0018).
+/// anything else: DUCK and BLOOM (0016), AUTO WIDTH (0018), and a control
+/// for the voices' decorrelation if 0028 gives it one.
 pub const RESERVED_IDS: [u32; 4] = [12, 13, 14, 15];
 
 /// VOICES's positions: the number of voices in each flock.
