@@ -36,8 +36,8 @@ use crate::flock::{FLOOR, Flock, FlockSettings, max_velocity};
 use crate::observe::{BANDS, Observation};
 use crate::wet::{Shape, WetGain};
 use crate::{
-    BLOOM, COHESION, DETUNE, DUCK, HIGH_DEPTH, LOW_XOVER, MAX_VOICES, MID_DEPTH, MIN_VOICES, MIX,
-    PARAMS, SEPARATION, SPREAD, TURBULENCE, VOICES, WIDTH,
+    AUTO_WIDTH, BLOOM, COHESION, DETUNE, DUCK, HIGH_DEPTH, LOW_XOVER, MAX_VOICES, MID_DEPTH,
+    MIN_VOICES, MIX, PARAMS, SEPARATION, SPREAD, TURBULENCE, VOICES, WIDTH,
 };
 
 /// Samples per control tick.
@@ -99,6 +99,10 @@ struct Band {
     /// written into, read by each voice at its own delay.
     wet: WetGain,
     side: SideBuffer,
+    /// AUTO WIDTH's share of WIDTH for this band, glided, and the width
+    /// (WIDTH times it) the last tick used.
+    auto: Glide,
+    width: f32,
 }
 
 impl Band {
@@ -127,6 +131,8 @@ impl Band {
             depth_ramp: Ramp::new(1.0, 1.0, TICK),
             chains: std::array::from_fn(|voice| Chain::new(band, voice, sample_rate)),
             wet: WetGain::new(sample_rate),
+            auto: Glide::new(1.0, AUTO_WIDTH_MS, sample_rate / TICK as f32),
+            width: 0.0,
             side: {
                 let mut s = SideBuffer::new(max_delay(sample_rate), max_lag);
                 s.fill(1.0);
@@ -151,6 +157,21 @@ impl Default for Heard {
     }
 }
 
+/// AUTO WIDTH's glide, ms: the image follows coherence slowly.
+const AUTO_WIDTH_MS: f32 = 200.0;
+/// AUTO WIDTH's share of WIDTH for a band with no correlation between its
+/// channels (or worse): it is already wide.
+const AUTO_WIDTH_FLOOR: f32 = 0.25;
+/// The mono guard: no voice is panned further than this. A voice panned p
+/// with equal power loses 10·log10((1 + cos(p·π/2))/2) dB when summed to
+/// mono; at this pan, 2 dB (hard left or right, 3 dB).
+pub const PAN_GUARD: f32 = 0.83;
+
+/// AUTO WIDTH's share of WIDTH for a band whose input has `coherence`.
+pub fn auto_width(coherence: f32) -> f32 {
+    AUTO_WIDTH_FLOOR + (1.0 - AUTO_WIDTH_FLOOR) * coherence.clamp(0.0, 1.0)
+}
+
 /// The delay lines' length, samples.
 fn max_delay(sample_rate: f32) -> usize {
     (MAX_DELAY * f64::from(sample_rate)).ceil() as usize + TICK
@@ -159,6 +180,11 @@ fn max_delay(sample_rate: f32) -> usize {
 /// Each voice's level with `voices` in use.
 fn voice_level(voices: usize) -> f32 {
     1.0 / (voices as f32).sqrt()
+}
+
+/// `pan` within the mono guard.
+fn guarded(pan: f32) -> f32 {
+    pan.clamp(-PAN_GUARD, PAN_GUARD)
 }
 
 /// Equal-power gains for `pan`, −1 to 1.
@@ -184,6 +210,7 @@ pub struct CharmEngine {
     turbulence: Glide,
     /// 0 to 1.
     width: Glide,
+    auto_width: bool,
     /// Hz.
     low_xover: Glide,
     low_xover_for: f32,
@@ -247,6 +274,7 @@ impl CharmEngine {
             separation: glide(default_of(SEPARATION) * 0.01),
             turbulence: glide(default_of(TURBULENCE) * 0.01),
             width: glide(default_of(WIDTH) * 0.01),
+            auto_width: default_of(AUTO_WIDTH) >= 0.5,
             low_xover: glide(low_xover),
             low_xover_for: low_xover,
             mix: glide(default_of(MIX) * 0.01),
@@ -317,6 +345,14 @@ impl CharmEngine {
         let fs = f64::from(self.sample_rate);
         self.obs.tick += 1;
         for (band, obs) in self.bands.iter_mut().zip(&mut self.obs.bands) {
+            band.auto.set_target(if self.auto_width {
+                auto_width(obs.coherence)
+            } else {
+                1.0
+            });
+            let width_from = band.width;
+            band.width = width * band.auto.tick();
+            let width_to = band.width;
             let depth_from = band.depth.value();
             band.depth_ramp = Ramp::new(depth_from, band.depth.tick(), TICK);
             let before = *band.flock.voices();
@@ -329,13 +365,13 @@ impl CharmEngine {
                 let g_to = band.level[i].tick();
                 band.sounding[i] = g_from > 0.0 || g_to > 0.0;
                 band.delay[i] = DelayRamp::new(before[i].delay * fs, after[i].delay * fs);
-                let (l0, r0) = pan_gains(before[i].pan as f32 * width);
-                let (l1, r1) = pan_gains(after[i].pan as f32 * width);
+                let (l0, r0) = pan_gains(guarded(before[i].pan as f32 * width_from));
+                let (l1, r1) = pan_gains(guarded(after[i].pan as f32 * width_to));
                 band.left[i] = Ramp::new(l0 * g_from, l1 * g_to, TICK);
                 band.right[i] = Ramp::new(r0 * g_from, r1 * g_to, TICK);
                 let o = &mut obs.voices[i];
                 o.delay = after[i].delay as f32;
-                o.pan = after[i].pan as f32 * width;
+                o.pan = guarded(after[i].pan as f32 * width_to);
                 o.velocity = after[i].delay_velocity as f32;
                 o.gain = g_to;
             }
@@ -423,6 +459,7 @@ impl Engine for CharmEngine {
             SEPARATION => self.separation.set_target(value * 0.01),
             TURBULENCE => self.turbulence.set_target(value * 0.01),
             WIDTH => self.width.set_target(value * 0.01),
+            AUTO_WIDTH => self.auto_width = value >= 0.5,
             LOW_XOVER => self.low_xover.set_target(value),
             MID_DEPTH => self.bands[0].depth.set_target(value * 0.01),
             HIGH_DEPTH => self.bands[1].depth.set_target(value * 0.01),
@@ -479,6 +516,9 @@ impl Engine for CharmEngine {
             band.line.clear();
             band.side.fill(1.0);
             band.wet.reset();
+            band.auto.set_target(1.0);
+            band.auto.snap();
+            band.width = self.width.value();
             for c in &mut band.chains {
                 c.reset();
             }

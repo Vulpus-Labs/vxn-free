@@ -167,10 +167,18 @@ Charm addresses each of these, and stays a zero-latency effect.
      it. Comb colouring is handled instead by decorrelating the voices
      (ticket 0028).
    - **Auto width.** Inter-channel coherence of the input, per band,
-     smoothed over about 300 ms. Bands that are already wide get less pan
-     spread; narrow bands get the full WIDTH. A guard limits the drop in
-     each band's level when the output is summed to mono to a set bound
-     (decided by measurement in its ticket).
+     smoothed over about 300 ms. With AUTO WIDTH on, each band's pan
+     bound is WIDTH × (0.25 + 0.75 × max(coherence, 0)), glided over
+     200 ms. Mono material gets the full WIDTH; uncorrelated or
+     out-of-phase material, already wide, a quarter of it.
+   - **Mono guard** (always on). The ensemble comes from the mid signal
+     and is never inverted, so the only way it can lose level in mono is
+     panning: a voice panned p with equal power loses
+     10·log10((1 + cos(p·π/2))/2) dB, 3 dB at hard left or right. No
+     voice is panned beyond ±0.83, which caps that at 2 dB a voice.
+     Measured at WIDTH and MIX 100 % (ticket 0018): the output loses at
+     most 0.26 dB more than the input in mono on mono material, and less
+     than the input on uncorrelated noise.
 
 8. **Determinism.** The same input and automation give the same output
    whatever the host's block size, and on every run: the flock and

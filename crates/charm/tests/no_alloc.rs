@@ -1,7 +1,9 @@
 //! The engine must not allocate on the audio thread.
 
 use charm::engine::CharmEngine;
-use charm::{BLOOM, COHESION, DETUNE, DUCK, LOW_XOVER, MIX, SPREAD, TURBULENCE, VOICES, WIDTH};
+use charm::{
+    AUTO_WIDTH, BLOOM, COHESION, DETUNE, DUCK, LOW_XOVER, MIX, SPREAD, TURBULENCE, VOICES, WIDTH,
+};
 use silkscreen::bridge::Engine;
 use silkscreen_bridge::testing::{CountingAllocator, allocations};
 
@@ -35,6 +37,7 @@ fn process_and_set_param_never_allocate() {
             e.set_param(MIX, 50.0);
             e.set_param(DUCK, k * 5.0);
             e.set_param(BLOOM, k * 100.0);
+            e.set_param(AUTO_WIDTH, k % 2.0);
             e.process(&mut [&mut l, &mut r]);
             e.process(&mut [&mut l[..77]]);
             let _ = e.observation();
