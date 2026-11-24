@@ -1,5 +1,6 @@
-# Builds every plugin as a CLAP bundle on macOS (universal), Windows and
-# Linux, checks each with clap-validator, and zips each per platform.
+# Builds every plugin as a CLAP and a VST3 on macOS (universal), Windows
+# and Linux, checks each CLAP with clap-validator and each VST3 with
+# Steinberg's validator, and zips each per platform.
 #
 # macOS bundles are signed with the Developer ID and notarized when the
 # MACOS_CERT_P12 secret is set; without it they are built unsigned, with a
@@ -72,7 +73,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             pkg-config libasound2-dev libx11-dev libx11-xcb-dev libxcb1-dev \
             libxcb-icccm4-dev libxcursor-dev libxkbcommon-dev libgl1-mesa-dev \
-            libwayland-dev
+            libwayland-dev libgtk-3-dev libgtkmm-3.0-dev
 
       # rust-toolchain.toml pins the compiler; rustup installs it on first use.
       - name: Toolchain
@@ -144,7 +145,10 @@ jobs:
           # The cache may hold an older run's bundles.
           rm -rf target/bundled
           for p in $PACKAGES; do
-            cargo silkscreen bundle "$p" ${{ matrix.bundle }} ${{ steps.signing.outputs.flags }}
+            # --vst3 builds the VST3 through clap-wrapper (CMake and a C++
+            # compiler, which every runner has); --validate runs
+            # Steinberg's validator on it.
+            cargo silkscreen bundle "$p" ${{ matrix.bundle }} --vst3 --validate ${{ steps.signing.outputs.flags }}
           done
 
       - name: clap-validator
@@ -175,15 +179,16 @@ jobs:
           version="${GITHUB_REF_NAME#v}"
           if [ "${GITHUB_REF_TYPE}" != tag ]; then version="dev-${GITHUB_SHA::7}"; fi
           mkdir -p target/dist
-          for b in target/bundled/*.clap; do
+          for b in target/bundled/*.clap target/bundled/*.vst3; do
             # Lower case, as downloads.vulpuslabs.com names its files:
-            # beverley-0.1.0-macos.clap.zip.
-            product=$(basename "$b" .clap | tr '[:upper:]' '[:lower:]')
-            name="$product-$version-${{ matrix.name }}.clap.zip"
+            # beverley-0.1.0-macos.clap.zip, beverley-0.1.1-macos.vst3.zip.
+            format="${b##*.}"
+            product=$(basename "$b" ".$format" | tr '[:upper:]' '[:lower:]')
+            name="$product-$version-${{ matrix.name }}.$format.zip"
             if [ "${{ runner.os }}" = macOS ]; then
               ditto -c -k --keepParent "$b" "target/dist/$name"
             elif [ "${{ runner.os }}" = Windows ]; then
-              (cd target/bundled && 7z a -tzip "../dist/$name" "$(basename "$b")" > /dev/null)
+              (cd target/bundled && 7z a -tzip -r "../dist/$name" "$(basename "$b")" > /dev/null)
             else
               (cd target/bundled && zip -qr "../dist/$name" "$(basename "$b")")
             fi

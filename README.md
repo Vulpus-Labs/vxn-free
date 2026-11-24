@@ -1,7 +1,7 @@
 # vxn-free
 
 Free audio effect plugins from Vulpus Labs, built with
-[silkscreen](https://github.com/Vulpus-Labs/silkscreen). CLAP only.
+[silkscreen](https://github.com/Vulpus-Labs/silkscreen), as CLAP and VST3.
 
 - **Beverley**: a bitcrusher that adds harmonic grit rather than plain
   stair-steps. Gain or automatic gain, a gamma curve, fractional bit depth,
@@ -18,9 +18,11 @@ Both are adaptations of Vulpus Labs modules for Voltage Modular.
 
 ## Releases
 
-`.github/workflows/release.yml` builds every plugin on macOS (one
-universal bundle for Apple silicon and Intel), Windows and Linux, checks
-each with clap-validator, and zips each per platform. It runs when a
+`.github/workflows/release.yml` builds every plugin as a CLAP and a
+VST3 on macOS (one universal bundle for Apple silicon and Intel), Windows
+and Linux, checks each CLAP with clap-validator and each VST3 with
+Steinberg's validator, and zips each per platform. The VST3s come from
+free-audio's clap-wrapper, through `cargo silkscreen bundle --vst3`. It runs when a
 `v*` tag is pushed, and by hand from the Actions tab; never on pull
 requests. A tag must match the workspace version in `Cargo.toml`
 (`v0.1.0`, or `v0.1.0-rc.1` for a pre-release). A tag's zips land in a
@@ -40,6 +42,10 @@ warning:
 | `NOTARY_ISSUER_ID` | Its issuer id |
 
 Windows and Linux builds aren't signed.
+
+VST is a registered trademark of Steinberg Media Technologies GmbH. The
+VST3 builds contain the VST3 SDK (MIT), clap-wrapper (MIT) and the CLAP
+headers (MIT).
 
 ## Licence
 

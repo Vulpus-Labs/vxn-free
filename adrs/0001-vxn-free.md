@@ -18,9 +18,10 @@ small job. They are to be given away, with their source.
    (`labs.vulpus.glow-up`), vendor Vulpus Labs. Ids never change once
    released: hosts key projects on them. ADR 0002 adds Charm
    (`labs.vulpus.charm`), an original design rather than a port.
-3. **Targets.** CLAP only, built with `cargo silkscreen bundle`. No web
-   page and no standalone app for now; silkscreen offers both if wanted
-   later.
+3. **Targets.** CLAP and VST3, built with `cargo silkscreen bundle`
+   (the VST3 through free-audio's clap-wrapper, `--vst3`; amended
+   2026-11-24, ticket 0027). No web page and no standalone app for now;
+   silkscreen offers both if wanted later.
 4. **silkscreen.** Every silkscreen crate from one git tag (`v0.2.1`
    first), with the same pinned toolchain as silkscreen.
 5. **Layout.**

@@ -74,7 +74,7 @@ dependencies = [
 
 [[package]]
 name = "beverley"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "silkscreen",
  "silkscreen-bridge",
@@ -85,7 +85,7 @@ dependencies = [
 
 [[package]]
 name = "beverley-clap"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "beverley",
  "clack-extensions",
@@ -1144,8 +1144,8 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 
 [[package]]
 name = "silkscreen"
-version = "0.2.1"
-source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.1#5b1844b5b8b0e455130f5ddc0ca5c44e7ccd2310"
+version = "0.2.2"
+source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.2#c9a964fc3ffd70b997966e61bb845372e0877a00"
 dependencies = [
  "silkscreen-bridge",
  "silkscreen-core",
@@ -1155,16 +1155,16 @@ dependencies = [
 
 [[package]]
 name = "silkscreen-bridge"
-version = "0.2.1"
-source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.1#5b1844b5b8b0e455130f5ddc0ca5c44e7ccd2310"
+version = "0.2.2"
+source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.2#c9a964fc3ffd70b997966e61bb845372e0877a00"
 dependencies = [
  "rtrb",
 ]
 
 [[package]]
 name = "silkscreen-build"
-version = "0.2.1"
-source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.1#5b1844b5b8b0e455130f5ddc0ca5c44e7ccd2310"
+version = "0.2.2"
+source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.2#c9a964fc3ffd70b997966e61bb845372e0877a00"
 dependencies = [
  "resvg",
  "roxmltree 0.21.2",
@@ -1176,8 +1176,8 @@ dependencies = [
 
 [[package]]
 name = "silkscreen-clap"
-version = "0.2.1"
-source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.1#5b1844b5b8b0e455130f5ddc0ca5c44e7ccd2310"
+version = "0.2.2"
+source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.2#c9a964fc3ffd70b997966e61bb845372e0877a00"
 dependencies = [
  "clack-extensions",
  "clack-host",
@@ -1189,24 +1189,24 @@ dependencies = [
 
 [[package]]
 name = "silkscreen-core"
-version = "0.2.1"
-source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.1#5b1844b5b8b0e455130f5ddc0ca5c44e7ccd2310"
+version = "0.2.2"
+source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.2#c9a964fc3ffd70b997966e61bb845372e0877a00"
 dependencies = [
  "tiny-skia",
 ]
 
 [[package]]
 name = "silkscreen-harness"
-version = "0.2.1"
-source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.1#5b1844b5b8b0e455130f5ddc0ca5c44e7ccd2310"
+version = "0.2.2"
+source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.2#c9a964fc3ffd70b997966e61bb845372e0877a00"
 dependencies = [
  "silkscreen",
 ]
 
 [[package]]
 name = "silkscreen-host-native"
-version = "0.2.1"
-source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.1#5b1844b5b8b0e455130f5ddc0ca5c44e7ccd2310"
+version = "0.2.2"
+source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.2#c9a964fc3ffd70b997966e61bb845372e0877a00"
 dependencies = [
  "baseview",
  "block2",
@@ -1226,8 +1226,8 @@ dependencies = [
 
 [[package]]
 name = "silkscreen-model"
-version = "0.2.1"
-source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.1#5b1844b5b8b0e455130f5ddc0ca5c44e7ccd2310"
+version = "0.2.2"
+source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.2#c9a964fc3ffd70b997966e61bb845372e0877a00"
 dependencies = [
  "silkscreen-bridge",
  "silkscreen-core",
@@ -1235,8 +1235,8 @@ dependencies = [
 
 [[package]]
 name = "silkscreen-text"
-version = "0.2.1"
-source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.1#5b1844b5b8b0e455130f5ddc0ca5c44e7ccd2310"
+version = "0.2.2"
+source = "git+https://github.com/Vulpus-Labs/silkscreen?tag=v0.2.2#c9a964fc3ffd70b997966e61bb845372e0877a00"
 dependencies = [
  "fontdue",
  "tiny-skia",
@@ -1556,7 +1556,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vxn-free-dsp"
-version = "0.1.0"
+version = "0.1.1"
 
 [[package]]
 name = "wasm-bindgen"

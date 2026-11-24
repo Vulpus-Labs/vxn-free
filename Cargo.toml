@@ -8,7 +8,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 rust-version = "1.95"
 license = "MIT OR Apache-2.0"
@@ -22,12 +22,12 @@ beverley = { path = "crates/beverley" }
 # Every silkscreen crate from one tag. Bump them together, and keep
 # rust-toolchain.toml equal to silkscreen's at that tag (snapshots depend
 # on it).
-silkscreen = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.1" }
-silkscreen-bridge = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.1" }
-silkscreen-build = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.1" }
-silkscreen-clap = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.1" }
-silkscreen-harness = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.1" }
-silkscreen-host-native = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.1" }
+silkscreen = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.2" }
+silkscreen-bridge = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.2" }
+silkscreen-build = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.2" }
+silkscreen-clap = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.2" }
+silkscreen-harness = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.2" }
+silkscreen-host-native = { git = "https://github.com/Vulpus-Labs/silkscreen", tag = "v0.2.2" }
 
 # clack: the rev silkscreen-clap pins at the tag above.
 clack-plugin = { git = "https://github.com/prokopyl/clack", rev = "f874e858ad576c601367b3038af5088a4e671744" }
