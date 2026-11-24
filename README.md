@@ -5,7 +5,9 @@ Free audio effect plugins from Vulpus Labs, built with
 
 - **Beverley**: a bitcrusher that adds harmonic grit rather than plain
   stair-steps. Gain or automatic gain, a gamma curve, fractional bit depth,
-  smoothing between quantisation levels, and symmetric or asymmetric crush.
+  smoothing between quantisation levels, and symmetric or asymmetric crush
+  ([manual](https://vulpuslabs.com/manuals/beverley/),
+  [downloads](https://vulpuslabs.com/products/beverley/)).
 - **Glow-Up**: a harmonic exciter. It finds the strongest partials in the
   input and boosts what is already there a fifth, an octave and two octaves
   above them, with resonance up to self-oscillation.
@@ -15,6 +17,14 @@ Both are adaptations of Vulpus Labs modules for Voltage Modular.
 **Status:** in development; no release yet. The plan is in
 [`epics/`](epics/) and [`tickets/`](tickets/), the decisions in
 [`adrs/`](adrs/).
+
+## Manuals
+
+Each plugin's manual is a PDF typeset with [Typst](https://typst.app) from
+its own code: `crates/<plugin>/manual/build.sh` draws the faceplate and
+measures the engine (`cargo run -p <plugin> --example manual`), then
+typesets `crates/<plugin>/manual/<plugin>-manual.typ` (ADR 0003). The
+built manuals are on vulpuslabs.com.
 
 ## Releases
 

@@ -1,0 +1,11 @@
+name,min,max,default
+Gain,0.0 dB,20.0 dB,0.0 dB
+Auto Gain,Off,On,Off
+Gamma,0.10,10.00,1.00
+Bit Depth,1.0 bits,16.0 bits,4.0 bits
+Smoothing,0 %,100 %,0 %
+Crush Mode,Asymmetric,Symmetric,Asymmetric
+Mix,0 %,100 %,100 %
+Stereo,Mono,Linked,Linked
+Decay,1 ms,5000 ms,115 ms
+Detect,Peak,Range,Range
