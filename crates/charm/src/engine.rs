@@ -28,15 +28,16 @@ use std::f32::consts::FRAC_PI_4;
 
 use silkscreen::ParamIndex;
 use silkscreen::bridge::Engine;
-use vxn_free_dsp::{Crossover, DelayLine, Glide, Ramp};
+use vxn_free_dsp::{Crossover, DelayLine, Glide, Ramp, SideBuffer};
 
 use crate::analysis::Analysis;
 use crate::decorrelate::Chain;
 use crate::flock::{FLOOR, Flock, FlockSettings, max_velocity};
 use crate::observe::{BANDS, Observation};
+use crate::wet::{Shape, WetGain};
 use crate::{
-    COHESION, DETUNE, HIGH_DEPTH, LOW_XOVER, MAX_VOICES, MID_DEPTH, MIN_VOICES, MIX, PARAMS,
-    SEPARATION, SPREAD, TURBULENCE, VOICES, WIDTH,
+    BLOOM, COHESION, DETUNE, DUCK, HIGH_DEPTH, LOW_XOVER, MAX_VOICES, MID_DEPTH, MIN_VOICES, MIX,
+    PARAMS, SEPARATION, SPREAD, TURBULENCE, VOICES, WIDTH,
 };
 
 /// Samples per control tick.
@@ -94,17 +95,28 @@ struct Band {
     depth_ramp: Ramp,
     /// Each voice's allpass chain (`decorrelate`).
     chains: [Chain; MAX_VOICES],
+    /// The wet gain after onsets (Duck, Bloom), and the side-buffer it is
+    /// written into, read by each voice at its own delay.
+    wet: WetGain,
+    side: SideBuffer,
 }
 
 impl Band {
-    fn new(band: usize, seed: u32, sample_rate: f32, spread: f32, voices: usize) -> Self {
+    fn new(
+        band: usize,
+        seed: u32,
+        sample_rate: f32,
+        spread: f32,
+        voices: usize,
+        max_lag: usize,
+    ) -> Self {
         let tick_rate = sample_rate / TICK as f32;
         let mut level = [Glide::new(0.0, FADE_MS, tick_rate); MAX_VOICES];
         for g in level.iter_mut().take(voices) {
             *g = Glide::new(voice_level(voices), FADE_MS, tick_rate);
         }
         Self {
-            line: DelayLine::new((MAX_DELAY * f64::from(sample_rate)).ceil() as usize + TICK),
+            line: DelayLine::new(max_delay(sample_rate)),
             flock: Flock::new(seed, f64::from(spread)),
             level,
             delay: [DelayRamp::default(); MAX_VOICES],
@@ -114,6 +126,12 @@ impl Band {
             depth: Glide::new(1.0, GLIDE_MS, tick_rate),
             depth_ramp: Ramp::new(1.0, 1.0, TICK),
             chains: std::array::from_fn(|voice| Chain::new(band, voice, sample_rate)),
+            wet: WetGain::new(sample_rate),
+            side: {
+                let mut s = SideBuffer::new(max_delay(sample_rate), max_lag);
+                s.fill(1.0);
+                s
+            },
         }
     }
 }
@@ -131,6 +149,11 @@ impl Default for Heard {
             bands: [[0.0; BANDS]; TICK],
         }
     }
+}
+
+/// The delay lines' length, samples.
+fn max_delay(sample_rate: f32) -> usize {
+    (MAX_DELAY * f64::from(sample_rate)).ceil() as usize + TICK
 }
 
 /// Each voice's level with `voices` in use.
@@ -168,6 +191,11 @@ pub struct CharmEngine {
     mix: Glide,
     mix_ramp: Ramp,
     into_tick: usize,
+    /// Samples since reset.
+    position: u64,
+    /// 0 to 1, and samples.
+    duck: f32,
+    bloom: f32,
     /// Whether voices pass through their allpass chains (0028).
     decorrelate: bool,
     analysis: Analysis,
@@ -190,20 +218,27 @@ impl CharmEngine {
         let spread = default_of(SPREAD) * 0.001;
         let low_xover = default_of(LOW_XOVER);
         let analysis = Analysis::new(sample_rate, low_xover);
+        // An onset reaches the side-buffer at the next tick: up to a tick
+        // after the analysis found it, which is up to its lag after it
+        // starts.
+        let max_lag = analysis.lag() + TICK + 1;
         // The analysis must have seen each sample before any voice reads
         // it: its lag, and a sample for the interpolator's reach.
         assert!(
-            ((FLOOR * f64::from(sample_rate)) as usize) > analysis.lag() + 1,
-            "the voices' floor ({FLOOR} s) is inside the analysis's lag ({} samples) at {sample_rate} Hz",
-            analysis.lag()
+            ((FLOOR * f64::from(sample_rate)) as usize) > max_lag + 1,
+            "the voices' floor ({FLOOR} s) is inside the analysis's lag and a tick ({max_lag} samples) at {sample_rate} Hz"
+        );
+        assert!(
+            max_lag < max_delay(sample_rate),
+            "the side-buffer's lag ({max_lag}) must fit its delay line"
         );
         Self {
             sample_rate,
             low: Crossover::new(low_xover, sample_rate),
             split: Crossover::new(MID_HIGH_XOVER, sample_rate),
             bands: [
-                Band::new(0, SEEDS[0], sample_rate, spread, voices),
-                Band::new(1, SEEDS[1], sample_rate, spread, voices),
+                Band::new(0, SEEDS[0], sample_rate, spread, voices, max_lag),
+                Band::new(1, SEEDS[1], sample_rate, spread, voices, max_lag),
             ],
             voices,
             detune: glide(default_of(DETUNE)),
@@ -217,6 +252,9 @@ impl CharmEngine {
             mix: glide(default_of(MIX) * 0.01),
             mix_ramp: Ramp::default(),
             into_tick: TICK,
+            position: 0,
+            duck: default_of(DUCK) * 0.01,
+            bloom: default_of(BLOOM) * 0.001 * sample_rate,
             decorrelate: true,
             analysis,
             obs: Observation::default(),
@@ -253,7 +291,25 @@ impl CharmEngine {
             self.analysis.set_low_xover(xover);
             self.low_xover_for = xover;
         }
-        self.analysis.take(&mut self.obs.bands);
+        let onsets = self.analysis.take(&mut self.obs.bands);
+        let shape = Shape {
+            duck: self.duck,
+            bloom: self.bloom,
+        };
+        for (band, onset) in self.bands.iter_mut().zip(onsets) {
+            band.wet.set_shape(shape);
+            if let Some(o) = onset {
+                // Restart the shape at the onset's start and rewrite what
+                // has been pushed since: no voice has read that far back.
+                let ago = self.position.saturating_sub(o.start);
+                band.wet.onset(ago);
+                let reach = ago.min(band.side.max_lag() as u64 + 1);
+                for age in (0..reach).rev() {
+                    let g = band.wet.at(ago - 1 - age);
+                    band.side.set_past(age as usize, g);
+                }
+            }
+        }
         let mix_from = self.mix.value();
         self.mix_ramp = Ramp::new(mix_from, self.mix.tick(), TICK);
 
@@ -295,14 +351,17 @@ impl CharmEngine {
         let (_, rest) = self.low.split(mid);
         let (m, h) = self.split.split(rest);
         let (mut wl, mut wr) = (0.0, 0.0);
+        self.position += 1;
         for (band, x) in self.bands.iter_mut().zip([m, h]) {
             band.line.push(x);
+            band.side.push(band.wet.step());
             let (mut bl, mut br) = (0.0, 0.0);
             for v in 0..MAX_VOICES {
                 if !band.sounding[v] {
                     continue;
                 }
-                let mut y = band.line.read(band.delay[v].at(i));
+                let delay = band.delay[v].at(i);
+                let mut y = band.line.read(delay) * band.side.read(delay);
                 if self.decorrelate {
                     y = band.chains[v].process(y);
                 }
@@ -368,6 +427,8 @@ impl Engine for CharmEngine {
             MID_DEPTH => self.bands[0].depth.set_target(value * 0.01),
             HIGH_DEPTH => self.bands[1].depth.set_target(value * 0.01),
             MIX => self.mix.set_target(value * 0.01),
+            DUCK => self.duck = value * 0.01,
+            BLOOM => self.bloom = value * 0.001 * self.sample_rate,
             _ => {}
         }
     }
@@ -416,6 +477,8 @@ impl Engine for CharmEngine {
         let level = voice_level(self.voices);
         for band in &mut self.bands {
             band.line.clear();
+            band.side.fill(1.0);
+            band.wet.reset();
             for c in &mut band.chains {
                 c.reset();
             }
@@ -427,6 +490,7 @@ impl Engine for CharmEngine {
             }
         }
         self.obs = Observation::default();
+        self.position = 0;
         self.into_tick = TICK;
     }
 }

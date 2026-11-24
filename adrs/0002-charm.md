@@ -139,6 +139,13 @@ Charm addresses each of these, and stays a zero-latency effect.
    - **Bloom.** After an onset, wet depth rises from zero over BLOOM
      time, the way a singer brings in vibrato late in a note. BLOOM = 0
      turns it off.
+   - **The shape** (ticket 0016), from an onset's marked start: the duck
+     holds at 1 − DUCK for 6 ms, past the lookback and the attack, then
+     recovers with a 30 ms time constant (both to be settled by ear in
+     0024). Bloom is a raised cosine over BLOOM, at −3 dB 0.636 of the way
+     through. Both crossfade from the previous gain over 1 ms, so a new
+     onset never steps the wet signal. Each band ducks on its own onsets.
+     Each voice reads the gain from the side-buffer at its own delay.
    - **Clarity: dropped (ticket 0017).** Clarity was to steer voices so
      their comb notches missed strong partials. It was built and measured
      three ways and doesn't work well enough to keep:

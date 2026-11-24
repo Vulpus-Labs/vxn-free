@@ -7,8 +7,9 @@
 //! axis, so no voice is ever further out of tune than DETUNE. The dry
 //! input passes at unity; MIX sets the ensemble's level against it.
 //!
-//! The editor arrives with the plugin (ticket 0020); DUCK, BLOOM and AUTO
-//! WIDTH with tickets 0016 and 0018, under the ids reserved below.
+//! On each onset the ensemble ducks (DUCK) and can fade back in (BLOOM).
+//! The editor arrives with the plugin (ticket 0020); AUTO WIDTH with
+//! ticket 0018, under an id reserved below.
 //! (CLARITY, which steered voices' comb notches off strong partials, was
 //! dropped after measurement: ticket 0017.)
 
@@ -20,6 +21,7 @@ pub mod decorrelate;
 pub mod engine;
 pub mod flock;
 pub mod observe;
+pub mod wet;
 
 pub const VOICES: ParamIndex = ParamIndex(0);
 pub const DETUNE: ParamIndex = ParamIndex(1);
@@ -32,11 +34,13 @@ pub const LOW_XOVER: ParamIndex = ParamIndex(7);
 pub const MID_DEPTH: ParamIndex = ParamIndex(8);
 pub const HIGH_DEPTH: ParamIndex = ParamIndex(9);
 pub const MIX: ParamIndex = ParamIndex(10);
+pub const DUCK: ParamIndex = ParamIndex(11);
+pub const BLOOM: ParamIndex = ParamIndex(12);
 
 /// Ids reserved for params later tickets add, so none is taken by
-/// anything else: DUCK and BLOOM (0016), AUTO WIDTH (0018), and a control
-/// for the voices' decorrelation if 0028 gives it one.
-pub const RESERVED_IDS: [u32; 4] = [12, 13, 14, 15];
+/// anything else: AUTO WIDTH (0018), and a control for the voices'
+/// decorrelation if 0024 gives it one.
+pub const RESERVED_IDS: [u32; 2] = [14, 15];
 
 /// VOICES's positions: the number of voices in each flock.
 const VOICE_COUNTS: &[&str] = &["2", "3", "4", "5", "6", "7", "8"];
@@ -49,7 +53,7 @@ pub const MAX_VOICES: usize = 8;
 /// The parameter table: index `i` is `ParamIndex(i)`. Each `id` is what
 /// presets and host projects store, so never change or reuse one. Ranges
 /// and defaults are provisional until ticket 0024 tunes them.
-pub static PARAMS: [ParamSpec; 11] = [
+pub static PARAMS: [ParamSpec; 13] = [
     // Voices per flock (MID and HIGH each have this many).
     ParamSpec::stepped("Voices", VOICE_COUNTS, 2).id(1),
     // The furthest out of tune any voice may be: the flock's speed limit
@@ -102,6 +106,19 @@ pub static PARAMS: [ParamSpec; 11] = [
         .unit("%")
         .decimals(0)
         .id(11),
+    // How far the ensemble drops on each attack, so attacks stay dry
+    // (ADR 0002, point 7).
+    ParamSpec::new("Duck", 0.0, 100.0, 50.0)
+        .unit("%")
+        .decimals(0)
+        .id(12),
+    // After each attack the ensemble fades back in over this long; 0 is
+    // off.
+    ParamSpec::new("Bloom", 0.0, 2000.0, 0.0)
+        .taper(Taper::Exp { mid: 300.0 })
+        .unit("ms")
+        .decimals(0)
+        .id(13),
 ];
 
 #[cfg(test)]

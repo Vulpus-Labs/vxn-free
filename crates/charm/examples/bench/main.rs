@@ -335,6 +335,14 @@ fn run(
             output: metrics::mono_loss(l, r, input.rate, xover),
         },
         split_identical: identical,
+        crest: {
+            let mono_in: Vec<f32> = input.channels[0]
+                .iter()
+                .zip(&input.channels[1])
+                .map(|(a, b)| 0.5 * (a + b))
+                .collect();
+            metrics::crest(&mono_in, &mono, input.rate)
+        },
         onset_scores: signals::onsets(&input.name, input.rate, len).map_or([None, None], |truth| {
             metrics::score_onsets(&obs, &truth, input.rate)
         }),
@@ -477,6 +485,15 @@ fn write_report(report: &mut String, json: &mut Vec<String>, name: &str, m: &Met
 
 /// The onset scores, partial loss and comb, where measured.
 fn write_measures(report: &mut String, json: &mut Vec<String>, name: &str, m: &Metrics) {
+    let _ = writeln!(
+        report,
+        "  crest factor (mono): input {:.1} dB, output {:.1} dB, wet {:.1} dB",
+        m.crest.input, m.crest.output, m.crest.wet
+    );
+    json.push(format!(
+        "\"{name}-crest\":{{\"input\":{},\"output\":{},\"wet\":{}}}",
+        m.crest.input, m.crest.output, m.crest.wet
+    ));
     for (b, s) in m.onset_scores.iter().enumerate() {
         if let Some(s) = s {
             let _ = writeln!(

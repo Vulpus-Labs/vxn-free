@@ -86,9 +86,19 @@ pub struct OnsetScore {
     pub max_delay_ms: f32,
 }
 
+/// Peak over RMS, dB, of the input, the output and the wet part (output
+/// minus input), mono, from half a second in (0016).
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Crest {
+    pub input: f32,
+    pub output: f32,
+    pub wet: f32,
+}
+
 /// Everything about one render.
 #[derive(Clone, Debug, Default)]
 pub struct Metrics {
+    pub crest: Crest,
     pub onset_scores: [Option<OnsetScore>; BANDS],
     pub comb: Comb,
     pub partial_loss: Option<PartialLoss>,
@@ -363,4 +373,28 @@ pub fn score_onsets(
         }
         Some(score)
     })
+}
+
+/// Crest factors of `input`, `output` and their difference, mono.
+pub fn crest(input: &[f32], output: &[f32], rate: f32) -> Crest {
+    let skip = (rate * 0.5) as usize;
+    let of = |x: &mut dyn Iterator<Item = f32>| {
+        let (mut peak, mut sum, mut n) = (0.0f32, 0.0f64, 0usize);
+        for v in x {
+            peak = peak.max(v.abs());
+            sum += f64::from(v) * f64::from(v);
+            n += 1;
+        }
+        let rms = (sum / n.max(1) as f64).sqrt();
+        if rms > 1.0e-12 {
+            (20.0 * (f64::from(peak) / rms).log10()) as f32
+        } else {
+            0.0
+        }
+    };
+    Crest {
+        input: of(&mut input.iter().skip(skip).copied()),
+        output: of(&mut output.iter().skip(skip).copied()),
+        wet: of(&mut input.iter().zip(output).skip(skip).map(|(a, b)| b - a)),
+    }
 }
