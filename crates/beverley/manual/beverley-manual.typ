@@ -40,6 +40,29 @@
     caption: caption)
 }
 
+// The same settings as a signal grid, each column the overtones of a pure tone: the first bar is
+// the tone itself, the rest its harmonics, against the tone going in. One row per CSV in `rows`
+// ((name, row label), ...).
+#let harmonic-grid(rows, labels, caption) = {
+  let cell(t, i, first) = plot(height: 30mm, legend: false,
+    x: (min: 0, max: 21, ticks: (1, 10, 20)),
+    y: (min: -90, max: 6, ticks: (-90, -60, -30, 0), title: if first { "dB" }),
+    series: ((data: column(t, str(i)), color: cat.at(0), kind: "stem", width: 0.8pt),))
+  figure(
+    grid(columns: (5mm,) + (1fr,) * labels.len(), column-gutter: 1mm, row-gutter: 0.5mm,
+      [], ..labels.map(l => align(center, text(font: sans, size: 7.5pt, weight: "semibold", l))),
+      ..rows.map(((name, rname)) => {
+        let t = data(name)
+        (
+          align(horizon, rotate(-90deg, reflow: true,
+            text(font: sans, size: 7pt, fill: ink-2, rname))),
+          ..range(labels.len()).map(i => cell(t, i, i == 0)),
+        )
+      }).flatten(),
+    ),
+    caption: caption)
+}
+
 // --- Title page ----------------------------------------------------------------------------------
 
 #page(header: none, footer: none, margin: (x: 20mm, top: 28mm, bottom: 20mm))[
@@ -172,6 +195,15 @@ of the knob's character is in its first half: its centre reads 20%.
 #signal-grid("grid-smoothing", ("0%", "25%", "50%", "100%"),
   [From sharp steps (0%) to none (100%), at 2 bits, *CRUSH* on SYM.])
 
+Smoothing turns down the overtones the crush adds, all of them together, so the sound keeps
+its character but loses its edge. At 50% the lowest overtones are about 14 dB quieter, the higher
+ones about 10 dB; at 100% none are left.
+
+#harmonic-grid((("harm-smoothing", "Harmonics"),), ("0%", "25%", "50%", "100%"),
+  [The overtones of a pure tone at the settings above (2 bits, *CRUSH* on SYM). The first bar is
+    the tone itself, the rest its overtones, all against the tone going in. A symmetric crush
+    adds only odd overtones (3rd, 5th, 7th…).])
+
 Sharp steps also make a high, out-of-tune whine on top of the note, called aliasing (see Fizz
 and whine, below). Smoothing is the cure.
 
@@ -190,6 +222,17 @@ evenly spaced.
   [*GAMMA* at 3 bits, *CRUSH* on SYM: the same number of steps, placed differently. At 0.32 the
     steps are coarse near silence, so the fading tail drops away; at 3.16 they are fine near
     silence and coarse near full level.])
+
+*GAMMA* also changes which overtones you hear, and how much depends on how loud the sound is.
+On a loud note, turning it down brings up the low overtones (the 3rd and 5th), a thick, fuzzy
+grit; turning it up brings up higher ones (the 7th and 9th), a thinner, buzzier edge. At 1 a loud
+note is crushed least. On a quiet note the picture changes: at 1 it is crushed hard, close to a
+square wave; turned down it drops to silence; turned up it comes through much cleaner.
+
+#harmonic-grid((("harm-gamma-loud", "Loud"), ("harm-gamma-quiet", "Quiet")), ("0.32", "1", "3.16"),
+  [The overtones of a pure tone at the settings above (3 bits, *CRUSH* on SYM), loud (top) and
+    18 dB quieter (bottom). The first bar is the tone itself, all against the tone going in. At
+    0.32 the quiet tone is silenced, so there is nothing to show.])
 
 == What it adds to the sound
 

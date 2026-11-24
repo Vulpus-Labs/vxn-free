@@ -23,6 +23,7 @@ const SEPARATE: f32 = 1.0;
 pub fn write(out: &Path) {
     grids(out);
     spectra(out);
+    harmonic_grids(out);
     aliasing(out);
     auto_gain_traces(out);
     offset(out);
@@ -178,9 +179,14 @@ fn power_at(signal: &[f32], cycles: f64) -> f64 {
 /// cycles, so each harmonic falls on one frequency bin, and 997 Hz so its
 /// aliases fall between them.
 fn tone(rate: f32, values: &[(ParamIndex, f32)]) -> Vec<f32> {
+    tone_at(rate, 0.8, values)
+}
+
+/// As [`tone`], at amplitude `amp`.
+fn tone_at(rate: f32, amp: f32, values: &[(ParamIndex, f32)]) -> Vec<f32> {
     let n = rate as usize;
     let x: Vec<f32> = (0..n)
-        .map(|i| 0.8 * (f64::from(TAU) * 997.0 * i as f64 / f64::from(rate)).sin() as f32)
+        .map(|i| amp * (f64::from(TAU) * 997.0 * i as f64 / f64::from(rate)).sin() as f32)
         .collect();
     run(rate, values, &x)
 }
@@ -213,6 +219,44 @@ fn spectra(out: &Path) {
         &["harmonic", "b2", "b4", "b8", "b4s50"],
         &rows(&columns),
     );
+}
+
+/// The first 20 harmonics of a 997 Hz tone at `amp` through each of
+/// `settings`, in dB against the input tone (so a fundamental crushed to
+/// silence shows as nothing, not as 0 dB). Columns `{i}`.
+fn harmonic_grid(out: &Path, name: &str, amp: f32, settings: &[Vec<(ParamIndex, f32)>]) {
+    let reference = f64::from(amp * amp) / 2.0;
+    let mut header = vec!["harmonic".to_owned()];
+    let mut columns = vec![(1..=20).map(|k| k as f32).collect::<Vec<_>>()];
+    for (i, values) in settings.iter().enumerate() {
+        let y = tone_at(RATE, amp, values);
+        header.push(i.to_string());
+        columns.push(
+            (1..=20)
+                .map(|k| {
+                    let p = power_at(&y, 997.0 * f64::from(k));
+                    (10.0 * (p / reference).max(1e-12).log10()).max(-120.0) as f32
+                })
+                .collect(),
+        );
+    }
+    let header: Vec<&str> = header.iter().map(String::as_str).collect();
+    csv(out, name, &header, &rows(&columns));
+}
+
+/// Harmonics for the smoothing and gamma grids' settings. Gamma's depend
+/// on level, so it is measured loud (0.8) and quiet (0.1).
+fn harmonic_grids(out: &Path) {
+    let sym = (CRUSH_MODE, 1.0);
+    harmonic_grid(
+        out,
+        "harm-smoothing",
+        0.8,
+        &[0.0, 25.0, 50.0, 100.0].map(|v| vec![(BIT_DEPTH, 2.0), sym, (SMOOTHING, v)]),
+    );
+    let gamma = [-0.5, 0.0, 0.5].map(|g| vec![(BIT_DEPTH, 3.0), sym, (GAMMA, g)]);
+    harmonic_grid(out, "harm-gamma-loud", 0.8, &gamma);
+    harmonic_grid(out, "harm-gamma-quiet", 0.1, &gamma);
 }
 
 /// Aliased power against the fundamental, in dB: everything in the
