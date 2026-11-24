@@ -43,10 +43,21 @@ pub struct MonoLoss {
     pub output: [f32; 3],
 }
 
+/// What the analysis saw, per band.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct AnalysisMetrics {
+    pub onsets: usize,
+    pub onsets_per_second: f32,
+    pub mean_coherence: f32,
+    /// Peaks found per tick, on average.
+    pub mean_peaks: f32,
+}
+
 /// Everything about one render.
 #[derive(Clone, Debug, Default)]
 pub struct Metrics {
     pub flocks: [FlockMetrics; BANDS],
+    pub analysis: [AnalysisMetrics; BANDS],
     pub mono: MonoLoss,
     /// Whether rendering in other block sizes gave bit-identical output.
     pub split_identical: bool,
@@ -126,6 +137,28 @@ pub fn mono_loss(l: &[f32], r: &[f32], rate: f32, low_xover: f32) -> [f32; 3] {
         } else {
             0.0
         };
+    }
+    out
+}
+
+pub fn analysis(obs: &[Observation], rate: f32) -> [AnalysisMetrics; BANDS] {
+    let mut out = [AnalysisMetrics::default(); BANDS];
+    let ticks = obs.len().max(1) as f32;
+    let samples = obs.last().map_or(1, |o| o.tick) as f32 * charm::engine::TICK as f32;
+    for (b, a) in out.iter_mut().enumerate() {
+        let mut coherence = 0.0f32;
+        let mut peaks = 0usize;
+        for o in obs {
+            let band = &o.bands[b];
+            if band.onset > 0.0 {
+                a.onsets += 1;
+            }
+            coherence += band.coherence;
+            peaks += band.peaks.iter().filter(|p| p.strength > 0.0).count();
+        }
+        a.mean_coherence = coherence / ticks;
+        a.mean_peaks = peaks as f32 / ticks;
+        a.onsets_per_second = a.onsets as f32 / (samples / rate);
     }
     out
 }

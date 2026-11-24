@@ -23,18 +23,38 @@ pub struct Peak {
 /// `threshold_db` above the frame's mean power. `sample_rate` turns bins
 /// into Hz. Never allocates.
 pub fn peaks(frame: &Frame<'_>, sample_rate: f32, threshold_db: f32, out: &mut [Peak]) -> usize {
+    peaks_between(frame, sample_rate, 0.0, sample_rate, threshold_db, out)
+}
+
+/// As [`peaks`], for bins from `low_hz` up to (not including) `high_hz`
+/// only, against the mean power of those bins.
+pub fn peaks_between(
+    frame: &Frame<'_>,
+    sample_rate: f32,
+    low_hz: f32,
+    high_hz: f32,
+    threshold_db: f32,
+    out: &mut [Peak],
+) -> usize {
     let bins = frame.len();
     let window = 2 * (bins - 1);
     if out.is_empty() || bins < 3 {
         return 0;
     }
-    let mean = (0..bins).map(|k| frame.power(k)).sum::<f32>() / bins as f32;
+    let per_bin = sample_rate / window as f32;
+    // Peaks need a neighbour either side.
+    let first = ((low_hz / per_bin).ceil() as usize).max(1);
+    let end = ((high_hz / per_bin).ceil() as usize).min(bins - 1);
+    if first >= end {
+        return 0;
+    }
+    let mean = (first..end).map(|k| frame.power(k)).sum::<f32>() / (end - first) as f32;
     let floor = mean * 10f32.powf(threshold_db / 10.0);
     let mut found = 0;
     // A Hann window's coherent gain is a half: a sine of amplitude A shows
     // as A · window / 4 at its peak.
     let to_amplitude = 4.0 / window as f32;
-    for k in 1..bins - 1 {
+    for k in first..end {
         let power = frame.power(k);
         if power <= floor || power <= frame.power(k - 1) || power < frame.power(k + 1) {
             continue;
@@ -51,7 +71,7 @@ pub fn peaks(frame: &Frame<'_>, sample_rate: f32, threshold_db: f32, out: &mut [
         };
         let peak_log = here - 0.25 * (below - above) * delta;
         let peak = Peak {
-            hz: (k as f32 + delta) * sample_rate / window as f32,
+            hz: (k as f32 + delta) * per_bin,
             amplitude: peak_log.exp() * to_amplitude,
         };
         // Keep the strongest, in order: insert, dropping the weakest.

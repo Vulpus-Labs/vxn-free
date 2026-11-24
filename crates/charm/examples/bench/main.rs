@@ -22,7 +22,8 @@
 //! - `--cpu`: measure CPU per block at 16, 32, 64 and 512 samples, 96 kHz.
 //!
 //! For each input it writes `NAME.wav` (the output, stereo float),
-//! `NAME-mono.wav` (its mono sum) and `NAME-voices.csv` (every voice at
+//! `NAME-mono.wav` (its mono sum), `NAME-voices.csv` (every voice at every
+//! tick) and `NAME-analysis.csv` (onsets, coherence and peaks per band at
 //! every tick), and adds a section to `metrics.txt` and `metrics.json`.
 
 mod metrics;
@@ -315,6 +316,11 @@ fn run(
         &obs,
         input.rate,
     )?;
+    write_analysis_csv(
+        &args.out.join(format!("{}-analysis.csv", input.name)),
+        &obs,
+        input.rate,
+    )?;
 
     let xover = settings.last().map_or(150.0, |s| s.low_xover);
     let m = Metrics {
@@ -324,6 +330,7 @@ fn run(
             output: metrics::mono_loss(l, r, input.rate, xover),
         },
         split_identical: identical,
+        analysis: metrics::analysis(&obs, input.rate),
     };
     write_report(report, json, &input.name, &m);
     Ok(())
@@ -346,6 +353,34 @@ fn write_csv(path: &Path, obs: &[Observation], rate: f32) -> Result<(), String> 
                     v.gain
                 );
             }
+        }
+    }
+    std::fs::write(path, s).map_err(|e| format!("{}: {e}", path.display()))
+}
+
+/// One row per band per tick: the analysis as the engine saw it.
+fn write_analysis_csv(path: &Path, obs: &[Observation], rate: f32) -> Result<(), String> {
+    let mut s = String::from("tick,seconds,band,onset,onset_start,coherence");
+    for i in 1..=charm::observe::PEAKS {
+        let _ = write!(s, ",peak{i}_hz,peak{i}_amp");
+    }
+    s.push('\n');
+    for o in obs {
+        let secs = o.tick as f32 * TICK as f32 / rate;
+        for (b, band) in o.bands.iter().enumerate() {
+            let _ = write!(
+                s,
+                "{},{secs:.5},{},{:.4},{},{:.4}",
+                o.tick,
+                ["mid", "high"][b],
+                band.onset,
+                band.onset_start,
+                band.coherence
+            );
+            for p in &band.peaks {
+                let _ = write!(s, ",{:.2},{:.5}", p.hz, p.strength);
+            }
+            s.push('\n');
         }
     }
     std::fs::write(path, s).map_err(|e| format!("{}: {e}", path.display()))
@@ -384,16 +419,39 @@ fn write_report(report: &mut String, json: &mut Vec<String>, name: &str, m: &Met
             finite(f.min_delay_gap_ms)
         ));
     }
+    for (b, a) in m.analysis.iter().enumerate() {
+        let _ = writeln!(
+            report,
+            "  {:<4} onsets {} ({:.1} a second); coherence mean {:.2}; peaks a tick {:.1}",
+            ["MID", "HIGH"][b],
+            a.onsets,
+            a.onsets_per_second,
+            a.mean_coherence,
+            a.mean_peaks
+        );
+    }
     let bands = ["LOW", "MID", "HIGH"];
     let _ = write!(report, "  mono-sum loss dB (in → out):");
     for ((band, input), output) in bands.iter().zip(m.mono.input).zip(m.mono.output) {
         let _ = write!(report, " {band} {input:.2} → {output:.2};");
     }
     let _ = writeln!(report);
+    let analysis: Vec<String> = m
+        .analysis
+        .iter()
+        .zip(["mid", "high"])
+        .map(|(a, band)| {
+            format!(
+                "\"{band}\":{{\"onsets\":{},\"onsets_per_second\":{},\"mean_coherence\":{},\"mean_peaks\":{}}}",
+                a.onsets, a.onsets_per_second, a.mean_coherence, a.mean_peaks
+            )
+        })
+        .collect();
     json.push(format!(
-        "\"{name}\":{{\"split_identical\":{},{},\"mono_loss_db\":{{\"input\":{:?},\"output\":{:?}}}}}",
+        "\"{name}\":{{\"split_identical\":{},{},\"analysis\":{{{}}},\"mono_loss_db\":{{\"input\":{:?},\"output\":{:?}}}}}",
         m.split_identical,
         flocks.join(","),
+        analysis.join(","),
         m.mono.input,
         m.mono.output
     ));

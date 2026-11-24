@@ -14,6 +14,7 @@
 use silkscreen::ParamIndex;
 use silkscreen::model::{ParamSpec, Taper};
 
+pub mod analysis;
 pub mod engine;
 pub mod flock;
 pub mod observe;
@@ -56,7 +57,7 @@ pub static PARAMS: [ParamSpec; 11] = [
         .unit("cents")
         .decimals(1)
         .id(2),
-    // The range of delays above the 7 ms floor.
+    // The range of delays above the 7.5 ms floor.
     ParamSpec::new("Spread", 1.0, 25.0, 10.0)
         .taper(Taper::Exp { mid: 7.0 })
         .unit("ms")

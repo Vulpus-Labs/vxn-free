@@ -56,8 +56,12 @@ pub struct BandObs {
     pub peaks: [PeakObs; PEAKS],
     /// Clarity's sparseness gate, 0 to 1 (0017).
     pub gate: f32,
-    /// Onset strength this tick, 0 when none (0015, 0016).
+    /// Onset strength this tick (the frame's relative rise in
+    /// magnitude), 0 when none (0015, 0016).
     pub onset: f32,
+    /// Where the onset's frame starts, in samples since reset; 0 when
+    /// none.
+    pub onset_start: u64,
     /// Inter-channel coherence of the input, −1 to 1 (0015, 0018).
     pub coherence: f32,
 }

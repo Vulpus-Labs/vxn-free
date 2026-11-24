@@ -25,5 +25,5 @@ measured offline.
 - [ ] The default setting's bench metrics are recorded as the baseline
       that later tickets compare against: detune, motion, spacing,
       mono-sum loss and CPU.
-- [ ] ADR 0002's draft values (the 2.5 kHz crossover, the 7 ms floor) are
+- [ ] ADR 0002's draft values (the 2.5 kHz crossover, the 7.5 ms floor) are
       updated if tuning changes them.

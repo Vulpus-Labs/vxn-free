@@ -30,6 +30,7 @@ use silkscreen::ParamIndex;
 use silkscreen::bridge::Engine;
 use vxn_free_dsp::{Crossover, DelayLine, Glide, Ramp};
 
+use crate::analysis::Analysis;
 use crate::flock::{FLOOR, Flock, FlockSettings, max_velocity};
 use crate::observe::{BANDS, Observation};
 use crate::{
@@ -113,6 +114,23 @@ impl Band {
     }
 }
 
+/// The dry input of one stretch (at most a tick), for the analysis.
+struct Heard {
+    mid: [f32; TICK],
+    side: [f32; TICK],
+    bands: [[f32; BANDS]; TICK],
+}
+
+impl Default for Heard {
+    fn default() -> Self {
+        Self {
+            mid: [0.0; TICK],
+            side: [0.0; TICK],
+            bands: [[0.0; BANDS]; TICK],
+        }
+    }
+}
+
 /// Each voice's level with `voices` in use.
 fn voice_level(voices: usize) -> f32 {
     1.0 / (voices as f32).sqrt()
@@ -148,6 +166,7 @@ pub struct CharmEngine {
     mix: Glide,
     mix_ramp: Ramp,
     into_tick: usize,
+    analysis: Analysis,
     obs: Observation,
 }
 
@@ -166,6 +185,14 @@ impl CharmEngine {
         let voices = default_of(VOICES).round() as usize + MIN_VOICES;
         let spread = default_of(SPREAD) * 0.001;
         let low_xover = default_of(LOW_XOVER);
+        let analysis = Analysis::new(sample_rate, low_xover);
+        // The analysis must have seen each sample before any voice reads
+        // it: its lag, and a sample for the interpolator's reach.
+        assert!(
+            ((FLOOR * f64::from(sample_rate)) as usize) > analysis.lag() + 1,
+            "the voices' floor ({FLOOR} s) is inside the analysis's lag ({} samples) at {sample_rate} Hz",
+            analysis.lag()
+        );
         Self {
             sample_rate,
             low: Crossover::new(low_xover, sample_rate),
@@ -186,6 +213,7 @@ impl CharmEngine {
             mix: glide(default_of(MIX) * 0.01),
             mix_ramp: Ramp::default(),
             into_tick: TICK,
+            analysis,
             obs: Observation::default(),
         }
     }
@@ -211,8 +239,10 @@ impl CharmEngine {
         let xover = self.low_xover.tick();
         if xover != self.low_xover_for {
             self.low.set_frequency(xover);
+            self.analysis.set_low_xover(xover);
             self.low_xover_for = xover;
         }
+        self.analysis.take(&mut self.obs.bands);
         let mix_from = self.mix.value();
         self.mix_ramp = Ramp::new(mix_from, self.mix.tick(), TICK);
 
@@ -247,9 +277,10 @@ impl CharmEngine {
     }
 
     /// Push one sample of the mid signal into the bands and return the
-    /// voices' left and right sum, `i` samples into the tick.
+    /// voices' left and right sum, `i` samples into the tick, and the
+    /// sample's MID and HIGH parts.
     #[inline]
-    fn voices_at(&mut self, i: usize, mid: f32) -> (f32, f32) {
+    fn voices_at(&mut self, i: usize, mid: f32) -> (f32, f32, [f32; BANDS]) {
         let (_, rest) = self.low.split(mid);
         let (m, h) = self.split.split(rest);
         let (mut wl, mut wr) = (0.0, 0.0);
@@ -268,32 +299,46 @@ impl CharmEngine {
             wl += bl * depth;
             wr += br * depth;
         }
-        (wl, wr)
+        (wl, wr, [m, h])
     }
 
     /// Render from `offset` into the tick: one channel.
     fn run_one(&mut self, x: &mut [f32], offset: usize) {
+        let mut heard = Heard::default();
         for (n, s) in x.iter_mut().enumerate() {
             let i = offset + n;
             let dry = *s;
-            let (wl, wr) = self.voices_at(i, dry);
+            let (wl, wr, bands) = self.voices_at(i, dry);
+            heard.mid[n] = dry;
+            heard.bands[n] = bands;
             // Summed to one channel, equal-power pans would favour the
             // centre; each voice's left and right add to at most √2, so
             // scale the sum back to its stereo level.
             *s = dry + self.mix_ramp.at(i) * (wl + wr) * std::f32::consts::FRAC_1_SQRT_2;
         }
+        let n = x.len();
+        self.analysis
+            .push(&heard.mid[..n], &heard.bands[..n], &heard.side[..n]);
     }
 
     /// Render from `offset` into the tick: two channels.
     fn run_two(&mut self, left: &mut [f32], right: &mut [f32], offset: usize) {
+        let mut heard = Heard::default();
         for (n, (l, r)) in left.iter_mut().zip(right.iter_mut()).enumerate() {
             let i = offset + n;
             let (dl, dr) = (*l, *r);
-            let (wl, wr) = self.voices_at(i, 0.5 * (dl + dr));
+            let mid = 0.5 * (dl + dr);
+            let (wl, wr, bands) = self.voices_at(i, mid);
+            heard.mid[n] = mid;
+            heard.side[n] = 0.5 * (dl - dr);
+            heard.bands[n] = bands;
             let mix = self.mix_ramp.at(i);
             *l = dl + mix * wl;
             *r = dr + mix * wr;
         }
+        let n = left.len().min(right.len());
+        self.analysis
+            .push(&heard.mid[..n], &heard.bands[..n], &heard.side[..n]);
     }
 }
 
@@ -355,6 +400,8 @@ impl Engine for CharmEngine {
         self.low_xover_for = self.low_xover.value();
         self.low.reset();
         self.split.reset();
+        self.analysis.set_low_xover(self.low_xover.value());
+        self.analysis.restart();
         let spread = f64::from(self.spread.value());
         let level = voice_level(self.voices);
         for band in &mut self.bands {

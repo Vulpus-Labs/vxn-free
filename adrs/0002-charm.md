@@ -108,8 +108,10 @@ Charm addresses each of these, and stays a zero-latency effect.
      alongside each delay line: the analysis writes gain values there
      after the fact, at the positions it has just examined, and each
      voice reads them at the same position as its audio tap.
-   - The minimum voice delay is window + hop, rounded up (about 7 ms at
-     every rate), and is enforced whatever the parameters.
+   - The minimum voice delay must exceed window + hop plus one sample
+     for the interpolator's reach (7.28 ms at 44.1 kHz, the worst rate).
+     It is a fixed 7.5 ms at every rate, so Charm sounds the same at any
+     rate, and the engine checks it when built (ticket 0015).
    - Small windows give coarse bins (about 190 Hz at 48 kHz). That is
      acceptable because the analysis only serves MID and HIGH: LOW, where
      fine resolution would matter, is never chorused.
@@ -233,5 +235,5 @@ first adaptive or flock-driven chorus.
 - Charm needs a silkscreen release with telemetry frames before its
   display can be built. Glow-Up's tracking display may use the same
   frames.
-- The minimum delay of about 7 ms rules out flanger territory. Charm is
+- The minimum delay of 7.5 ms rules out flanger territory. Charm is
   a chorus and ensemble, not a flanger.
