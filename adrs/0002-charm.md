@@ -56,7 +56,12 @@ Charm addresses each of these, and stays a zero-latency effect.
    - *Turbulence* adds a band-limited random force per voice, so the
      motion never settles and has no period.
    - Delay is bounded softly within a range set by SPREAD, with a floor
-     set by point 6. Pan is bounded within ±WIDTH.
+     set by point 6. Pan is bounded within ±WIDTH. Pan speed has its own
+     limit (half the width per second), because with a narrow SPREAD the
+     delay axis's limit would let voices sweep the stereo field fast
+     enough to be heard as tremolo.
+   - Each voice's level is 1/√VOICES, so the ensemble's level holds as
+     voices come and go. A voice added or removed fades over about 30 ms.
 
    The flock updates at a control rate (once per fixed internal tick, not
    per host block), and each voice's delay is interpolated per sample
@@ -83,6 +88,9 @@ Charm addresses each of these, and stays a zero-latency effect.
      need to sum flat in the dry path.
    - Voices read the mid signal (L + R) / 2 of their band and are placed
      by pan. The dry signal keeps the input's own stereo image.
+   - The dry signal stays at unity. MIX sets the ensemble's level against
+     it, from nothing to equal level at 100 %. A crossfade would take the
+     bass away with the dry signal, since LOW has no wet part.
 
 5. **Pan law.** Equal-power panning. Interaural time and level difference
    panning was considered and left out: it combs when summed to mono,
