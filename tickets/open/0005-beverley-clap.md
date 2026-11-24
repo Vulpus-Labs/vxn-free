@@ -13,14 +13,14 @@ The `beverley-clap` crate: Beverley as a stereo CLAP audio effect.
 
 ## Acceptance criteria
 
-- [ ] `SilkscreenPlugin` with id `labs.vulpus.beverley`, name Beverley,
+- [x] `SilkscreenPlugin` with id `labs.vulpus.beverley`, name Beverley,
       features audio-effect, distortion, stereo; audio input; no licence
       check.
-- [ ] `[package.metadata.silkscreen.clap]`; `cargo silkscreen bundle
+- [x] `[package.metadata.silkscreen.clap]`; `cargo silkscreen bundle
       beverley-clap` builds it.
-- [ ] Tests with silkscreen-clap's test host: params, state round trip,
+- [x] Tests with silkscreen-clap's test host: params, state round trip,
       no allocation while processing.
-- [ ] Beverley must report its latency accurately. The CLAP `latency`
+- [x] Beverley must report its latency accurately. The CLAP `latency`
       extension's value equals the engine's measured latency (0003), and
       a test-host test checks them against each other at 44.1, 48 and
       96 kHz.
@@ -29,5 +29,34 @@ The `beverley-clap` crate: Beverley as a stereo CLAP audio effect.
       settings), silkscreen first gains per-instance latency with the
       host told when it changes (`request_restart` while deactivated, as
       CLAP requires), as a silkscreen release, before this closes.
-- [ ] clap-validator passes.
+- [x] clap-validator passes.
 - [ ] Hand check in a DAW: loads, sounds right, automation works.
+
+## Progress (2026-11-24)
+
+Everything but the DAW check has landed. The ticket stays open until
+that is done.
+
+- `crates/beverley-clap`: `BeverleyPlugin`, id `labs.vulpus.beverley`,
+  features audio-effect, distortion and stereo, with an audio input, user
+  presets and no licence. `LATENCY` is `BeverleyEngine::LATENCY` (0).
+  The engine's latency is a constant (0003), so silkscreen needed no
+  per-instance latency.
+- `cargo silkscreen bundle beverley-clap` builds
+  `target/bundled/Beverley.clap` (silkscreen-tool from tag v0.2.1).
+- Tests through the test host:
+  - `params`: ids 1–8, names, ranges and defaults as `PARAMS`; text in
+    units both ways; automation reaching the audio and the model.
+  - `state`: save, change every param, load; values and sound come
+    back.
+  - `no_alloc`: eight process calls with param events, none allocating.
+  - `latency`: at 44.1, 48 and 96 kHz the latency extension reports
+    `BeverleyEngine::LATENCY`. Impulses and steps through the plugin, at
+    five settings, land on the sample it reports.
+- clap-validator 0.3.2: 16 passed, 5 skipped (preset discovery and note
+  ports, which Beverley doesn't have), 0 failed. The first run, straight
+  after the bundle was built, reported 20 tests and 1 warning, and its
+  text wasn't kept. Ten runs after it were all clean, 21 tests and no
+  warnings.
+- Hand check in a DAW: to do. `cargo silkscreen bundle beverley-clap
+  --install` puts the plugin in the user's CLAP folder.

@@ -4,6 +4,7 @@ resolver = "3"
 members = [
     "crates/vxn-free-dsp",
     "crates/beverley",
+    "crates/beverley-clap",
 ]
 
 [workspace.package]
@@ -31,6 +32,7 @@ silkscreen-host-native = { git = "https://github.com/Vulpus-Labs/silkscreen", ta
 # clack: the rev silkscreen-clap pins at the tag above.
 clack-plugin = { git = "https://github.com/prokopyl/clack", rev = "f874e858ad576c601367b3038af5088a4e671744" }
 clack-extensions = { git = "https://github.com/prokopyl/clack", rev = "f874e858ad576c601367b3038af5088a4e671744" }
+clack-host = { git = "https://github.com/prokopyl/clack", rev = "f874e858ad576c601367b3038af5088a4e671744" }
 
 # Working across both repos: uncomment to build against a silkscreen
 # checkout beside this one. Don't commit it uncommented.
