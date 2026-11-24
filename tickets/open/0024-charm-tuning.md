@@ -25,5 +25,8 @@ measured offline.
 - [ ] The default setting's bench metrics are recorded as the baseline
       that later tickets compare against: detune, motion, spacing,
       mono-sum loss and CPU.
+- [ ] The voices' allpass decorrelation (0028) A/B'd with the bench's
+      `--no-decorrelate`, on sustained material especially: kept on,
+      made a control, or removed, and ADR 0002 updated.
 - [ ] ADR 0002's draft values (the 2.5 kHz crossover, the 7.5 ms floor) are
       updated if tuning changes them.

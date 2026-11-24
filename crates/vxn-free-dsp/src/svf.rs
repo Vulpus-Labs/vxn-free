@@ -62,6 +62,15 @@ impl Svf {
         self.ic2 = 0.0;
     }
 
+    /// Filter one sample through the allpass response, x − 2·bp/Q: unity
+    /// gain at every frequency, its phase turning a full cycle about the
+    /// centre, faster the higher the Q.
+    #[inline]
+    pub fn allpass(&mut self, x: f32) -> f32 {
+        let bp = self.tick(x).bp;
+        x - 2.0 * self.k * bp
+    }
+
     /// Filter one sample.
     #[inline]
     pub fn tick(&mut self, x: f32) -> SvfOut {
@@ -74,6 +83,34 @@ impl Svf {
             lp: v2,
             bp: v1,
             hp: x - self.k * v1 - v2,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::f64::consts::TAU;
+
+    #[test]
+    fn the_allpass_is_flat() {
+        let fs = 48_000.0;
+        for q in [0.5f32, 1.0, 3.0] {
+            for hz in [50.0f64, 300.0, 1000.0, 5000.0, 15_000.0] {
+                let mut f = Svf::new(1000.0, q, fs);
+                let w = TAU * hz / f64::from(fs);
+                let (mut si, mut so) = (0.0f64, 0.0f64);
+                for n in 0..96_000 {
+                    let x = (w * f64::from(n)).sin() as f32;
+                    let y = f.allpass(x);
+                    if n >= 48_000 {
+                        si += f64::from(x * x);
+                        so += f64::from(y * y);
+                    }
+                }
+                let db = 10.0 * (so / si).log10();
+                assert!(db.abs() < 0.01, "Q {q}, {hz} Hz: {db} dB");
+            }
         }
     }
 }

@@ -60,6 +60,15 @@ Charm addresses each of these, and stays a zero-latency effect.
      limit (half the width per second), because with a narrow SPREAD the
      delay axis's limit would let voices sweep the stereo field fast
      enough to be heard as tremolo.
+   - Each voice passes through its own fixed allpass chain (four
+     second-order stages, log-spaced across its band, offset per voice).
+     Its level is untouched at every frequency, but its phase turns
+     differently at each, so its comb with the dry signal and with other
+     voices is no longer evenly spaced. Measured (ticket 0028): the
+     comb's regularity falls by 16–40 %, how deep the dips go doesn't
+     change, a click smears by under 0.6 ms, and it costs 1.2 % of a
+     core at 96 kHz with eight voices. Whether it is heard is decided by
+     ear in 0024; it is on until then.
    - Each voice's level is 1/√VOICES, so the ensemble's level holds as
      voices come and go. A voice added or removed fades over about 30 ms.
 

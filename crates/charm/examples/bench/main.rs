@@ -20,6 +20,7 @@
 //! - `--out DIR`: where results go (default the workspace's
 //!   `target/charm-bench`).
 //! - `--cpu`: measure CPU per block at 16, 32, 64 and 512 samples, 96 kHz.
+//! - `--no-decorrelate`: turn the voices' allpass chains off.
 //!
 //! For each input it writes `NAME.wav` (the output, stereo float),
 //! `NAME-mono.wav` (its mono sum), `NAME-voices.csv` (every voice at every
@@ -61,6 +62,8 @@ struct Args {
     seconds: f32,
     out: PathBuf,
     cpu: bool,
+    /// Turn the voices' allpass decorrelation off (0028).
+    no_decorrelate: bool,
 }
 
 /// The param called `name`, matched without case, spaces, `-` or `_`.
@@ -145,6 +148,7 @@ fn parse_args() -> Result<Args, String> {
             "--out" => args.out = PathBuf::from(value("--out")?),
             "--corpus" => args.corpus = true,
             "--cpu" => args.cpu = true,
+            "--no-decorrelate" => args.no_decorrelate = true,
             "--help" | "-h" => {
                 return Err("see the doc comment at the top of examples/bench/main.rs".into());
             }
@@ -235,6 +239,7 @@ fn render(
 ) -> [Vec<f32>; 2] {
     let len = input.channels[0].len();
     let mut e = CharmEngine::new(input.rate);
+    e.set_decorrelation(!args.no_decorrelate);
     for (p, v) in values_at(args, 0, len) {
         e.set_param(p, v);
     }
@@ -330,6 +335,15 @@ fn run(
             output: metrics::mono_loss(l, r, input.rate, xover),
         },
         split_identical: identical,
+        comb: {
+            let mono_in: Vec<f32> = input.channels[0]
+                .iter()
+                .zip(&input.channels[1])
+                .map(|(a, b)| 0.5 * (a + b))
+                .collect();
+            let spread = settings.last().map_or(0.01, |s| s.spread);
+            metrics::comb(&mono_in, &mono, input.rate, spread)
+        },
         analysis: metrics::analysis(&obs, input.rate),
         partial_loss: signals::partials(&input.name, input.rate).map(|p| {
             let mono_in: Vec<f32> = input.channels[0]
@@ -449,6 +463,15 @@ fn write_report(report: &mut String, json: &mut Vec<String>, name: &str, m: &Met
             p.partials, p.mean_db, p.worst_db, p.worst_hz
         ));
     }
+    let _ = writeln!(
+        report,
+        "  comb (mono, in → out): cepstral peak {:.3} at {:.2} ms; ripple {:.2} dB (300 Hz–10 kHz)",
+        m.comb.cepstral_peak, m.comb.peak_ms, m.comb.ripple_db
+    );
+    json.push(format!(
+        "\"{name}-comb\":{{\"cepstral_peak\":{},\"peak_ms\":{},\"ripple_db\":{}}}",
+        m.comb.cepstral_peak, m.comb.peak_ms, m.comb.ripple_db
+    ));
     let bands = ["LOW", "MID", "HIGH"];
     let _ = write!(report, "  mono-sum loss dB (in → out):");
     for ((band, input), output) in bands.iter().zip(m.mono.input).zip(m.mono.output) {
@@ -496,6 +519,7 @@ fn cpu(args: &Args, report: &mut String) {
     let _ = writeln!(report, "== CPU at 96 kHz (stereo pink noise, {seconds} s)");
     for block in [16usize, 32, 64, 512] {
         let mut e = CharmEngine::new(rate);
+        e.set_decorrelation(!args.no_decorrelate);
         for (p, v) in values_at(args, 0, 1) {
             e.set_param(p, v);
         }

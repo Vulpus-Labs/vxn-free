@@ -31,6 +31,7 @@ use silkscreen::bridge::Engine;
 use vxn_free_dsp::{Crossover, DelayLine, Glide, Ramp};
 
 use crate::analysis::Analysis;
+use crate::decorrelate::Chain;
 use crate::flock::{FLOOR, Flock, FlockSettings, max_velocity};
 use crate::observe::{BANDS, Observation};
 use crate::{
@@ -91,10 +92,12 @@ struct Band {
     sounding: [bool; MAX_VOICES],
     depth: Glide,
     depth_ramp: Ramp,
+    /// Each voice's allpass chain (`decorrelate`).
+    chains: [Chain; MAX_VOICES],
 }
 
 impl Band {
-    fn new(seed: u32, sample_rate: f32, spread: f32, voices: usize) -> Self {
+    fn new(band: usize, seed: u32, sample_rate: f32, spread: f32, voices: usize) -> Self {
         let tick_rate = sample_rate / TICK as f32;
         let mut level = [Glide::new(0.0, FADE_MS, tick_rate); MAX_VOICES];
         for g in level.iter_mut().take(voices) {
@@ -110,6 +113,7 @@ impl Band {
             sounding: [false; MAX_VOICES],
             depth: Glide::new(1.0, GLIDE_MS, tick_rate),
             depth_ramp: Ramp::new(1.0, 1.0, TICK),
+            chains: std::array::from_fn(|voice| Chain::new(band, voice, sample_rate)),
         }
     }
 }
@@ -166,6 +170,8 @@ pub struct CharmEngine {
     mix: Glide,
     mix_ramp: Ramp,
     into_tick: usize,
+    /// Whether voices pass through their allpass chains (0028).
+    decorrelate: bool,
     analysis: Analysis,
     obs: Observation,
 }
@@ -198,8 +204,8 @@ impl CharmEngine {
             low: Crossover::new(low_xover, sample_rate),
             split: Crossover::new(MID_HIGH_XOVER, sample_rate),
             bands: [
-                Band::new(SEEDS[0], sample_rate, spread, voices),
-                Band::new(SEEDS[1], sample_rate, spread, voices),
+                Band::new(0, SEEDS[0], sample_rate, spread, voices),
+                Band::new(1, SEEDS[1], sample_rate, spread, voices),
             ],
             voices,
             detune: glide(default_of(DETUNE)),
@@ -213,9 +219,16 @@ impl CharmEngine {
             mix: glide(default_of(MIX) * 0.01),
             mix_ramp: Ramp::default(),
             into_tick: TICK,
+            decorrelate: true,
             analysis,
             obs: Observation::default(),
         }
+    }
+
+    /// Turn the voices' allpass decorrelation on or off (for measuring
+    /// it: ticket 0028).
+    pub fn set_decorrelation(&mut self, on: bool) {
+        self.decorrelate = on;
     }
 
     /// What the engine is doing, as of the latest tick.
@@ -291,7 +304,10 @@ impl CharmEngine {
                 if !band.sounding[v] {
                     continue;
                 }
-                let y = band.line.read(band.delay[v].at(i));
+                let mut y = band.line.read(band.delay[v].at(i));
+                if self.decorrelate {
+                    y = band.chains[v].process(y);
+                }
                 bl += y * band.left[v].at(i);
                 br += y * band.right[v].at(i);
             }
@@ -406,6 +422,9 @@ impl Engine for CharmEngine {
         let level = voice_level(self.voices);
         for band in &mut self.bands {
             band.line.clear();
+            for c in &mut band.chains {
+                c.reset();
+            }
             band.flock.reset(spread);
             band.depth.snap();
             for (i, g) in band.level.iter_mut().enumerate() {

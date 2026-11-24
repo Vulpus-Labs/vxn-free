@@ -16,6 +16,7 @@ use silkscreen::ParamIndex;
 use silkscreen::model::{ParamSpec, Taper};
 
 pub mod analysis;
+pub mod decorrelate;
 pub mod engine;
 pub mod flock;
 pub mod observe;

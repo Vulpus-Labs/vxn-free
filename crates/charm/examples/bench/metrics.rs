@@ -66,9 +66,21 @@ pub struct PartialLoss {
     pub mean_db: f32,
 }
 
+/// How regular a comb the output makes with its input (0028).
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Comb {
+    /// The largest cepstral magnitude at quefrencies within the voices'
+    /// delay range: a regular comb at delay d puts a peak at d.
+    pub cepstral_peak: f32,
+    pub peak_ms: f32,
+    /// The standard deviation of the transfer's level, dB, 300 Hz–10 kHz.
+    pub ripple_db: f32,
+}
+
 /// Everything about one render.
 #[derive(Clone, Debug, Default)]
 pub struct Metrics {
+    pub comb: Comb,
     pub partial_loss: Option<PartialLoss>,
     pub flocks: [FlockMetrics; BANDS],
     pub analysis: [AnalysisMetrics; BANDS],
@@ -231,6 +243,72 @@ pub fn partial_loss(
     }
     if out.partials > 0 {
         out.mean_db = sum / out.partials as f32;
+    }
+    out
+}
+
+/// The comb `output` makes of `input`: their transfer, averaged over
+/// Hann-windowed frames of 4096 every 2048 from one second in, then the
+/// cepstrum of its log level, searched over the voices' delays.
+pub fn comb(input: &[f32], output: &[f32], rate: f32, spread: f32) -> Comb {
+    use vxn_free_dsp::RealPackedFft;
+    const N: usize = 4096;
+    let fft = RealPackedFft::new(N);
+    let window: Vec<f32> = (0..N)
+        .map(|k| 0.5 - 0.5 * (std::f32::consts::TAU * k as f32 / N as f32).cos())
+        .collect();
+    let bins = N / 2;
+    let (mut cross_re, mut cross_im, mut auto) =
+        (vec![0.0f64; bins], vec![0.0f64; bins], vec![0.0f64; bins]);
+    let (mut x, mut y) = (vec![0.0f32; N], vec![0.0f32; N]);
+    let mut at = rate as usize;
+    while at + N <= input.len().min(output.len()) {
+        for k in 0..N {
+            x[k] = input[at + k] * window[k];
+            y[k] = output[at + k] * window[k];
+        }
+        fft.forward(&mut x);
+        fft.forward(&mut y);
+        for k in 1..bins {
+            let (xr, xi) = (f64::from(x[2 * k]), f64::from(x[2 * k + 1]));
+            let (yr, yi) = (f64::from(y[2 * k]), f64::from(y[2 * k + 1]));
+            // conj(X)·Y
+            cross_re[k] += xr * yr + xi * yi;
+            cross_im[k] += xr * yi - xi * yr;
+            auto[k] += xr * xr + xi * xi;
+        }
+        at += N / 2;
+    }
+    // Log level of the transfer, as a real spectrum for the inverse FFT.
+    let mut log = vec![0.0f32; N];
+    let (mut sum, mut sum2, mut count) = (0.0f64, 0.0f64, 0usize);
+    let per_bin = f64::from(rate) / N as f64;
+    for k in 1..bins {
+        let h = (cross_re[k].hypot(cross_im[k]) / auto[k].max(1.0e-30)).max(1.0e-6);
+        log[2 * k] = h.ln() as f32;
+        let hz = k as f64 * per_bin;
+        if (300.0..10_000.0).contains(&hz) {
+            let db = 20.0 * h.log10();
+            sum += db;
+            sum2 += db * db;
+            count += 1;
+        }
+    }
+    log[0] = log[2];
+    log[1] = log[2 * bins - 2];
+    fft.inverse(&mut log);
+    let first = (charm::flock::FLOOR * f64::from(rate)) as usize;
+    let last = ((charm::flock::FLOOR + f64::from(spread)) * f64::from(rate)) as usize + 1;
+    let mut out = Comb::default();
+    for (n, &c) in log.iter().enumerate().take(last.min(N / 2)).skip(first) {
+        if c.abs() > out.cepstral_peak {
+            out.cepstral_peak = c.abs();
+            out.peak_ms = n as f32 / rate * 1000.0;
+        }
+    }
+    if count > 0 {
+        let mean = sum / count as f64;
+        out.ripple_db = (sum2 / count as f64 - mean * mean).max(0.0).sqrt() as f32;
     }
     out
 }
