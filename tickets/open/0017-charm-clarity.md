@@ -1,6 +1,6 @@
 ---
 id: "0017"
-title: "Murmuration CLARITY: steering comb notches off partials"
+title: "Charm CLARITY: steering comb notches off partials"
 priority: medium
 created: 2026-11-24
 epic: E004

@@ -1,6 +1,6 @@
 ---
 id: "0013"
-title: "Murmuration DSP: modulated delay, LR4 crossovers, side-buffer"
+title: "Charm DSP: modulated delay, LR4 crossovers, side-buffer"
 priority: medium
 created: 2026-11-24
 epic: E004
@@ -9,7 +9,7 @@ depends: ["0001"]
 
 ## Summary
 
-The building blocks Murmuration's audio path needs, in `vxn-free-dsp`
+The building blocks Charm's audio path needs, in `vxn-free-dsp`
 (ADR 0002, points 4, 6 and 10).
 
 ## Acceptance criteria

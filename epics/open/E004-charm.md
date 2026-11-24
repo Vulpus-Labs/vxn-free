@@ -1,13 +1,13 @@
 ---
 id: E004
-title: "Murmuration: a listening ensemble chorus"
+title: "Charm: a listening ensemble chorus"
 status: open
 created: 2026-11-24
 ---
 
 ## Goal
 
-Murmuration as a zero-latency CLAP chorus, as ADR 0002 decides:
+Charm as a zero-latency CLAP chorus, as ADR 0002 decides:
 
 - voices moving as a flock, with detune as a speed limit
 - bass left unchorused
@@ -26,6 +26,7 @@ Murmuration as a zero-latency CLAP chorus, as ADR 0002 decides:
 | 0016 | Duck and Bloom through the side-buffer |
 | 0017 | Clarity: comb-notch avoidance |
 | 0018 | Auto width and the mono guard |
+| 0022 | silkscreen telemetry frames: release and bump |
 | 0019 | Faceplate, editor and flock display |
 | 0020 | CLAP plugin |
 | 0021 | Manual |
@@ -33,6 +34,6 @@ Murmuration as a zero-latency CLAP chorus, as ADR 0002 decides:
 ## Dependency order
 
 0013 after 0001; 0014 after 0013; 0015 after 0007 and 0014; 0016, 0017
-and 0018 after 0015, in any order; 0019 after 0016, 0017 and 0018; 0020
-after 0019; 0021 after 0020. E004 can run beside E002. It shares 0007
-with E003.
+and 0018 after 0015, in any order; 0022 after 0014; 0019 after 0016,
+0017, 0018 and 0022; 0020 after 0019; 0021 after 0020. E004 can run
+beside E002. It shares 0007 with E003.

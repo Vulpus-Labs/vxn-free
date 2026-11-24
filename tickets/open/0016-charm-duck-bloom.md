@@ -1,6 +1,6 @@
 ---
 id: "0016"
-title: "Murmuration DUCK and BLOOM through the side-buffer"
+title: "Charm DUCK and BLOOM through the side-buffer"
 priority: medium
 created: 2026-11-24
 epic: E004

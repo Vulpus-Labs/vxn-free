@@ -18,7 +18,7 @@ Tagging `vX.Y.Z` builds every plugin and attaches it to a GitHub release.
       platform, attached to the release.
 - [x] Signing secrets documented (names only) in the README's release
       section; nothing secret in the repo.
-- [ ] A dry run on a pre-release tag.
+- [x] A dry run on a pre-release tag (done as a real release instead: see below).
 
 ## Notes
 
@@ -53,6 +53,25 @@ macOS part.
     x86_64 + arm64.
   - The Windows and Linux zips each hold `Beverley.clap`.
 - The first CI run on GitHub (all three jobs) passed.
-- To do: a run on a pre-release tag (`v0.1.0-rc.1`), for the tag check
-  and the draft release. The workspace version must stay 0.1.0 until
-  then.
+
+## Close-out (2026-11-24)
+
+The pre-release dry run became the first real release:
+downloads.vulpuslabs.com serves only plain version folders (0.1.0, not
+0.1.0-rc.1), so the user chose to tag `v0.1.0` straight away.
+
+- The `v0.1.0` tag (run 45414448454) passed the tag/version check and
+  built all three platforms, each clap-validated. It made a draft
+  release, not a pre-release, holding `beverley-0.1.0-{macos,windows,
+  linux}.clap.zip`. Zip names are lower case, as the download server
+  names them.
+- The draft's macOS bundle is notarized (stapled, Gatekeeper accepts it,
+  "Notarized Developer ID") and universal.
+- Published to `https://downloads.vulpuslabs.com/beverley/0.1.0/` with
+  a `SHA256SUMS`, by the procedure in the download host's notes (rsync,
+  `--ignore-existing`). The files fetched back match. A quarantined
+  download of the macOS zip passes Gatekeeper.
+- Linked from vulpuslabs.com's new Beverley page (`/products/beverley/`)
+  and its "Free effects" sections (vulpus-labs-site 1fe522e).
+- The GitHub release is still a draft. The site links to the download
+  server, so publishing the draft is optional.

@@ -1,6 +1,6 @@
 ---
 id: "0015"
-title: "Murmuration analysis sidechain: onsets, peaks, coherence"
+title: "Charm analysis sidechain: onsets, peaks, coherence"
 priority: medium
 created: 2026-11-24
 epic: E004
@@ -16,7 +16,7 @@ yet affect the audio.
 
 ## Acceptance criteria
 
-- [ ] The STFT from 0007 accepts windows of 128 and 256. Murmuration uses
+- [ ] The STFT from 0007 accepts windows of 128 and 256. Charm uses
       the next power of two at or above 5 ms at the host's rate, with a
       hop of a quarter-window, on a fixed internal schedule independent of
       the host's block size.

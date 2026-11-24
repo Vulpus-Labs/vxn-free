@@ -16,8 +16,8 @@ small job. They are to be given away, with their source.
    Vulpus Labs repos; ported algorithms are explained in its own words.
 2. **Plugins.** Beverley (`labs.vulpus.beverley`) and Glow-Up
    (`labs.vulpus.glow-up`), vendor Vulpus Labs. Ids never change once
-   released: hosts key projects on them. ADR 0002 adds Murmuration
-   (`labs.vulpus.murmuration`), an original design rather than a port.
+   released: hosts key projects on them. ADR 0002 adds Charm
+   (`labs.vulpus.charm`), an original design rather than a port.
 3. **Targets.** CLAP only, built with `cargo silkscreen bundle`. No web
    page and no standalone app for now; silkscreen offers both if wanted
    later.

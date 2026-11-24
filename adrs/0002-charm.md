@@ -1,4 +1,4 @@
-# 0002: Murmuration, a listening ensemble chorus
+# 0002: Charm, a listening ensemble chorus
 
 Status: proposed (2026-11-24)
 
@@ -17,14 +17,24 @@ known:
 - Attacks are chorused as much as sustains, so drums and plucks soften.
 - Widening material that is already wide makes the mono sum collapse.
 
-Murmuration addresses each of these, and stays a zero-latency effect.
+Charm addresses each of these, and stays a zero-latency effect.
 
 ## Decision
 
-1. **Plugin.** Murmuration, id `labs.vulpus.murmuration`, vendor Vulpus
-   Labs, features audio-effect, chorus. This extends ADR 0001's list of
+1. **Plugin.** Charm, id `labs.vulpus.charm`, vendor Vulpus Labs,
+   features audio-effect, chorus. This extends ADR 0001's list of
    plugins. It is an original design, not a port, so it has no module
    behaviour to keep.
+
+   *Name.* "A charm of goldfinches": in older English a charm is also
+   the blended sound of many birds singing together, a chorus made by a
+   flock. The working name, Murmuration, was dropped because Harmonico
+   DSP sells a reverb of that name, also modulated by a flock. Web
+   searches (2026-11-24) found no audio plugin named Charm; the nearest
+   is MeldaProduction's MCharmVerb. A trademark search in class 9 (USPTO
+   and EUIPO) is due before the first release (ticket 0020). In listings
+   the name is paired with the vendor or the word chorus, since "Charm"
+   alone is hard to search for.
 
 2. **Zero latency.** The audio path has no block processing: each output
    sample depends only on input up to that sample. The reported latency
@@ -142,10 +152,56 @@ Murmuration addresses each of these, and stays a zero-latency effect.
    DEPTH, CLARITY, DUCK, BLOOM, MIX. The engine ticket fixes ranges,
    defaults and ids. The faceplate ticket may group or merge controls.
 
-10. **Measured DSP.** The interpolation for modulated delay reads is
+10. **The flock display.** The editor plots what the engine is doing. It
+    is part of the design, because it shows what the flock controls mean.
+    - Horizontal: pan, −WIDTH to +WIDTH. AUTO WIDTH's limits are drawn as
+      walls that close in.
+    - Vertical: delay, from the floor (bottom, "front of the stage") to
+      floor + SPREAD.
+    - Each voice is a dot, MID and HIGH in two colours. A tail shows its
+      velocity on the delay axis, which is its detune, as a fraction of
+      DETUNE.
+    - Clarity's no-go bands are shaded horizontally in the flock's
+      colour, at d ≈ (k + ½) / p ± r / p for each peak p, with intensity
+      = strength × sparseness gate.
+    - Duck and Bloom scale each dot's size and brightness, so an onset
+      shows as a pulse across the flock.
+
+    The engine publishes one consistent frame per flock tick: every
+    voice's delay, pan, velocity and gain, plus each band's peaks and
+    gate. Silkscreen's telemetry holds 16 separate values with no
+    consistent snapshot, which is not enough for this. Silkscreen
+    therefore gains telemetry frames: a fixed-size block per instance,
+    published as one snapshot, with no allocation or lock on the audio
+    thread. The change is made and released in silkscreen first, and the
+    tag is bumped here.
+
+11. **Measured DSP.** The interpolation for modulated delay reads is
     chosen by measuring aliasing and CPU in a scratch harness, at the
     largest DETUNE and at 44.1, 48 and 96 kHz. The numbers go in the
     ticket.
+
+## Prior art
+
+Each building block has been done before:
+- Multiband choruses: MeldaProduction MChorusMB, which can also split
+  transients from tonal content, and Minimal Audio Flex Chorus.
+- Many voices with random modulation: Caelum Audio Choric.
+- Constant detune: triangle-swept bucket-brigade choruses.
+- Fixed per-voice decorrelation against combing: Acon Digital Multiply.
+- Flocks driving the modulation of time-based effects: ToneCarver Boids,
+  where boids drive grains and delay taps, and Harmonico DSP Murmuration,
+  where a flock replaces an FDN reverb's LFO.
+
+As far as searches found, these parts are original:
+- treating the flock's velocity on the delay axis as detune, so that
+  DETUNE is a speed limit for every steering force
+- Clarity
+- ducking with lookahead at zero latency, using the wet path's own delay
+- width driven by per-band coherence, with a mono guard
+
+The manual describes Charm in those terms. It makes no claim to be the
+first adaptive or flock-driven chorus.
 
 ## Out of scope
 
@@ -164,5 +220,8 @@ Murmuration addresses each of these, and stays a zero-latency effect.
   window sizes down to 128.
 - The flock is a small physics simulation. Its parameters interact, so
   its controls need tuning by ear before the ranges are fixed.
-- The minimum delay of about 7 ms rules out flanger territory. Murmuration
-  is a chorus and ensemble, not a flanger.
+- Charm needs a silkscreen release with telemetry frames before its
+  display can be built. Glow-Up's tracking display may use the same
+  frames.
+- The minimum delay of about 7 ms rules out flanger territory. Charm is
+  a chorus and ensemble, not a flanger.

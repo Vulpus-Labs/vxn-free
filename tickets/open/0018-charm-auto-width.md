@@ -1,6 +1,6 @@
 ---
 id: "0018"
-title: "Murmuration AUTO WIDTH and the mono guard"
+title: "Charm AUTO WIDTH and the mono guard"
 priority: medium
 created: 2026-11-24
 epic: E004

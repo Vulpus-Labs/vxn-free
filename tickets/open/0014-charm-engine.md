@@ -1,6 +1,6 @@
 ---
 id: "0014"
-title: "Murmuration engine core: flock, bands, mix"
+title: "Charm engine core: flock, bands, mix"
 priority: medium
 created: 2026-11-24
 epic: E004
@@ -9,7 +9,7 @@ depends: ["0013"]
 
 ## Summary
 
-A new `murmuration` crate (editor/engine, laid out like `beverley`) with
+A new `charm` crate (editor/engine, laid out like `beverley`) with
 an engine that already sounds like the finished effect, before any
 analysis is added. It has the flock (ADR 0002, point 3), the bands
 (point 4), equal-power panning (point 5) and the dry/wet mix.
