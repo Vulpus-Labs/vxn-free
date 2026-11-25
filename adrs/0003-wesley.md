@@ -16,7 +16,8 @@ together: Beverley's crush chain on each of three bands.
 ## Decision
 
 1. **Plugin.** Wesley, id `labs.vulpus.wesley`, vendor Vulpus Labs,
-   features audio-effect, distortion, multiband, stereo. Beverley's
+   features audio-effect, distortion, stereo (CLAP has no standard
+   multiband feature). Beverley's
    sibling, named to match. Web searches (2026-11-25) found no audio
    plugin named Wesley; a trademark search in class 9 is due before the
    first release, as for Charm.

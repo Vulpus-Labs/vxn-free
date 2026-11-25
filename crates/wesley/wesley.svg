@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <!-- Wesley's plain faceplate (ticket 0034): a grid of the params, enough
+       to play it in a DAW. Ticket 0036 replaces it with the real design.
+       Each shape in the "controls" layer marks one control; its id is
+       kind.name. Drawn from scratch. -->
+  <defs>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f2b27"/>
+      <stop offset="1" stop-color="#1d1b19"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="540" fill="#121110"/>
+  <rect x="4" y="4" width="952" height="532" rx="6" fill="url(#panel)" stroke="#4a443d"/>
+  <g font-family="'Jost*'" font-weight="500">
+    <text x="24" y="38" font-size="22" letter-spacing="4" fill="#f3e6cf">WESLEY</text>
+    <text x="148" y="38" font-size="9" letter-spacing="2.6" fill="#d9a35a">THREE-BAND CRUSHER</text>
+    <text x="936" y="38" font-size="8" letter-spacing="2.4" fill="#948b80" text-anchor="end">VULPUS LABS</text>
+    <line x1="24" y1="52" x2="936" y2="52" stroke="#4a443d" stroke-width="1"/>
+  </g>
+  <rect x="24" y="64" width="280" height="320" rx="5" fill="none" stroke="#4a443d"/>
+  <rect x="340" y="64" width="280" height="320" rx="5" fill="none" stroke="#4a443d"/>
+  <rect x="656" y="64" width="280" height="320" rx="5" fill="none" stroke="#4a443d"/>
+  <rect x="24" y="398" width="912" height="126" rx="5" fill="none" stroke="#4a443d"/>
+  <g font-family="'Jost*'" font-weight="500" font-size="9" letter-spacing="1.4" fill="#e2dccf" text-anchor="middle">
+    <text x="164.0" y="84" font-size="11" letter-spacing="3" fill="#f3e6cf">LOW</text>
+    <text x="70.6667" y="178">GAIN</text>
+    <text x="164" y="178">GAMMA</text>
+    <text x="257.333" y="178">BIT DEPTH</text>
+    <text x="70.6667" y="288">SMOOTHING</text>
+    <text x="164" y="288">MIX</text>
+    <text x="257.333" y="288">LEVEL</text>
+    <text x="59" y="368">AUTO</text>
+    <text x="129" y="368">SYMM</text>
+    <text x="199" y="368">ON</text>
+    <text x="269" y="368">SOLO</text>
+    <text x="480.0" y="84" font-size="11" letter-spacing="3" fill="#f3e6cf">MID</text>
+    <text x="386.667" y="178">GAIN</text>
+    <text x="480" y="178">GAMMA</text>
+    <text x="573.333" y="178">BIT DEPTH</text>
+    <text x="386.667" y="288">SMOOTHING</text>
+    <text x="480" y="288">MIX</text>
+    <text x="573.333" y="288">LEVEL</text>
+    <text x="375" y="368">AUTO</text>
+    <text x="445" y="368">SYMM</text>
+    <text x="515" y="368">ON</text>
+    <text x="585" y="368">SOLO</text>
+    <text x="796.0" y="84" font-size="11" letter-spacing="3" fill="#f3e6cf">HIGH</text>
+    <text x="702.667" y="178">GAIN</text>
+    <text x="796" y="178">GAMMA</text>
+    <text x="889.333" y="178">BIT DEPTH</text>
+    <text x="702.667" y="288">SMOOTHING</text>
+    <text x="796" y="288">MIX</text>
+    <text x="889.333" y="288">LEVEL</text>
+    <text x="691" y="368">AUTO</text>
+    <text x="761" y="368">SYMM</text>
+    <text x="831" y="368">ON</text>
+    <text x="901" y="368">SOLO</text>
+    <text x="90" y="506">LOW XOVER</text>
+    <text x="230" y="506">HIGH XOVER</text>
+    <text x="370" y="506">DECAY</text>
+    <text x="500" y="506">DETECT</text>
+    <text x="640" y="506">STEREO</text>
+    <text x="870" y="506">MIX</text>
+  </g>
+  <g fill="none" stroke="#6a6258" stroke-width="2">
+    <circle cx="70.6667" cy="130" r="32"/>
+    <circle cx="164" cy="130" r="32"/>
+    <circle cx="257.333" cy="130" r="32"/>
+    <circle cx="70.6667" cy="240" r="32"/>
+    <circle cx="164" cy="240" r="32"/>
+    <circle cx="257.333" cy="240" r="32"/>
+    <rect x="35" y="320" width="48" height="28" rx="8"/>
+    <rect x="105" y="320" width="48" height="28" rx="8"/>
+    <rect x="175" y="320" width="48" height="28" rx="8"/>
+    <rect x="245" y="320" width="48" height="28" rx="8"/>
+    <circle cx="386.667" cy="130" r="32"/>
+    <circle cx="480" cy="130" r="32"/>
+    <circle cx="573.333" cy="130" r="32"/>
+    <circle cx="386.667" cy="240" r="32"/>
+    <circle cx="480" cy="240" r="32"/>
+    <circle cx="573.333" cy="240" r="32"/>
+    <rect x="351" y="320" width="48" height="28" rx="8"/>
+    <rect x="421" y="320" width="48" height="28" rx="8"/>
+    <rect x="491" y="320" width="48" height="28" rx="8"/>
+    <rect x="561" y="320" width="48" height="28" rx="8"/>
+    <circle cx="702.667" cy="130" r="32"/>
+    <circle cx="796" cy="130" r="32"/>
+    <circle cx="889.333" cy="130" r="32"/>
+    <circle cx="702.667" cy="240" r="32"/>
+    <circle cx="796" cy="240" r="32"/>
+    <circle cx="889.333" cy="240" r="32"/>
+    <rect x="667" y="320" width="48" height="28" rx="8"/>
+    <rect x="737" y="320" width="48" height="28" rx="8"/>
+    <rect x="807" y="320" width="48" height="28" rx="8"/>
+    <rect x="877" y="320" width="48" height="28" rx="8"/>
+    <circle cx="90" cy="456" r="32"/>
+    <circle cx="230" cy="456" r="32"/>
+    <circle cx="370" cy="456" r="32"/>
+    <rect x="474" y="440" width="52" height="32" rx="8"/>
+    <rect x="586" y="440" width="108" height="32" rx="8"/>
+    <circle cx="870" cy="456" r="32"/>
+  </g>
+  <g id="controls">
+    <circle id="knob.low_gain" cx="70.6667" cy="130" r="26" fill="#ff00ff"/>
+    <circle id="knob.low_gamma" cx="164" cy="130" r="26" fill="#ff00ff"/>
+    <circle id="knob.low_bit_depth" cx="257.333" cy="130" r="26" fill="#ff00ff"/>
+    <circle id="knob.low_smoothing" cx="70.6667" cy="240" r="26" fill="#ff00ff"/>
+    <circle id="knob.low_mix" cx="164" cy="240" r="26" fill="#ff00ff"/>
+    <circle id="knob.low_level" cx="257.333" cy="240" r="26" fill="#ff00ff"/>
+    <rect id="toggle.low_auto_gain" x="39" y="324" width="40" height="20" fill="#ff00ff"/>
+    <rect id="toggle.low_crush_mode" x="109" y="324" width="40" height="20" fill="#ff00ff"/>
+    <rect id="toggle.low_on" x="179" y="324" width="40" height="20" fill="#ff00ff"/>
+    <rect id="toggle.low_solo" x="249" y="324" width="40" height="20" fill="#ff00ff"/>
+    <circle id="knob.mid_gain" cx="386.667" cy="130" r="26" fill="#ff00ff"/>
+    <circle id="knob.mid_gamma" cx="480" cy="130" r="26" fill="#ff00ff"/>
+    <circle id="knob.mid_bit_depth" cx="573.333" cy="130" r="26" fill="#ff00ff"/>
+    <circle id="knob.mid_smoothing" cx="386.667" cy="240" r="26" fill="#ff00ff"/>
+    <circle id="knob.mid_mix" cx="480" cy="240" r="26" fill="#ff00ff"/>
+    <circle id="knob.mid_level" cx="573.333" cy="240" r="26" fill="#ff00ff"/>
+    <rect id="toggle.mid_auto_gain" x="355" y="324" width="40" height="20" fill="#ff00ff"/>
+    <rect id="toggle.mid_crush_mode" x="425" y="324" width="40" height="20" fill="#ff00ff"/>
+    <rect id="toggle.mid_on" x="495" y="324" width="40" height="20" fill="#ff00ff"/>
+    <rect id="toggle.mid_solo" x="565" y="324" width="40" height="20" fill="#ff00ff"/>
+    <circle id="knob.high_gain" cx="702.667" cy="130" r="26" fill="#ff00ff"/>
+    <circle id="knob.high_gamma" cx="796" cy="130" r="26" fill="#ff00ff"/>
+    <circle id="knob.high_bit_depth" cx="889.333" cy="130" r="26" fill="#ff00ff"/>
+    <circle id="knob.high_smoothing" cx="702.667" cy="240" r="26" fill="#ff00ff"/>
+    <circle id="knob.high_mix" cx="796" cy="240" r="26" fill="#ff00ff"/>
+    <circle id="knob.high_level" cx="889.333" cy="240" r="26" fill="#ff00ff"/>
+    <rect id="toggle.high_auto_gain" x="671" y="324" width="40" height="20" fill="#ff00ff"/>
+    <rect id="toggle.high_crush_mode" x="741" y="324" width="40" height="20" fill="#ff00ff"/>
+    <rect id="toggle.high_on" x="811" y="324" width="40" height="20" fill="#ff00ff"/>
+    <rect id="toggle.high_solo" x="881" y="324" width="40" height="20" fill="#ff00ff"/>
+    <circle id="knob.low_xover" cx="90" cy="456" r="26" fill="#ff00ff"/>
+    <circle id="knob.high_xover" cx="230" cy="456" r="26" fill="#ff00ff"/>
+    <circle id="knob.decay" cx="370" cy="456" r="26" fill="#ff00ff"/>
+    <rect id="toggle.detect" x="478" y="444" width="44" height="24" fill="#ff00ff"/>
+    <rect id="selector.stereo" x="590" y="444" width="100" height="24" fill="#ff00ff"/>
+    <circle id="knob.mix" cx="870" cy="456" r="26" fill="#ff00ff"/>
+  </g>
+</svg>

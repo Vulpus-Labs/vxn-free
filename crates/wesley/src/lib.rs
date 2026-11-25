@@ -5,13 +5,23 @@
 //! crossovers whose bands sum flat (`vxn_free_dsp::ThreeBand`). Each band
 //! has Beverley's crush chain with its own settings; STEREO and auto
 //! gain's DETECT and DECAY are shared. LOW is off by default, so out of
-//! the box the bass passes clean and MID and HIGH are crushed. The editor
-//! arrives with the plugin (ticket 0034).
+//! the box the bass passes clean and MID and HIGH are crushed.
+//!
+//! `wesley.svg` is the plain faceplate (ticket 0034) until 0036's design;
+//! `build.rs` turns it into PNGs and the `faceplate` module below.
 
-use silkscreen::ParamIndex;
 use silkscreen::model::{ParamSpec, Taper};
+use silkscreen::{
+    Binding, BindingExt, Editor, EditorState, EngineLink, Model, ParamIndex, ParamKnob,
+    ParamSelector, ParamToggle, PluginUi,
+};
 
 pub mod engine;
+
+/// Generated from `wesley.svg` by `silkscreen-build`.
+pub mod faceplate {
+    include!(concat!(env!("OUT_DIR"), "/wesley.rs"));
+}
 
 /// The three bands, low to high.
 pub const BANDS: usize = 3;
@@ -186,6 +196,136 @@ pub static PARAMS: [ParamSpec; PARAM_COUNT] = {
         .id(36);
     all
 };
+
+fn on(model: &Model, p: ParamIndex) -> bool {
+    model.get(p) >= 0.5
+}
+
+/// Band `band`'s bindings: its crush controls dim while the band is off,
+/// and its GAIN while AUTO GAIN sets the gain instead.
+fn band_controls(band: usize) -> [Box<dyn Binding>; PER_BAND as usize] {
+    let p = |q| band_param(band, q);
+    let band_on = p(BandParam::On);
+    let auto = p(BandParam::AutoGain);
+    let knob = move |q| -> Box<dyn Binding> {
+        Box::new(ParamKnob::new(p(q)).dimmed_when(&[band_on], move |m| !on(m, band_on)))
+    };
+    let toggle = move |q| -> Box<dyn Binding> {
+        Box::new(ParamToggle::new(p(q)).dimmed_when(&[band_on], move |m| !on(m, band_on)))
+    };
+    [
+        Box::new(
+            ParamKnob::new(p(BandParam::Gain))
+                .dimmed_when(&[band_on, auto], move |m| !on(m, band_on) || on(m, auto)),
+        ),
+        toggle(BandParam::AutoGain),
+        knob(BandParam::Gamma),
+        knob(BandParam::BitDepth),
+        knob(BandParam::Smoothing),
+        toggle(BandParam::CrushMode),
+        knob(BandParam::Mix),
+        Box::new(ParamKnob::new(p(BandParam::Level))),
+        Box::new(ParamToggle::new(band_on)),
+        Box::new(ParamToggle::new(p(BandParam::Solo))),
+    ]
+}
+
+/// The editor's long-lived state, bound to the engine through `link`.
+pub fn state(link: Box<dyn EngineLink>) -> EditorState {
+    let [
+        low_gain,
+        low_auto_gain,
+        low_gamma,
+        low_bit_depth,
+        low_smoothing,
+        low_crush_mode,
+        low_mix,
+        low_level,
+        low_on,
+        low_solo,
+    ] = band_controls(LOW);
+    let [
+        mid_gain,
+        mid_auto_gain,
+        mid_gamma,
+        mid_bit_depth,
+        mid_smoothing,
+        mid_crush_mode,
+        mid_mix,
+        mid_level,
+        mid_on,
+        mid_solo,
+    ] = band_controls(MID);
+    let [
+        high_gain,
+        high_auto_gain,
+        high_gamma,
+        high_bit_depth,
+        high_smoothing,
+        high_crush_mode,
+        high_mix,
+        high_level,
+        high_on,
+        high_solo,
+    ] = band_controls(HIGH);
+    let controls = faceplate::Controls::<Box<dyn Binding>> {
+        low_gain,
+        low_auto_gain,
+        low_gamma,
+        low_bit_depth,
+        low_smoothing,
+        low_crush_mode,
+        low_mix,
+        low_level,
+        low_on,
+        low_solo,
+        mid_gain,
+        mid_auto_gain,
+        mid_gamma,
+        mid_bit_depth,
+        mid_smoothing,
+        mid_crush_mode,
+        mid_mix,
+        mid_level,
+        mid_on,
+        mid_solo,
+        high_gain,
+        high_auto_gain,
+        high_gamma,
+        high_bit_depth,
+        high_smoothing,
+        high_crush_mode,
+        high_mix,
+        high_level,
+        high_on,
+        high_solo,
+        low_xover: Box::new(ParamKnob::new(LOW_XOVER)),
+        high_xover: Box::new(ParamKnob::new(HIGH_XOVER)),
+        decay: Box::new(ParamKnob::new(DECAY)),
+        detect: Box::new(ParamToggle::new(DETECT)),
+        stereo: Box::new(ParamSelector::new(STEREO)),
+        mix: Box::new(ParamKnob::new(MIX)),
+    };
+    EditorState::new(&faceplate::LAYOUT, &PARAMS, controls.into_array(), link)
+}
+
+/// What every host needs to know about the editor.
+pub const UI: PluginUi = PluginUi {
+    vendor: "Vulpus Labs",
+    product: "Wesley",
+    version: env!("CARGO_PKG_VERSION"),
+    web_prefix: "wesley",
+    specs: &PARAMS,
+    factory: &[],
+    faceplate: &faceplate::FACEPLATE,
+    frame: 0,
+    state,
+};
+
+/// A whole editor, state and view, for hosts that own both.
+pub fn editor(link: Box<dyn EngineLink>) -> Editor {
+    Editor::new(state(link), UI.raster())
+}
 
 #[cfg(test)]
 mod tests {

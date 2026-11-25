@@ -1716,7 +1716,24 @@ version = "0.1.1"
 dependencies = [
  "silkscreen",
  "silkscreen-bridge",
+ "silkscreen-build",
+ "silkscreen-harness",
  "vxn-free-dsp",
+]
+
+[[package]]
+name = "wesley-clap"
+version = "0.1.1"
+dependencies = [
+ "clack-extensions",
+ "clack-host",
+ "clack-plugin",
+ "silkscreen",
+ "silkscreen-bridge",
+ "silkscreen-build",
+ "silkscreen-clap",
+ "vxn-free-dsp",
+ "wesley",
 ]
 
 [[package]]

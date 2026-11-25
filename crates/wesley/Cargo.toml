@@ -12,8 +12,12 @@ publish.workspace = true
 silkscreen.workspace = true
 vxn-free-dsp.workspace = true
 
+[build-dependencies]
+silkscreen-build.workspace = true
+
 [dev-dependencies]
 silkscreen-bridge = { workspace = true, features = ["testing"] }
+silkscreen-harness.workspace = true
 
 [lints]
 workspace = true
