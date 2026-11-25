@@ -20,7 +20,7 @@ pub mod spectrum;
 pub mod stft;
 pub mod svf;
 
-pub use crossover::Crossover;
+pub use crossover::{Crossover, MIN_BAND_RATIO, ThreeBand};
 pub use delay::{DelayLine, LANES, SideBuffer, lagrange4_weights};
 pub use fft::RealPackedFft;
 pub use peak::{PeakFollower, RangeFollower};

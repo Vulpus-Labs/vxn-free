@@ -5,7 +5,7 @@ use std::alloc::{GlobalAlloc, Layout, System};
 use std::cell::Cell;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use vxn_free_dsp::{Crossover, DelayLine, Peak, SideBuffer, Stft, peaks};
+use vxn_free_dsp::{Crossover, DelayLine, Peak, SideBuffer, Stft, ThreeBand, peaks};
 
 struct Counting;
 
@@ -77,6 +77,23 @@ fn delay_lines_side_buffers_and_crossovers_never_allocate() {
         line.clear();
         side.fill(1.0);
         xover.reset();
+    });
+    std::hint::black_box(acc);
+    assert_eq!(n, 0);
+}
+
+#[test]
+fn a_three_band_split_never_allocates() {
+    let mut split = ThreeBand::new(200.0, 2500.0, 48_000.0);
+    let mut acc = 0.0f32;
+    let n = allocations(|| {
+        for n in 0..100_000 {
+            if n % 32 == 0 {
+                split.set_frequencies(100.0 + (n % 900) as f32, 2000.0 + (n % 5000) as f32);
+            }
+            acc += split.split((n as f32 * 0.01).sin()).iter().sum::<f32>();
+        }
+        split.reset();
     });
     std::hint::black_box(acc);
     assert_eq!(n, 0);
