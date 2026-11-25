@@ -8,13 +8,20 @@ Free audio effect plugins from Vulpus Labs, built with
   smoothing between quantisation levels, and symmetric or asymmetric crush
   ([manual](https://vulpuslabs.com/manuals/beverley/),
   [downloads](https://vulpuslabs.com/products/beverley/)).
+- **Wesley**: Beverley in three bands. Two crossovers split the input into
+  LOW, MID and HIGH, which sum flat; each band has Beverley's controls, its
+  own level and mix, and a solo. The bass is left clean by default
+  ([manual](https://vulpuslabs.com/manuals/wesley/),
+  [downloads](https://vulpuslabs.com/products/wesley/)).
 - **Glow-Up**: a harmonic exciter. It finds the strongest partials in the
   input and boosts what is already there a fifth, an octave and two octaves
   above them, with resonance up to self-oscillation.
 
-Both are adaptations of Vulpus Labs modules for Voltage Modular.
+Beverley and Glow-Up are adaptations of Vulpus Labs modules for Voltage
+Modular.
 
-**Status:** in development; no release yet. The plan is in
+**Status:** Beverley and Wesley are released (0.2.0); Glow-Up is in
+development. The plan is in
 [`epics/`](epics/) and [`tickets/`](tickets/), the decisions in
 [`adrs/`](adrs/).
 

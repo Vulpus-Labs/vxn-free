@@ -1,0 +1,39 @@
+name,min,max,default
+Low Gain,0.0 dB,20.0 dB,0.0 dB
+Low Auto Gain,Off,On,On
+Low Gamma,0.10,10.00,1.00
+Low Bit Depth,1.0 bits,16.0 bits,4.0 bits
+Low Smoothing,0 %,100 %,0 %
+Low Crush Mode,Asymmetric,Symmetric,Asymmetric
+Low Mix,0 %,100 %,100 %
+Low Level,-24.0 dB,12.0 dB,0.0 dB
+Low On,Off,On,Off
+Low Detect,Peak,Range,Range
+Low Decay,1 ms,5000 ms,300 ms
+Mid Gain,0.0 dB,20.0 dB,0.0 dB
+Mid Auto Gain,Off,On,On
+Mid Gamma,0.10,10.00,1.00
+Mid Bit Depth,1.0 bits,16.0 bits,4.0 bits
+Mid Smoothing,0 %,100 %,0 %
+Mid Crush Mode,Asymmetric,Symmetric,Asymmetric
+Mid Mix,0 %,100 %,100 %
+Mid Level,-24.0 dB,12.0 dB,0.0 dB
+Mid On,Off,On,On
+Mid Detect,Peak,Range,Range
+Mid Decay,1 ms,5000 ms,115 ms
+High Gain,0.0 dB,20.0 dB,0.0 dB
+High Auto Gain,Off,On,On
+High Gamma,0.10,10.00,1.00
+High Bit Depth,1.0 bits,16.0 bits,4.0 bits
+High Smoothing,0 %,100 %,0 %
+High Crush Mode,Asymmetric,Symmetric,Asymmetric
+High Mix,0 %,100 %,100 %
+High Level,-24.0 dB,12.0 dB,0.0 dB
+High On,Off,On,On
+High Detect,Peak,Range,Range
+High Decay,1 ms,5000 ms,40 ms
+Low Xover,40 Hz,1000 Hz,200 Hz
+High Xover,500 Hz,12000 Hz,2500 Hz
+Stereo,Mono,Linked,Linked
+Mix,0 %,100 %,100 %
+Solo,Off,High,Off
