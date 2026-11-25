@@ -19,8 +19,8 @@ it.
   `crates/beverley/art/panel/geometry.json`. Don't edit what it writes:
   change it and run `python3 faceplate.py` here.
 - **Panel relief**: `blender/panel.py` builds the panel (its face in
-  sections split by engraved grooves, the rack slots, the screws and
-  washers) and renders two maps into `crates/beverley/art/panel/`. The
+  sections split by engraved grooves, the rack slots, the display's
+  recessed window, the screws and washers) and renders two maps into `crates/beverley/art/panel/`. The
   SVG multiplies `shade.png` over the print and screens `sheen.png` over
   it. Re-render after the geometry changes (about 40 s):
 

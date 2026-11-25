@@ -4,8 +4,8 @@ geometry):
 
 - `shade.png`, multiplied: the relief's light and shade. White where the
   panel's face is lit flat on; darker on its bevelled edges, in the rack
-  slots and the engraved dividers, and in the shadows the screws and
-  washers cast.
+  slots, the engraved dividers and the display's window, and in the
+  shadows the screws and washers cast.
 - `sheen.png`, screened: the light the relief reflects. The bevels and
   the screws catch the key light; the paint has a soft satin sheen.
 
@@ -48,6 +48,10 @@ BEVEL = 1.4
 # Engraved dividers: GROOVE wide, GROOVE_DEPTH deep.
 GROOVE = 1.2
 GROOVE_DEPTH = 0.7
+# The display's window: a recess WINDOW_DEPTH deep, its corners rounded
+# WINDOW_R.
+WINDOW_DEPTH = 1.6
+WINDOW_R = 3.0
 # A nylon cup washer, and a pan-head screw in it.
 WASHER_R = 7.5
 WASHER_H = 1.3
@@ -137,6 +141,10 @@ def build(geom):
 
     for x, y, sw, sh in geom["slots"]:
         cutter(studio.rounded_rect(sw * U, sh * U, sh / 2 * U), x + sw / 2, y + sh / 2, -1.0)
+    # Display windows: recessed part way into the face.
+    for x, y, sw, sh in geom.get("windows", []):
+        cutter(studio.rounded_rect(sw * U, sh * U, WINDOW_R * U), x + sw / 2, y + sh / 2,
+               top - WINDOW_DEPTH * U)
 
     # The face is in sections, a groove's width apart, over a backing
     # plate a groove's depth down: each section's rounded edge is the

@@ -8,8 +8,9 @@
 use silkscreen::model::Taper;
 use silkscreen::{
     Binding, BindingExt, Editor, EditorState, EngineLink, Model, ParamIndex, ParamKnob,
-    ParamSelector, ParamSpec, ParamToggle, PluginUi,
+    ParamSelector, ParamSpec, ParamToggle, PluginUi, Unbound,
 };
+use vxn_free_ui::{ChainParams, CrushStyle, CrushView};
 
 /// Beverley's crush chain, in `vxn-free-dsp` so Wesley's engine shares
 /// it (ADR 0003).
@@ -110,8 +111,25 @@ pub fn state(link: Box<dyn EngineLink>) -> EditorState {
         crush_mode: Box::new(ParamToggle::new(CRUSH_MODE)),
         stereo: Box::new(ParamSelector::new(STEREO)),
         mix: Box::new(ParamKnob::new(MIX)),
+        // The crush display (ticket 0039) takes no input.
+        display: Box::new(Unbound),
     };
-    EditorState::new(&faceplate::LAYOUT, &PARAMS, controls.into_array(), link)
+    let mut state = EditorState::new(&faceplate::LAYOUT, &PARAMS, controls.into_array(), link);
+    state.set_widget(faceplate::ids::DISPLAY, |_| {
+        Box::new(CrushView::new(
+            ChainParams {
+                gain: GAIN,
+                auto_gain: AUTO_GAIN,
+                gamma: GAMMA,
+                bit_depth: BIT_DEPTH,
+                smoothing: SMOOTHING,
+                crush_mode: CRUSH_MODE,
+                mix: MIX,
+            },
+            CrushStyle::LCD,
+        ))
+    });
+    state
 }
 
 /// What every host needs to know about the editor.

@@ -24,7 +24,7 @@ import os
 HERE = os.path.dirname(os.path.abspath(__file__))
 CRATE = os.path.join(HERE, "..", "..", "crates", "beverley")
 
-W, H = 1090, 150
+W, H = 1290, 150
 # The panel stands this far in from the top and bottom of the view; the
 # gap shows the rack behind.
 GAP = 3
@@ -41,7 +41,8 @@ ACCENT = "#d9572b"  # the 90s signal orange of the title stripe
 
 out = []
 o = out.append
-geometry = {"size": [W, H], "gap": GAP, "slots": [], "screws": [], "grooves": []}
+geometry = {"size": [W, H], "gap": GAP, "slots": [], "screws": [], "grooves": [],
+            "windows": []}
 
 
 def polar(cx, cy, r, deg):
@@ -110,6 +111,24 @@ def divider(x):
     o(f'  <line x1="{x}" y1="20" x2="{x}" y2="130" stroke="#141517" stroke-width="1.2"/>')
 
 
+# The crush display's window (ticket 0039): an LCD set into a recess, the
+# canvas inside its bezel.
+WIN_X, WIN_Y, WIN_W, WIN_H = 828, 40, 160, 84
+LCD_INSET = 5
+
+
+def window():
+    """The display's window: a recess the relief cuts part way into the
+    face, a dark bezel printed in it, and the LCD's glass (drawn by the
+    editor's widget over the canvas marker)."""
+    geometry["windows"].append([WIN_X, WIN_Y, WIN_W, WIN_H])
+    o(f'  <rect x="{WIN_X}" y="{WIN_Y}" width="{WIN_W}" height="{WIN_H}" rx="3" '
+      f'fill="#0b0b0c"/>')
+    o(f'  <rect x="{WIN_X + LCD_INSET - 1}" y="{WIN_Y + LCD_INSET - 1}" '
+      f'width="{WIN_W - 2 * LCD_INSET + 2}" height="{WIN_H - 2 * LCD_INSET + 2}" '
+      f'fill="#3a4430"/>')
+
+
 def lin(n):
     return [i / (n - 1) for i in range(n)]
 
@@ -152,10 +171,13 @@ knob(552, "GAMMA", lin(9), {0: "0.1", 0.5: "1", 1: "10"})
 knob(650, "BIT DEPTH", lin(9), {0: "1", 0.25: "2", 0.5: "4", 0.75: "8", 1: "16"})
 knob(748, "SMOOTHING", lin(9), {0: "0", 0.5: "20", 1: "100 %"})
 divider(808)
-bat(846, "CRUSH", "SYM", "ASYM")
-bat(908, "STEREO", "LINK", "MONO", "SEP")
-divider(950)
-knob(992, "MIX", lin(11), {0: "DRY", 1: "WET"})
+text(WIN_X + WIN_W / 2, 30, "1 CYCLE", 10.5, spacing=1.6)
+window()
+divider(1008)
+bat(1046, "CRUSH", "SYM", "ASYM")
+bat(1108, "STEREO", "LINK", "MONO", "SEP")
+divider(1150)
+knob(1192, "MIX", lin(11), {0: "DRY", 1: "WET"})
 o('  </g>')
 
 # Blender's relief over the print: light and shadow multiplied, the
@@ -174,12 +196,14 @@ def marker(kind, name, cx, box, skin):
 
 
 for cx, n in ((250, "gain"), (442, "decay"), (552, "gamma"), (650, "bit_depth"),
-              (748, "smoothing"), (992, "mix")):
+              (748, "smoothing"), (1192, "mix")):
     marker("knob", n, cx, KNOB_BOX, "knob")
 marker("button", "auto_gain", 312, BUTTON_BOX, "button")
 marker("toggle", "detect", 372, TOGGLE_BOX, "toggle2")
-marker("toggle", "crush_mode", 846, TOGGLE_BOX, "toggle2")
-marker("toggle", "stereo", 908, TOGGLE_BOX, "toggle3")
+marker("toggle", "crush_mode", 1046, TOGGLE_BOX, "toggle2")
+marker("toggle", "stereo", 1108, TOGGLE_BOX, "toggle3")
+o(f'    <rect id="canvas.display" x="{WIN_X + LCD_INSET}" y="{WIN_Y + LCD_INSET}" '
+  f'width="{WIN_W - 2 * LCD_INSET}" height="{WIN_H - 2 * LCD_INSET}" fill="#f0f"/>')
 o('  </g>\n</svg>')
 
 with open(os.path.join(CRATE, "beverley.svg"), "w") as f:

@@ -138,6 +138,18 @@ impl CrushStyle {
         curve_width: 1.6,
         inset: 6.0,
     };
+
+    /// A backlit yellow-green LCD with a dark trace: for Beverley's 1990s
+    /// rack panel (ticket 0039).
+    pub const LCD: CrushStyle = CrushStyle {
+        background: (0xa9, 0xb8, 0x72),
+        grid: (0x8e, 0x9c, 0x5c),
+        sine: (0x3c, 0x47, 0x2c),
+        sine_alpha: 0.3,
+        curve: (0x1b, 0x22, 0x14),
+        curve_width: 1.5,
+        inset: 5.0,
+    };
 }
 
 /// The display widget for one chain.

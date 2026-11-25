@@ -81,6 +81,7 @@ dependencies = [
  "silkscreen-build",
  "silkscreen-harness",
  "vxn-free-dsp",
+ "vxn-free-ui",
 ]
 
 [[package]]
