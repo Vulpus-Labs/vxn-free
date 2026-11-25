@@ -67,7 +67,10 @@ together: Beverley's crush chain on each of three bands.
    aliases outside it. They are left in, as in most multiband
    distortion: refiltering each band after the crush would take the
    edge off and cost phase. Measured in the engine ticket, and revisited
-   by ear.
+   by ear. Measured (0033): with MID alone crushed at 4 bits, a 0.4–2 kHz
+   sine's products are 27–28 dB under the signal in HIGH's range, 36–41
+   dB within MID, and 76–90 dB down in LOW's. A crushed band mostly adds
+   treble above itself.
 
 8. **One chain, shared with Beverley.** Beverley's per-channel chain
    (settings, glides, auto gain detectors, the crush) becomes a type

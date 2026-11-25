@@ -190,7 +190,7 @@ fn shape(x: f32, steepness: f32) -> f32 {
 mod tests {
     use super::*;
 
-    use vxn_free_dsp::PeakFollower;
+    use crate::PeakFollower;
 
     fn crush(s: Settings, x: f32) -> f32 {
         Prepared::new(&s).crush(x, s.gain)
@@ -326,11 +326,7 @@ mod tests {
             ..Settings::default()
         };
         let p = Prepared::new(&s);
-        let mut peak = PeakFollower::new(
-            ATTACK_MS,
-            vxn_free_dsp::peak::fall(0.115, 48_000.0),
-            48_000.0,
-        );
+        let mut peak = PeakFollower::new(ATTACK_MS, crate::peak::fall(0.115, 48_000.0), 48_000.0);
         // A steady 0.1 drives the peak to 0.1, so the gain to 10: the
         // quantiser sees 1, and the output is 0.1 again.
         let mut out = 0.0;

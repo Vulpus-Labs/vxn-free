@@ -1,6 +1,6 @@
-//! One crush chain with its settings: what Beverley runs on its input and
-//! Wesley on each of its bands (ADR 0003, ticket 0032). It sees only
-//! `vxn-free-dsp`: it runs on the audio thread, so it never allocates or
+//! One crush chain ([`crate::crush`]) with its settings: what Beverley
+//! runs on its input and Wesley on each of its bands (ADR 0003, tickets
+//! 0032 and 0033). It runs on the audio thread, so it never allocates or
 //! locks.
 //!
 //! Settings are worked out once per control tick of [`TICK`] samples: the
@@ -18,8 +18,8 @@
 //! (aliasing was measured, and oversampling bought too little for its
 //! cost: ticket 0003).
 
-use vxn_free_dsp::peak::fall;
-use vxn_free_dsp::{Glide, PeakFollower, Ramp, RangeFollower};
+use crate::peak::fall;
+use crate::{Glide, PeakFollower, Ramp, RangeFollower};
 
 use crate::crush::{ATTACK_MS, Mode, Prepared, Settings, auto_gain};
 

@@ -1711,6 +1711,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88"
 
 [[package]]
+name = "wesley"
+version = "0.1.1"
+dependencies = [
+ "silkscreen",
+ "silkscreen-bridge",
+ "vxn-free-dsp",
+]
+
+[[package]]
 name = "windows"
 version = "0.62.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

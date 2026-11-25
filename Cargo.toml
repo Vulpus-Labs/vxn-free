@@ -7,6 +7,7 @@ members = [
     "crates/beverley-clap",
     "crates/charm",
     "crates/charm-clap",
+    "crates/wesley",
 ]
 
 [workspace.package]
@@ -21,6 +22,7 @@ publish = false
 vxn-free-dsp = { path = "crates/vxn-free-dsp" }
 beverley = { path = "crates/beverley" }
 charm = { path = "crates/charm" }
+wesley = { path = "crates/wesley" }
 
 # Every silkscreen crate from one tag. Bump them together, and keep
 # rust-toolchain.toml equal to silkscreen's at that tag (snapshots depend

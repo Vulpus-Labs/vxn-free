@@ -11,8 +11,9 @@ use silkscreen::{
     ParamSelector, ParamSpec, ParamToggle, PluginUi,
 };
 
-pub mod chain;
-pub mod crush;
+/// Beverley's crush chain, in `vxn-free-dsp` so Wesley's engine shares
+/// it (ADR 0003).
+pub use vxn_free_dsp::{crush, crush_chain as chain};
 pub mod engine;
 
 /// Generated from `beverley.svg` by `silkscreen-build`.

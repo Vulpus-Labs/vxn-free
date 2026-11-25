@@ -1,4 +1,5 @@
-//! DSP shared by the vxn-free plugins: Beverley, Glow-Up and Charm.
+//! DSP shared by the vxn-free plugins: Beverley, Wesley, Glow-Up and (shelved)
+//! Charm.
 //!
 //! # Rules
 //!
@@ -10,6 +11,8 @@
 //!   `wasm32-unknown-unknown`, so a web build of a plugin stays possible.
 
 pub mod crossover;
+pub mod crush;
+pub mod crush_chain;
 pub mod delay;
 // A copy of Patches' FFT, kept as its source formats it (see its header).
 #[rustfmt::skip]
