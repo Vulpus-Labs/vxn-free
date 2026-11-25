@@ -10,6 +10,6 @@ depends: ["0036"]
 ## Acceptance criteria
 
 - [ ] `docs/wesley.md`: what it does, each control, starting points.
-- [ ] Trademark search in class 9 (ADR 0003, point 1).
+- [ ] Trademark search in class 9 (ADR 0004, point 1).
 - [ ] The release workflow builds `wesley-clap` (CLAP and VST3, signed
       and notarized on macOS) beside Beverley.

@@ -10,7 +10,7 @@ depends: ["0034"]
 ## Summary
 
 Wesley's real faceplate, in the 1990s rack style of Beverley's (ticket
-0013), drawn from scratch (ADR 0003, point 10).
+0013), drawn from scratch (ADR 0004, point 10).
 
 ## Acceptance criteria
 
@@ -39,7 +39,7 @@ change the controls, and the script redraws the panel in a minute.
 - The controls are Beverley's skins (`build.rs` registers
   `crates/beverley/art/controls/`), so the two plugins' knobs and
   switches match.
-- With it: per-band DETECT and DECAY (ADR 0003, point 5), and solo as
+- With it: per-band DETECT and DECAY (ADR 0004, point 5), and solo as
   one SOLO param shown as an LED button a band, one lit at a time
   (point 6). Ids renumbered (unreleased): 11 a band, 1–33; LOW XOVER,
   HIGH XOVER, STEREO, MIX, SOLO 34–38.

@@ -9,7 +9,7 @@ depends: ["0031", "0032"]
 
 ## Summary
 
-The `wesley` crate: params and engine (ADR 0003, points 3–7).
+The `wesley` crate: params and engine (ADR 0004, points 3–7).
 
 ## Acceptance criteria
 

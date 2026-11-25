@@ -1,4 +1,4 @@
-# 0003: Wesley, a three-band Beverley
+# 0004: Wesley, a three-band Beverley
 
 Status: proposed (2026-11-25)
 

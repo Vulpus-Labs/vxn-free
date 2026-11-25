@@ -1,4 +1,4 @@
-//! Wesley's engine (ADR 0003): the input split into three bands, each
+//! Wesley's engine (ADR 0004): the input split into three bands, each
 //! through its own crush chain, summed. It sees only the bridge
 //! (`silkscreen::bridge`) and `vxn-free-dsp`: it runs on the audio thread,
 //! so it never allocates or locks.

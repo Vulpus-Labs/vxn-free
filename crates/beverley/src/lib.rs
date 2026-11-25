@@ -13,7 +13,7 @@ use silkscreen::{
 use vxn_free_ui::{ChainParams, CrushStyle, CrushView};
 
 /// Beverley's crush chain, in `vxn-free-dsp` so Wesley's engine shares
-/// it (ADR 0003).
+/// it (ADR 0004).
 pub use vxn_free_dsp::{crush, crush_chain as chain};
 pub mod engine;
 

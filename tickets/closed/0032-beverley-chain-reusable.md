@@ -11,7 +11,7 @@ depends: []
 
 Beverley's per-channel processing (its settings and glides, auto gain's
 detectors, the crush) becomes one type, so Wesley can run three of
-them (ADR 0003, point 8). Beverley then uses it too, unchanged in sound.
+them (ADR 0004, point 8). Beverley then uses it too, unchanged in sound.
 
 ## Acceptance criteria
 

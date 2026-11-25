@@ -1,4 +1,4 @@
-//! Wesley: Beverley in three bands (ADR 0003). Its parameters and its
+//! Wesley: Beverley in three bands (ADR 0004). Its parameters and its
 //! engine.
 //!
 //! The input is split into LOW, MID and HIGH by two Linkwitz-Riley
@@ -91,7 +91,7 @@ pub const HIGH_XOVER: ParamIndex = ParamIndex(SHARED + 1);
 pub const STEREO: ParamIndex = ParamIndex(SHARED + 2);
 pub const MIX: ParamIndex = ParamIndex(SHARED + 3);
 /// The soloed band, if any: 0 none, then LOW, MID, HIGH. One param, so
-/// only one band is ever soloed (ADR 0003, point 6).
+/// only one band is ever soloed (ADR 0004, point 6).
 pub const SOLO: ParamIndex = ParamIndex(SHARED + 4);
 
 /// The band [`SOLO`] at plain `value` solos, if any.
@@ -112,7 +112,7 @@ fn gamma_to_knob(gamma: f32) -> f32 {
 /// One band's params, `name` prefixed (`"Low"`), ids from `id`. Ranges
 /// and defaults are Beverley's but for AUTO GAIN, on (a band is quieter
 /// than the whole, and auto gain brings it to full scale before it is
-/// crushed: ADR 0003, point 4), and DECAY, `decay` ms: slower for LOW, so
+/// crushed: ADR 0004, point 4), and DECAY, `decay` ms: slower for LOW, so
 /// auto gain doesn't pump within a bass cycle, faster for HIGH. Drafts
 /// until ticket 0035.
 macro_rules! band {

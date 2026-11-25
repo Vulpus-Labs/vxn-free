@@ -1,7 +1,7 @@
 """Writes Wesley's faceplate, `crates/wesley/wesley.svg`, and the relief
 Beverley's `blender/panel.py` renders, `crates/wesley/art/panel/geometry.json`.
 
-Wesley is Beverley's sibling (ADR 0003): the same 1990s rack style, the
+Wesley is Beverley's sibling (ADR 0004): the same 1990s rack style, the
 same knobs and switches (Beverley's skins, `crates/beverley/art/controls/`),
 in wine red where Beverley is dark teal-blue. Each band is a column, as on
 the plain faceplate it replaced, holding Beverley's strip folded into

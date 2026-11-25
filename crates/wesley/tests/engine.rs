@@ -151,7 +151,7 @@ fn at_the_defaults_the_bass_passes_clean() {
 
 #[test]
 fn solo_hears_only_the_soloed_band() {
-    // SOLO is one param, so one band at a time (ADR 0003, point 6).
+    // SOLO is one param, so one band at a time (ADR 0004, point 6).
     let x = noise(48_000, 3);
     for (value, keep) in [
         (0.0, [true, true, true]),

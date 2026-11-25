@@ -24,7 +24,7 @@ impl SilkscreenPlugin for WesleyPlugin {
     const BUILD: &'static str = env!("SILKSCREEN_BUILD_ID");
     const AUDIO_INPUT: bool = true;
     const USER_PRESETS: bool = true;
-    /// None, at any setting and rate (ADR 0003, point 2).
+    /// None, at any setting and rate (ADR 0004, point 2).
     const LATENCY: u32 = WesleyEngine::LATENCY;
     const UI: PluginUi = wesley::UI;
 

@@ -9,7 +9,7 @@ depends: ["0033"]
 
 ## Summary
 
-Wesley in a DAW as soon as it plays (ADR 0003, point 9): the plugin
+Wesley in a DAW as soon as it plays (ADR 0004, point 9): the plugin
 plumbing and a plain SVG grid of its controls, enough to listen. 0036
 replaces the faceplate.
 
@@ -37,7 +37,7 @@ Everything but the DAW check is done; this closes when you've listened.
   (LOW, at the defaults), and its GAIN while AUTO GAIN is on.
 - `crates/wesley-clap`: `WesleyPlugin`, `labs.vulpus.wesley`, features
   audio-effect, distortion, stereo (CLAP has no standard multiband
-  feature; ADR 0003 corrected); user presets; latency 0.
+  feature; ADR 0004 corrected); user presets; latency 0.
 - Tests:
   - editor: a snapshot; every one of the 36 controls moves its param;
     LOW's strip undims when it is switched on

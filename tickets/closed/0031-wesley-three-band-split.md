@@ -9,7 +9,7 @@ depends: []
 
 ## Summary
 
-`vxn-free-dsp` gains a three-band split for Wesley (ADR 0003, point 3):
+`vxn-free-dsp` gains a three-band split for Wesley (ADR 0004, point 3):
 two Linkwitz-Riley crossovers, with the low band passed through the
 upper crossover's allpass so the three bands sum to an allpass of the
 input.

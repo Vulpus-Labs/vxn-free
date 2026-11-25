@@ -7,7 +7,7 @@ created: 2026-11-25
 
 ## Goal
 
-Wesley as a zero-latency CLAP (and VST3) effect, as ADR 0003 proposes:
+Wesley as a zero-latency CLAP (and VST3) effect, as ADR 0004 proposes:
 Beverley's crush chain on each of three bands, split by Linkwitz-Riley
 crossovers that sum flat, with per-band controls and shared stereo and
 auto gain settings. In a DAW early, tuned by ear, then given its

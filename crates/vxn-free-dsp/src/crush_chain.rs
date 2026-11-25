@@ -1,5 +1,5 @@
 //! One crush chain ([`crate::crush`]) with its settings: what Beverley
-//! runs on its input and Wesley on each of its bands (ADR 0003, tickets
+//! runs on its input and Wesley on each of its bands (ADR 0004, tickets
 //! 0032 and 0033). It runs on the audio thread, so it never allocates or
 //! locks.
 //!

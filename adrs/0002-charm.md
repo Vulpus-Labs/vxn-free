@@ -308,7 +308,7 @@ What carries on:
 
 - The multiband split (point 5): LOW left alone, MID and HIGH processed,
   through Linkwitz-Riley crossovers in `vxn-free-dsp`. Wesley, a
-  multiband Beverley, builds on it (ADR 0003).
+  multiband Beverley, builds on it (ADR 0004).
 - From `vxn-free-dsp`: the modulated delay line and its lane-wise
   `gather`, `AllpassBank`, the side-buffer.
 - silkscreen's telemetry frames (0022), released in v0.3.0 and v0.3.1.
