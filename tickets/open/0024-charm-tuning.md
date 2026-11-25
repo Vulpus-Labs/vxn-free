@@ -118,3 +118,38 @@ voices on the floor, at rest, for good.
   the loop into its own function (even `#[inline(always)]`, const
   generic per mode), cost 15 % more (9.7 %); the loop stays inline with
   one `if` for the chains and one for the fade.
+
+## Progress (2026-11-25): what the controls do to the sound; SPREAD to 150 ms
+
+Heard in a DAW: the flock knobs change the display's flight patterns
+far more than the sound, and 32 voices sound much like 64. Measured on
+a 440 Hz sine (wet signal's 10 ms RMS envelope, 16 s):
+
+| Voices (SPREAD 10 ms) | envelope varies | swells a second |
+|---|---|---|
+| 2 | 47 % | 1.2 |
+| 8 | 45 % | 2.1 |
+| 32 | 49 % | 2.3 |
+| 64 | 55 % | 2.7 |
+
+- A sum of detuned copies is already a random sum by a few voices; its
+  envelope varies about 50 % whatever the count (the 1/√N level holds
+  the loudness). Past 4–8 voices, more voices change little.
+- What each voice contributes is its detune over time, capped by
+  DETUNE; the flock rules change paths, but every voice spends its time
+  at 60–70 % of the cap, so COHESION, SEPARATION and TURBULENCE are
+  mostly visual. SPREAD set only the swell rate (2.6 a second at 1 ms,
+  1.3 at 25 ms).
+- At 7.5–32.5 ms every voice fuses with the dry signal: delay sets the
+  comb colouring, not the space.
+
+Experiment: SPREAD's top raised from 25 to 150 ms (taper centre 7 →
+12 ms; the default stays 10 ms; values are stored in ms, so saved ones
+keep their meaning), and the delay lines with it. Beyond about 40 ms the
+voices should be heard as separate entries, so the flock's spacing and
+motion become audible as an ensemble's looseness. CPU unchanged: 8.55 %
+of a core at 64 voices, 96 kHz, SPREAD 10 ms; 8.61 % at 150 ms. The
+steady-sine envelope is unchanged too (45–49 %), as expected: the wider
+range should show on changing material, not a held tone. To decide by
+ear here: the range, whether the floor moves, and whether the flock
+controls stay.
