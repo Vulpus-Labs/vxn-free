@@ -1,0 +1,16 @@
+[package]
+name = "vxn-free-ui"
+description = "Editor widgets the vxn-free plugins share"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+silkscreen.workspace = true
+vxn-free-dsp.workspace = true
+
+[lints]
+workspace = true

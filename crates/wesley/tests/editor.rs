@@ -87,7 +87,8 @@ fn controls() -> Vec<(silkscreen::ControlId, ParamIndex)> {
 fn every_control_moves_its_param() {
     let all = controls();
     assert_eq!(all.len(), PARAMS.len(), "one control a param");
-    assert_eq!(LAYOUT.controls.len(), PARAMS.len());
+    // And a crush display a band (ticket 0040).
+    assert_eq!(LAYOUT.controls.len(), PARAMS.len() + 3);
     for (control, param) in all {
         let mut h = Harness::new(wesley::editor, 1.0);
         let spec = &PARAMS[param.0 as usize];
@@ -112,4 +113,23 @@ fn a_bands_controls_dim_while_it_is_off() {
     assert_eq!(h.model().get(band_param(LOW, BandParam::On)), 1.0);
     let on = h.snapshot().clone();
     assert_ne!(off, on, "turning LOW on undims its strip");
+}
+
+#[test]
+fn a_display_follows_its_bands_settings() {
+    let mut h = Harness::new(wesley::editor, 1.0);
+    h.snapshot();
+    h.drag(ids::MID_BIT_DEPTH, 30.0);
+    h.snapshot();
+    let mid = LAYOUT.control(ids::MID_DISPLAY).rect.to_physical(1.0);
+    let high = LAYOUT.control(ids::HIGH_DISPLAY).rect.to_physical(1.0);
+    assert!(
+        h.last_damage().iter().any(|d| d.intersect(&mid).is_some()),
+        "MID's display repaints"
+    );
+    assert!(
+        h.last_damage().iter().all(|d| d.intersect(&high).is_none()),
+        "HIGH's doesn't"
+    );
+    assert_snapshot!(h, "mid_two_bits_1x");
 }

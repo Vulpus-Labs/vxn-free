@@ -21,6 +21,7 @@ asymmetric crush, and mono, separate or linked stereo.
 | 0006 (closed) | Manual |
 | 0012 (closed) | Auto gain: PEAK and RANGE detectors, DECAY |
 | 0013 (closed) | Faceplate rendered in Blender, 1990s rack style |
+| 0039 | Crush display: an LCD window in the panel (after E005's 0038) |
 
 ## Dependency order
 

@@ -13,8 +13,9 @@
 use silkscreen::model::{ParamSpec, Taper};
 use silkscreen::{
     Binding, BindingExt, Editor, EditorState, EngineLink, Model, ParamIndex, ParamKnob,
-    ParamSelector, ParamToggle, PluginUi,
+    ParamSelector, ParamToggle, PluginUi, Unbound,
 };
+use vxn_free_ui::{ChainParams, CrushStyle, CrushView};
 
 pub mod engine;
 
@@ -305,8 +306,42 @@ pub fn state(link: Box<dyn EngineLink>) -> EditorState {
         detect: Box::new(ParamToggle::new(DETECT)),
         stereo: Box::new(ParamSelector::new(STEREO)),
         mix: Box::new(ParamKnob::new(MIX)),
+        low_display: display_binding(LOW),
+        mid_display: display_binding(MID),
+        high_display: display_binding(HIGH),
     };
-    EditorState::new(&faceplate::LAYOUT, &PARAMS, controls.into_array(), link)
+    let mut state = EditorState::new(&faceplate::LAYOUT, &PARAMS, controls.into_array(), link);
+    for (band, id) in [
+        (LOW, faceplate::ids::LOW_DISPLAY),
+        (MID, faceplate::ids::MID_DISPLAY),
+        (HIGH, faceplate::ids::HIGH_DISPLAY),
+    ] {
+        state.set_widget(id, move |_| {
+            Box::new(CrushView::new(chain_params(band), CrushStyle::WELL))
+        });
+    }
+    state
+}
+
+/// Band `band`'s chain params, for its crush display (ticket 0040).
+fn chain_params(band: usize) -> ChainParams {
+    let p = |q| band_param(band, q);
+    ChainParams {
+        gain: p(BandParam::Gain),
+        auto_gain: p(BandParam::AutoGain),
+        gamma: p(BandParam::Gamma),
+        bit_depth: p(BandParam::BitDepth),
+        smoothing: p(BandParam::Smoothing),
+        crush_mode: p(BandParam::CrushMode),
+        mix: p(BandParam::Mix),
+    }
+}
+
+/// A band's display takes no input, and dims with the band while it is
+/// off.
+fn display_binding(band: usize) -> Box<dyn Binding> {
+    let band_on = band_param(band, BandParam::On);
+    Box::new(Unbound.dimmed_when(&[band_on], move |m| !on(m, band_on)))
 }
 
 /// What every host needs to know about the editor.

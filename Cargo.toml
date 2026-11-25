@@ -3,6 +3,7 @@
 resolver = "3"
 members = [
     "crates/vxn-free-dsp",
+    "crates/vxn-free-ui",
     "crates/beverley",
     "crates/beverley-clap",
     "crates/charm",
@@ -21,6 +22,7 @@ publish = false
 
 [workspace.dependencies]
 vxn-free-dsp = { path = "crates/vxn-free-dsp" }
+vxn-free-ui = { path = "crates/vxn-free-ui" }
 beverley = { path = "crates/beverley" }
 charm = { path = "crates/charm" }
 wesley = { path = "crates/wesley" }

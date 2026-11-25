@@ -24,6 +24,8 @@ faceplate.
 | 0035 | Tuning by ear: ranges, defaults, out-of-band products |
 | 0036 | Faceplate in Beverley's family |
 | 0037 | Manual and release |
+| 0038 | A crush display: the settings on one cycle of a sine (shared) |
+| 0040 | Wesley's crush displays, one a band |
 
 Beverley's own open tickets (0005, 0027) go on in parallel; 0032 is the
 only one here that touches Beverley, and leaves its sound unchanged.
@@ -31,4 +33,5 @@ only one here that touches Beverley, and leaves its sound unchanged.
 ## Dependency order
 
 0031 and 0032 first, in either order; 0033 after both; 0034 after 0033;
-0035 after 0034; 0036 after 0035; 0037 after 0036.
+0035 after 0034; 0036 after 0035; 0037 after 0036. 0038 after 0033;
+0040 after 0038 and 0034, before 0036.

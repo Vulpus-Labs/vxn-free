@@ -11,6 +11,7 @@ publish.workspace = true
 [dependencies]
 silkscreen.workspace = true
 vxn-free-dsp.workspace = true
+vxn-free-ui.workspace = true
 
 [build-dependencies]
 silkscreen-build.workspace = true
