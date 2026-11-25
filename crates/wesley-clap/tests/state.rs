@@ -30,17 +30,18 @@ fn a_saved_state_comes_back_with_its_sound() {
         (2, 0.0),
         (4, 2.5),
         (9, 1.0),
-        (13, 0.3),
-        (15, 40.0),
-        (18, -3.0),
-        (24, 8.0),
-        (27, 70.0),
-        (31, 300.0),
-        (32, 4000.0),
-        (33, 1.0),
-        (34, 0.0),
-        (35, 500.0),
-        (36, 80.0),
+        (14, 0.3),
+        (16, 40.0),
+        (19, -3.0),
+        (21, 0.0),
+        (22, 500.0),
+        (26, 8.0),
+        (29, 70.0),
+        (34, 300.0),
+        (35, 4000.0),
+        (36, 1.0),
+        (37, 80.0),
+        (38, 2.0),
     ];
     run(&mut plugin, 48_000.0, &events(first), &x, &x);
     let saved = save(&mut plugin);
@@ -48,7 +49,7 @@ fn a_saved_state_comes_back_with_its_sound() {
 
     let second: Vec<(u32, f64)> = first.iter().map(|&(id, _)| (id, 1.0)).collect();
     run(&mut plugin, 48_000.0, &events(&second), &x, &x);
-    assert_eq!(value(&mut plugin, 36), 1.0);
+    assert_eq!(value(&mut plugin, 37), 1.0);
 
     restore(&mut plugin, &saved);
     for &(id, v) in first {

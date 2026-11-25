@@ -15,6 +15,9 @@
 //!   input: the split turns the phase, and mixing with the raw input
 //!   would comb about the crossovers (point 5).
 //!
+//! Each band's chain has its own auto gain DETECT and DECAY; STEREO goes
+//! to all three.
+//!
 //! Nothing is delayed, so the latency is zero; the crossovers turn the
 //! phase (ticket 0031).
 
@@ -25,7 +28,7 @@ use vxn_free_dsp::crush_chain::{Chain, Detect, Setting, Stereo, TICK};
 use vxn_free_dsp::{Glide, Ramp, ThreeBand};
 
 use crate::{
-    BANDS, BandParam, DECAY, DETECT, HIGH_XOVER, LOW_XOVER, MIX, PARAMS, STEREO, band_param,
+    BANDS, BandParam, HIGH_XOVER, LOW_XOVER, MIX, PARAMS, SOLO, STEREO, band_param, soloed,
     which_band_param,
 };
 
@@ -50,7 +53,6 @@ struct BandGains {
     on: Glide,
     /// 0 (muted by another band's solo) to 1 (heard).
     heard: Glide,
-    solo: bool,
     level_ramp: Ramp,
     on_ramp: Ramp,
     heard_ramp: Ramp,
@@ -69,6 +71,8 @@ pub struct WesleyEngine {
     /// 0 (uncrushed) to 1 (crushed).
     mix: Glide,
     mix_ramp: Ramp,
+    /// The soloed band, if any.
+    solo: Option<usize>,
     /// Samples of the current tick already rendered; a new tick starts
     /// when it reaches `TICK`.
     into_tick: usize,
@@ -91,13 +95,13 @@ impl WesleyEngine {
                 level: glide(db_to_linear(default_of(band_param(band, BandParam::Level)))),
                 on: glide(default_of(band_param(band, BandParam::On))),
                 heard: glide(1.0),
-                solo: false,
                 level_ramp: Ramp::default(),
                 on_ramp: Ramp::default(),
                 heard_ramp: Ramp::default(),
             }),
             mix: glide(default_of(MIX) * 0.01),
             mix_ramp: Ramp::default(),
+            solo: None,
             into_tick: TICK,
             dry: [[[0.0; TICK]; 2]; BANDS],
             wet: [[[0.0; TICK]; 2]; BANDS],
@@ -125,10 +129,8 @@ impl WesleyEngine {
         for chain in &mut self.chains {
             chain.tick();
         }
-        let any_solo = self.gains.iter().any(|g| g.solo);
-        for g in &mut self.gains {
-            g.heard
-                .set_target(if !any_solo || g.solo { 1.0 } else { 0.0 });
+        for (band, g) in self.gains.iter_mut().enumerate() {
+            g.heard.set_target(heard(self.solo, band));
             let ramp = |glide: &mut Glide| {
                 let from = glide.value();
                 Ramp::new(from, glide.tick(), TICK)
@@ -180,6 +182,16 @@ impl WesleyEngine {
     }
 }
 
+/// How much of `band` is heard with `solo` soloed: all of it with none
+/// soloed or itself soloed, none otherwise.
+fn heard(solo: Option<usize>, band: usize) -> f32 {
+    if solo.is_none_or(|s| s == band) {
+        1.0
+    } else {
+        0.0
+    }
+}
+
 /// A band's chain setting for its param `p` at plain `value`, if it is
 /// one.
 fn chain_setting(p: BandParam, value: f32) -> Option<Setting> {
@@ -195,7 +207,13 @@ fn chain_setting(p: BandParam, value: f32) -> Option<Setting> {
             Mode::Asymmetric
         }),
         BandParam::Mix => Setting::Mix(value),
-        BandParam::Level | BandParam::On | BandParam::Solo => return None,
+        BandParam::Detect => Setting::Detect(if value >= 0.5 {
+            Detect::Range
+        } else {
+            Detect::Peak
+        }),
+        BandParam::Decay => Setting::Decay(value),
+        BandParam::Level | BandParam::On => return None,
     })
 }
 
@@ -209,7 +227,6 @@ impl Engine for WesleyEngine {
             match p {
                 BandParam::Level => g.level.set_target(db_to_linear(value)),
                 BandParam::On => g.on.set_target(if value >= 0.5 { 1.0 } else { 0.0 }),
-                BandParam::Solo => g.solo = value >= 0.5,
                 _ => {}
             }
             return;
@@ -227,17 +244,15 @@ impl Engine for WesleyEngine {
                 self.mix.set_target(value * 0.01);
                 return;
             }
+            SOLO => {
+                self.solo = soloed(value);
+                return;
+            }
             STEREO => Setting::Stereo(match value.round() as i32 {
                 0 => Stereo::Mono,
                 1 => Stereo::Separate,
                 _ => Stereo::Linked,
             }),
-            DETECT => Setting::Detect(if value >= 0.5 {
-                Detect::Range
-            } else {
-                Detect::Peak
-            }),
-            DECAY => Setting::Decay(value),
             _ => return,
         };
         for chain in &mut self.chains {
@@ -269,10 +284,8 @@ impl Engine for WesleyEngine {
     }
 
     fn reset(&mut self) {
-        let any_solo = self.gains.iter().any(|g| g.solo);
-        for g in &mut self.gains {
-            g.heard
-                .set_target(if !any_solo || g.solo { 1.0 } else { 0.0 });
+        for (band, g) in self.gains.iter_mut().enumerate() {
+            g.heard.set_target(heard(self.solo, band));
             for glide in [&mut g.level, &mut g.on, &mut g.heard] {
                 glide.snap();
             }

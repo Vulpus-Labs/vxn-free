@@ -4,7 +4,7 @@ use silkscreen::ParamIndex;
 use silkscreen::bridge::Engine;
 use silkscreen_bridge::testing::{CountingAllocator, allocations};
 use wesley::engine::WesleyEngine;
-use wesley::{BandParam, HIGH_XOVER, LOW, LOW_XOVER, MID, MIX, PARAMS, STEREO, band_param};
+use wesley::{BandParam, HIGH_XOVER, LOW, LOW_XOVER, MIX, PARAMS, SOLO, STEREO, band_param};
 
 #[global_allocator]
 static ALLOC: CountingAllocator = CountingAllocator;
@@ -25,7 +25,7 @@ fn process_and_set_param_never_allocate() {
                 );
             }
             e.set_param(band_param(LOW, BandParam::On), 1.0);
-            e.set_param(band_param(MID, BandParam::Solo), k % 2.0);
+            e.set_param(SOLO, k % 4.0);
             e.set_param(LOW_XOVER, 100.0 + 50.0 * k);
             e.set_param(HIGH_XOVER, 1000.0 + 1000.0 * k);
             e.set_param(STEREO, k % 3.0);

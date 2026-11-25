@@ -34,7 +34,7 @@ fn every_param_is_listed_with_its_id_name_and_range() {
     }
     assert_eq!(
         ids,
-        (1..=36).collect::<Vec<u32>>(),
+        (1..=38).collect::<Vec<u32>>(),
         "ids never change or move"
     );
 }
@@ -46,12 +46,13 @@ fn values_read_in_their_units() {
     let params = handle.get_extension::<PluginParams>().unwrap();
     let mut text = [0u8; 64];
     for (id, value, shown) in [
-        (14, 6.5, "6.5 bits"),
-        (18, 3.0, "3.0 dB"),
-        (31, 200.0, "200 Hz"),
-        (32, 2500.0, "2500 Hz"),
-        (35, 300.0, "300 ms"),
-        (36, 50.0, "50 %"),
+        (15, 6.5, "6.5 bits"),
+        (19, 3.0, "3.0 dB"),
+        (34, 200.0, "200 Hz"),
+        (35, 2500.0, "2500 Hz"),
+        (22, 300.0, "300 ms"),
+        (37, 50.0, "50 %"),
+        (38, 2.0, "Mid"),
     ] {
         let got = params
             .value_to_text(&mut handle, ClapId::new(id), value, &mut text)
@@ -59,7 +60,7 @@ fn values_read_in_their_units() {
         assert_eq!(std::str::from_utf8(got).unwrap(), shown, "param {id}");
     }
     assert_eq!(
-        params.text_to_value(&mut handle, ClapId::new(31), c"300 Hz"),
+        params.text_to_value(&mut handle, ClapId::new(34), c"300 Hz"),
         Some(300.0)
     );
 }
@@ -84,10 +85,10 @@ fn automation_reaches_audio_and_the_model() {
     let (after, _) = run(
         &mut plugin,
         48_000.0,
-        &events(&[(19, 0.0), (29, 0.0)]),
+        &events(&[(20, 0.0), (31, 0.0)]),
         &x,
         &x,
     );
     assert!(far(&after) < 1e-5, "{}", far(&after));
-    assert_eq!(value(&mut plugin, 19), 0.0);
+    assert_eq!(value(&mut plugin, 20), 0.0);
 }

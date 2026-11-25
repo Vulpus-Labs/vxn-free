@@ -3,14 +3,15 @@
 //!
 //! The input is split into LOW, MID and HIGH by two Linkwitz-Riley
 //! crossovers whose bands sum flat (`vxn_free_dsp::ThreeBand`). Each band
-//! has Beverley's crush chain with its own settings; STEREO and auto
-//! gain's DETECT and DECAY are shared. LOW is off by default, so out of
+//! has Beverley's crush chain with its own settings, auto gain's DETECT
+//! and DECAY among them; STEREO is shared. LOW is off by default, so out of
 //! the box the bass passes clean and MID and HIGH are crushed.
 //!
 //! `wesley.svg` is the plain faceplate (ticket 0034) until 0036's design;
 //! `build.rs` turns it into PNGs and the `faceplate` module below.
 
-use silkscreen::model::{ParamSpec, Taper};
+use silkscreen::core::{ControlEvent, WidgetState};
+use silkscreen::model::{Edit, ParamSpec, Taper, binding};
 use silkscreen::{
     Binding, BindingExt, Editor, EditorState, EngineLink, Model, ParamIndex, ParamKnob,
     ParamSelector, ParamToggle, PluginUi, Unbound,
@@ -44,11 +45,12 @@ pub enum BandParam {
     Mix = 6,
     Level = 7,
     On = 8,
-    Solo = 9,
+    Detect = 9,
+    Decay = 10,
 }
 
 /// Params a band has.
-pub const PER_BAND: u32 = 10;
+pub const PER_BAND: u32 = 11;
 
 impl BandParam {
     /// Every band param, in index order.
@@ -62,7 +64,8 @@ impl BandParam {
         BandParam::Mix,
         BandParam::Level,
         BandParam::On,
-        BandParam::Solo,
+        BandParam::Detect,
+        BandParam::Decay,
     ];
 }
 
@@ -86,9 +89,16 @@ const SHARED: u32 = BANDS as u32 * PER_BAND;
 pub const LOW_XOVER: ParamIndex = ParamIndex(SHARED);
 pub const HIGH_XOVER: ParamIndex = ParamIndex(SHARED + 1);
 pub const STEREO: ParamIndex = ParamIndex(SHARED + 2);
-pub const DETECT: ParamIndex = ParamIndex(SHARED + 3);
-pub const DECAY: ParamIndex = ParamIndex(SHARED + 4);
-pub const MIX: ParamIndex = ParamIndex(SHARED + 5);
+pub const MIX: ParamIndex = ParamIndex(SHARED + 3);
+/// The soloed band, if any: 0 none, then LOW, MID, HIGH. One param, so
+/// only one band is ever soloed (ADR 0003, point 6).
+pub const SOLO: ParamIndex = ParamIndex(SHARED + 4);
+
+/// The band [`SOLO`] at plain `value` solos, if any.
+pub fn soloed(value: f32) -> Option<usize> {
+    let v = value.round();
+    (v >= 1.0 && v <= BANDS as f32).then(|| v as usize - 1)
+}
 
 /// GAMMA's knob runs from −1 to 1; the power it sets is ten to that.
 fn gamma_from_knob(knob: f32) -> f32 {
@@ -100,11 +110,13 @@ fn gamma_to_knob(gamma: f32) -> f32 {
 }
 
 /// One band's params, `name` prefixed (`"Low"`), ids from `id`. Ranges
-/// and defaults are Beverley's but for AUTO GAIN, on: a band is quieter
+/// and defaults are Beverley's but for AUTO GAIN, on (a band is quieter
 /// than the whole, and auto gain brings it to full scale before it is
-/// crushed (ADR 0003, point 4). Drafts until ticket 0035.
+/// crushed: ADR 0003, point 4), and DECAY, `decay` ms: slower for LOW, so
+/// auto gain doesn't pump within a bass cycle, faster for HIGH. Drafts
+/// until ticket 0035.
 macro_rules! band {
-    ($name:literal, $id:literal, $on:literal) => {
+    ($name:literal, $id:literal, $on:literal, $decay:literal) => {
         [
             ParamSpec::new(concat!($name, " Gain"), 0.0, 20.0, 0.0)
                 .unit("dB")
@@ -141,18 +153,26 @@ macro_rules! band {
                 .id($id + 7),
             // Off passes the band uncrushed.
             ParamSpec::toggle(concat!($name, " On"), $on).id($id + 8),
-            // Any band soloed mutes the rest: for setting up by ear.
-            ParamSpec::toggle(concat!($name, " Solo"), false).id($id + 9),
+            // How auto gain follows the band, as Beverley's DETECT.
+            ParamSpec::toggle(concat!($name, " Detect"), true)
+                .labels(&["Peak", "Range"])
+                .id($id + 9),
+            // Auto gain lets go 20 dB in this time, as Beverley's DECAY.
+            ParamSpec::new(concat!($name, " Decay"), 1.0, 5000.0, $decay)
+                .taper(Taper::Exp { mid: 70.710_68 })
+                .unit("ms")
+                .decimals(0)
+                .id($id + 10),
         ]
     };
 }
 
-const LOW_PARAMS: [ParamSpec; PER_BAND as usize] = band!("Low", 1, false);
-const MID_PARAMS: [ParamSpec; PER_BAND as usize] = band!("Mid", 11, true);
-const HIGH_PARAMS: [ParamSpec; PER_BAND as usize] = band!("High", 21, true);
+const LOW_PARAMS: [ParamSpec; PER_BAND as usize] = band!("Low", 1, false, 300.0);
+const MID_PARAMS: [ParamSpec; PER_BAND as usize] = band!("Mid", 12, true, 115.0);
+const HIGH_PARAMS: [ParamSpec; PER_BAND as usize] = band!("High", 23, true, 40.0);
 
 /// Params in all.
-pub const PARAM_COUNT: usize = BANDS * PER_BAND as usize + 6;
+pub const PARAM_COUNT: usize = BANDS * PER_BAND as usize + 5;
 
 /// The parameter table: index `i` is `ParamIndex(i)`. Each `id` is what
 /// presets and host projects store, so never change or reuse one.
@@ -171,30 +191,22 @@ pub static PARAMS: [ParamSpec; PARAM_COUNT] = {
         .taper(Taper::Exp { mid: 200.0 })
         .unit("Hz")
         .decimals(0)
-        .id(31);
+        .id(34);
     // Held at least an octave above LOW XOVER.
     all[s + 1] = ParamSpec::new("High Xover", 500.0, 12_000.0, 2500.0)
         .taper(Taper::Exp { mid: 2449.49 })
         .unit("Hz")
         .decimals(0)
-        .id(32);
-    // How the two channels are crushed, as Beverley's STEREO.
-    all[s + 2] = ParamSpec::stepped("Stereo", &["Mono", "Separate", "Linked"], 2).id(33);
-    // How auto gain follows each band, as Beverley's DETECT.
-    all[s + 3] = ParamSpec::toggle("Detect", true)
-        .labels(&["Peak", "Range"])
-        .id(34);
-    // Auto gain lets go 20 dB in this time, as Beverley's DECAY.
-    all[s + 4] = ParamSpec::new("Decay", 1.0, 5000.0, 115.0)
-        .taper(Taper::Exp { mid: 70.710_68 })
-        .unit("ms")
-        .decimals(0)
         .id(35);
+    // How the two channels are crushed, as Beverley's STEREO.
+    all[s + 2] = ParamSpec::stepped("Stereo", &["Mono", "Separate", "Linked"], 2).id(36);
     // The summed bands against the input split and summed uncrushed.
-    all[s + 5] = ParamSpec::new("Mix", 0.0, 100.0, 100.0)
+    all[s + 3] = ParamSpec::new("Mix", 0.0, 100.0, 100.0)
         .unit("%")
         .decimals(0)
-        .id(36);
+        .id(37);
+    // The soloed band, for setting up by ear: it alone is heard.
+    all[s + 4] = ParamSpec::stepped("Solo", &["Off", "Low", "Mid", "High"], 0).id(38);
     all
 };
 
@@ -227,8 +239,37 @@ fn band_controls(band: usize) -> [Box<dyn Binding>; PER_BAND as usize] {
         knob(BandParam::Mix),
         Box::new(ParamKnob::new(p(BandParam::Level))),
         Box::new(ParamToggle::new(band_on)),
-        Box::new(ParamToggle::new(p(BandParam::Solo))),
+        // Auto gain's DETECT and DECAY do nothing with AUTO off.
+        Box::new(
+            ParamToggle::new(p(BandParam::Detect))
+                .dimmed_when(&[band_on, auto], move |m| !on(m, band_on) || !on(m, auto)),
+        ),
+        Box::new(
+            ParamKnob::new(p(BandParam::Decay))
+                .dimmed_when(&[band_on, auto], move |m| !on(m, band_on) || !on(m, auto)),
+        ),
     ]
+}
+
+/// Band `band`'s SOLO button: lit while the band is soloed; a press solos
+/// it, or, if it is soloed, clears the solo. Only one band is soloed at a
+/// time, so lighting one button puts out the others.
+fn solo_button(band: usize) -> Box<dyn Binding> {
+    let this = (band + 1) as f32;
+    Box::new(binding::from_fn(
+        &[SOLO],
+        move |event: &ControlEvent, edit: &mut Edit<'_>| {
+            if let ControlEvent::Click { .. } = event {
+                let to = if edit.get(SOLO) == this { 0.0 } else { this };
+                edit.begin(SOLO);
+                edit.set(SOLO, to);
+                edit.end(SOLO);
+            }
+        },
+        move |model: &Model| {
+            WidgetState::stepped(if model.get(SOLO) == this { 1.0 } else { 0.0 }, 2)
+        },
+    ))
 }
 
 /// The editor's long-lived state, bound to the engine through `link`.
@@ -243,7 +284,8 @@ pub fn state(link: Box<dyn EngineLink>) -> EditorState {
         low_mix,
         low_level,
         low_on,
-        low_solo,
+        low_detect,
+        low_decay,
     ] = band_controls(LOW);
     let [
         mid_gain,
@@ -255,7 +297,8 @@ pub fn state(link: Box<dyn EngineLink>) -> EditorState {
         mid_mix,
         mid_level,
         mid_on,
-        mid_solo,
+        mid_detect,
+        mid_decay,
     ] = band_controls(MID);
     let [
         high_gain,
@@ -267,7 +310,8 @@ pub fn state(link: Box<dyn EngineLink>) -> EditorState {
         high_mix,
         high_level,
         high_on,
-        high_solo,
+        high_detect,
+        high_decay,
     ] = band_controls(HIGH);
     let controls = faceplate::Controls::<Box<dyn Binding>> {
         low_gain,
@@ -279,7 +323,8 @@ pub fn state(link: Box<dyn EngineLink>) -> EditorState {
         low_mix,
         low_level,
         low_on,
-        low_solo,
+        low_detect,
+        low_decay,
         mid_gain,
         mid_auto_gain,
         mid_gamma,
@@ -289,7 +334,8 @@ pub fn state(link: Box<dyn EngineLink>) -> EditorState {
         mid_mix,
         mid_level,
         mid_on,
-        mid_solo,
+        mid_detect,
+        mid_decay,
         high_gain,
         high_auto_gain,
         high_gamma,
@@ -299,13 +345,15 @@ pub fn state(link: Box<dyn EngineLink>) -> EditorState {
         high_mix,
         high_level,
         high_on,
-        high_solo,
+        high_detect,
+        high_decay,
         low_xover: Box::new(ParamKnob::new(LOW_XOVER)),
         high_xover: Box::new(ParamKnob::new(HIGH_XOVER)),
-        decay: Box::new(ParamKnob::new(DECAY)),
-        detect: Box::new(ParamToggle::new(DETECT)),
         stereo: Box::new(ParamSelector::new(STEREO)),
         mix: Box::new(ParamKnob::new(MIX)),
+        low_solo: solo_button(LOW),
+        mid_solo: solo_button(MID),
+        high_solo: solo_button(HIGH),
         low_display: display_binding(LOW),
         mid_display: display_binding(MID),
         high_display: display_binding(HIGH),
@@ -317,7 +365,7 @@ pub fn state(link: Box<dyn EngineLink>) -> EditorState {
         (HIGH, faceplate::ids::HIGH_DISPLAY),
     ] {
         state.set_widget(id, move |_| {
-            Box::new(CrushView::new(chain_params(band), CrushStyle::WELL))
+            Box::new(CrushView::new(chain_params(band), CrushStyle::LCD))
         });
     }
     state
@@ -369,7 +417,7 @@ mod tests {
     #[test]
     fn ids_are_unique_and_in_order() {
         let ids: Vec<u32> = PARAMS.iter().map(|p| p.id).collect();
-        assert_eq!(ids, (1..=36).collect::<Vec<u32>>());
+        assert_eq!(ids, (1..=38).collect::<Vec<u32>>());
     }
 
     #[test]

@@ -53,3 +53,6 @@ Everything but the DAW check is done; this closes when you've listened.
   fresh bundle warns on scan time, as for Beverley and Charm, and a
   second is clean (16 passed, 0 warnings).
 - Installed with `cargo silkscreen bundle wesley-clap --install`.
+
+Later (2026-11-25): the plain faceplate is replaced by 0036's rack panel;
+params are renumbered there (38). The plugin tests follow.

@@ -54,15 +54,21 @@ together: Beverley's crush chain on each of three bands.
    reduced one (ON, BIT DEPTH, MIX, LEVEL) or none.
 
 5. **Shared settings.** STEREO (mono, separate, linked, as Beverley's)
-   and auto gain's DETECT and DECAY apply to every band, so the bands
-   stay one instrument. A global MIX blends the summed bands against the
+   applies to every band. Auto gain's DETECT and DECAY are each band's
+   own (amended 2026-11-25; first drafted as shared): a short release
+   that suits the treble makes the gain pump within each bass cycle, so
+   one DECAY can't suit every band. Draft DECAY defaults: LOW 300 ms,
+   MID 115 ms (Beverley's), HIGH 40 ms. A global MIX blends the summed bands against the
    dry input. The dry path is the uncrushed bands' sum, not the raw
    input: the bands are turned in phase, and mixing them with the raw
    input would comb around the crossovers.
 
 6. **Solo and bypass.** Each band can be switched off (passing its band
-   uncrushed) or soloed, to set it up by ear. Solo is a param, so it is
-   saved, but only for setting up; a soloed band mutes the others.
+   uncrushed) or soloed, to set it up by ear. Solo means solo: one band
+   at a time. It is one param, SOLO (off, LOW, MID or HIGH), shown as an
+   LED button a band; pressing a band's solos it (putting out any other),
+   pressing the lit one clears it. Being a param, it is saved, but it is
+   only for setting up.
 
 7. **Out-of-band products stay.** Crushing a band makes harmonics and
    aliases outside it. They are left in, as in most multiband
@@ -85,16 +91,19 @@ together: Beverley's crush chain on each of three bands.
    faceplate is drawn.
 
 10. **Faceplate.** Original, in Beverley's family (the 1990s rack style
-    of ticket 0013): three band strips side by side, with the
-    crossovers and shared settings apart.
+    of ticket 0013), rendered the same way and in wine red where
+    Beverley is dark teal-blue: each band a row laid out as Beverley's
+    strip (ON and SOLO; GAIN, AUTO, DETECT, DECAY; GAMMA, BIT DEPTH,
+    SMOOTHING; its crush display; CRUSH, LEVEL, MIX), the rows on shared
+    columns so the engraved dividers run the full height, and the title,
+    crossovers, STEREO and MIX in the first column (ticket 0036).
 
 ## Consequences
 
-- Up to about 33 params: 9 a band (GAIN, AUTO GAIN, GAMMA, BIT DEPTH,
-  SMOOTHING, CRUSH MODE, MIX, LEVEL, and ON or SOLO) and 6 shared
-  (LOW XOVER, HIGH XOVER, STEREO, DETECT, DECAY, MIX), fewer if LOW's
-  strip is cut down. The faceplate is wide; whether every band needs
-  every control is a question for tuning.
+- 38 params: 11 a band (GAIN, AUTO GAIN, GAMMA, BIT DEPTH, SMOOTHING,
+  CRUSH MODE, MIX, LEVEL, ON, DETECT, DECAY; ids 1–33) and 5 shared
+  (LOW XOVER, HIGH XOVER, STEREO, MIX, SOLO; ids 34–38), fewer if
+  tuning cuts LOW's strip down. Ids were renumbered before any release.
 - CPU is about three Beverleys plus five filters a channel; Beverley's
   chain is cheap, so Wesley stays well under a percent of a core.
 - `vxn-free-dsp` gains a three-band split. Charm's crates keep using

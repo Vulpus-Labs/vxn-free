@@ -4,7 +4,7 @@ use silkscreen::ParamIndex;
 use silkscreen::bridge::Engine;
 use vxn_free_dsp::ThreeBand;
 use wesley::engine::WesleyEngine;
-use wesley::{BANDS, BandParam, HIGH, LOW, MID, MIX, PARAMS, band_param};
+use wesley::{BANDS, BandParam, HIGH, LOW, MID, MIX, PARAMS, SOLO, band_param};
 
 const RATE: f32 = 48_000.0;
 
@@ -150,15 +150,20 @@ fn at_the_defaults_the_bass_passes_clean() {
 }
 
 #[test]
-fn solo_hears_only_the_soloed_bands() {
+fn solo_hears_only_the_soloed_band() {
+    // SOLO is one param, so one band at a time (ADR 0003, point 6).
     let x = noise(48_000, 3);
-    let mut set = all_off();
-    set.push((band_param(MID, BandParam::Solo), 1.0));
-    let (out, _) = render(&mut engine(&set), &x, &x, 64);
-    assert!(worst(&out, &split_sum(&x, [false, true, false])) < 1e-6);
-    set.push((band_param(HIGH, BandParam::Solo), 1.0));
-    let (out, _) = render(&mut engine(&set), &x, &x, 64);
-    assert!(worst(&out, &split_sum(&x, [false, true, true])) < 1e-6);
+    for (value, keep) in [
+        (0.0, [true, true, true]),
+        (1.0, [true, false, false]),
+        (2.0, [false, true, false]),
+        (3.0, [false, false, true]),
+    ] {
+        let mut set = all_off();
+        set.push((SOLO, value));
+        let (out, _) = render(&mut engine(&set), &x, &x, 64);
+        assert!(worst(&out, &split_sum(&x, keep)) < 1e-6, "SOLO {value}");
+    }
 }
 
 #[test]
@@ -271,8 +276,10 @@ fn every_param_has_an_effect_or_is_known_to_need_one() {
         let mut set = base.clone();
         set.push((p, v));
         let (got, _) = render(&mut engine(&set), &x, &x, 64);
-        // STEREO and DETECT need a stereo difference or auto gain to act.
-        let quiet = ["Stereo", "Detect", "Decay"].contains(&spec.name);
+        // STEREO needs a stereo difference to act, DETECT and DECAY auto
+        // gain (off here).
+        let quiet =
+            spec.name == "Stereo" || spec.name.ends_with("Detect") || spec.name.ends_with("Decay");
         assert!(
             quiet || worst(&got, &want) > 1e-4,
             "{} had no effect",
