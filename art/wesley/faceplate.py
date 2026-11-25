@@ -4,15 +4,16 @@ Beverley's `blender/panel.py` renders, `crates/wesley/art/panel/geometry.json`.
 Wesley is Beverley's sibling (ADR 0003): the same 1990s rack style, the
 same knobs and switches (Beverley's skins, `crates/beverley/art/controls/`),
 in wine red where Beverley is dark teal-blue. Each band is a column, as on
-the plain faceplate it replaced, so the engraved dividers between them run
-the panel's full height (the relief splits its face only along them). A
-band column is Beverley's strip folded into rows:
+the plain faceplate it replaced, holding Beverley's strip folded into
+rows; a row along the bottom holds the title and the shared controls. The
+engraved grooves part the face into a grid (`sections` in the geometry):
 
-    [title]        [LOW  ON SOLO]   [MID ...]   [HIGH ...]
-    [LOW X HIGH X] [1 CYCLE LCD ]
-    [STEREO]       [GAIN AUTO DETECT DECAY]
-    [MIX]          [GAMMA BIT DEPTH SMOOTHING]
-                   [CRUSH LEVEL MIX]
+    [LOW  ON SOLO]               [MID ...]        [HIGH ...]
+    [1 CYCLE LCD ]
+    [GAIN AUTO DETECT DECAY]
+    [GAMMA BIT DEPTH SMOOTHING]
+    [CRUSH LEVEL MIX]
+    [title]                      [LOW X HIGH X]   [STEREO MIX]
 
     python3 faceplate.py            (from this folder)
 
@@ -38,13 +39,15 @@ CRATE = os.path.join(HERE, "..", "..", "crates", "wesley")
 
 GAP = 3
 EAR = 36
-# Columns: the first for the title and shared controls, then a band each.
-FIRST = 220
+# A column a band; under them, a row for the title and shared controls.
 BAND_W = 300
-W = EAR + FIRST + 3 * BAND_W + EAR
-H = 560
+W = EAR + 3 * BAND_W + EAR
+# Where the bottom row starts (its groove), and its height.
+BOTTOM = 552
+H = BOTTOM + 148
+GROOVE = 1.2
 # Rows within a column: (label line, control centre line).
-ROWS_Y = [(190, 252), (320, 382), (450, 512)]
+ROWS_Y = [(190, 252), (320, 382), (450, 512), (BOTTOM + 30, BOTTOM + 92)]
 KR = 25
 KNOB_BOX = 64
 TOGGLE_BOX = 46
@@ -63,7 +66,7 @@ BANDS = (("low", "LOW"), ("mid", "MID"), ("high", "HIGH"))
 out = []
 o = out.append
 geometry = {"size": [W, H], "gap": GAP, "slots": [], "screws": [], "grooves": [],
-            "windows": []}
+            "windows": [], "sections": []}
 controls = []
 
 
@@ -154,11 +157,22 @@ def slot_and_screw(cx, cy):
       f'stroke="#2c2d30" stroke-width="1.4" stroke-linecap="round"/>')
 
 
-def divider(x):
-    """An engraved line between columns, the panel's full height: the
-    relief cuts the groove."""
-    geometry["grooves"].append([x, 20, H - 20])
-    o(f'  <line x1="{x}" y1="20" x2="{x}" y2="{H - 20}" stroke="#1d0508" stroke-width="1.2"/>')
+def groove(x1, y1, x2, y2):
+    """An engraved line: the print's dark line where the relief's groove
+    falls (the relief's own grooves come from `sections`)."""
+    o(f'  <line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" stroke="#1d0508" stroke-width="1.2"/>')
+
+
+def grid(xs, ys):
+    """The face's sections: a grid parted at grooves `xs` (down) and `ys`
+    (across), the outer ones running past the panel's edges as
+    Beverley's do."""
+    def spans(cuts, lo, hi):
+        edges = [lo] + [e for c in cuts for e in (c - GROOVE / 2, c + GROOVE / 2)] + [hi]
+        return list(zip(edges[::2], edges[1::2]))
+    for y0, y1 in spans(ys, GAP, H - GAP):
+        for x0, x1 in spans(xs, -0.02 * W, 1.02 * W):
+            geometry["sections"].append([x0, y0, x1, y1])
 
 
 def rule(y, x0, x1):
@@ -196,27 +210,15 @@ for x in (EAR / 2, W - EAR / 2):
         slot_and_screw(x, y)
 
 o('  <g font-family="\'Jost*\'" font-weight="500">')
-COL = [EAR, EAR + FIRST] + [EAR + FIRST + k * BAND_W for k in (1, 2, 3)]
-for x in COL[1:-1]:
-    divider(x)
-
-# The title block, then the shared controls, in the first column.
-o(f'  <rect x="{EAR + 14}" y="22" width="5" height="106" fill="{ACCENT}"/>')
-text(EAR + 27, 68, "WESLEY", 24, anchor="start", spacing=2.5)
-text(EAR + 28, 86, "3-BAND CRUSHER", 9.5, anchor="start", fill=ACCENT, spacing=3.2)
-text(EAR + 28, 126, "VULPUS LABS", 8, anchor="start", fill=DIM, spacing=2.4)
-rule(172, EAR + 8, COL[1] - 8)
-mid0 = EAR + FIRST / 2
-knob("low_xover", mid0 - 52, 0, "LOW X", lin(9),
-     {0: "40", exp_pos(200, 40, 1000): "200", 1: "1k"})
-knob("high_xover", mid0 + 52, 0, "HIGH X", lin(9),
-     {0: "500", exp_pos(2500, 500, 12000): "2.5k", 1: "12k"})
-bat("stereo", mid0, 1, "STEREO", "LINK", "MONO", skin="toggle3", middle="SEP")
-knob("mix", mid0, 2, "MIX", lin(11), {0: "DRY", 1: "WET"})
+COL = [EAR + k * BAND_W for k in range(4)]
+grid(COL[1:3], [BOTTOM])
+for x in COL[1:3]:
+    groove(x, 20, x, H - 20)
+groove(20, BOTTOM, W - 20, BOTTOM)
 
 # The band columns, each Beverley's strip folded into rows.
 for k, (key, name) in enumerate(BANDS):
-    x0 = COL[1] + k * BAND_W
+    x0 = COL[k]
     cx = x0 + BAND_W / 2
     text(cx, 40, name, 13, spacing=3)
     button(f"{key}_on", x0 + 46, 0, "ON", y=34)
@@ -235,6 +237,20 @@ for k, (key, name) in enumerate(BANDS):
     bat(f"{key}_crush_mode", x0 + 54, 2, "CRUSH", "SYM", "ASYM")
     knob(f"{key}_level", cx, 2, "LEVEL", lin(10), {0: "-24", 24 / 36: "0", 1: "+12"})
     knob(f"{key}_mix", x0 + BAND_W - 54, 2, "MIX", lin(11), {0: "DRY", 1: "WET"})
+
+# The bottom row: the title block, as Beverley's; then the crossovers;
+# then STEREO and the overall MIX.
+top = BOTTOM
+o(f'  <rect x="{EAR + 14}" y="{top + 22}" width="5" height="106" fill="{ACCENT}"/>')
+text(EAR + 27, top + 68, "WESLEY", 24, anchor="start", spacing=2.5)
+text(EAR + 28, top + 86, "3-BAND CRUSHER", 9.5, anchor="start", fill=ACCENT, spacing=3.2)
+text(EAR + 28, top + 126, "VULPUS LABS", 8, anchor="start", fill=DIM, spacing=2.4)
+knob("low_xover", COL[1] + 92, 3, "LOW X", lin(9),
+     {0: "40", exp_pos(200, 40, 1000): "200", 1: "1k"})
+knob("high_xover", COL[2] - 92, 3, "HIGH X", lin(9),
+     {0: "500", exp_pos(2500, 500, 12000): "2.5k", 1: "12k"})
+bat("stereo", COL[2] + 92, 3, "STEREO", "LINK", "MONO", skin="toggle3", middle="SEP")
+knob("mix", COL[3] - 92, 3, "MIX", lin(11), {0: "DRY", 1: "WET"})
 o('  </g>')
 
 # Blender's relief over the print: light and shadow multiplied, the

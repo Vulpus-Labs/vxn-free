@@ -59,3 +59,18 @@ the title, LOW X, HIGH X, STEREO and MIX in a first column (220 px).
 1192 × 560. The dividers between columns still run the full height, so
 the relief needed no change; re-rendered (2 min 40 s). Snapshots
 re-blessed; every editor test passes unchanged.
+
+## Amended (2026-11-25): the shared controls in a bottom row
+
+The first column's content, the title block included, moves to a row
+along the bottom, under the three band columns: the title under LOW, LOW
+X and HIGH X under MID, STEREO and MIX under HIGH. 972 × 700.
+
+The relief needed a groove across the panel as well as down it, and
+Beverley's `blender/panel.py` split the face only between full-height
+vertical grooves. A panel may now list its face sections as rectangles
+(`sections` in the geometry); Wesley's is a 3 × 2 grid. Without
+`sections`, the script derives them from the vertical grooves exactly as
+before, so Beverley's panel is unchanged and wasn't re-rendered.
+Wesley's relief re-rendered (2 min 37 s); snapshots re-blessed; every
+editor test passes unchanged.

@@ -22,7 +22,9 @@ it.
   sections split by engraved grooves, the rack slots, the display's
   recessed window, the screws and washers) and renders two maps into `crates/beverley/art/panel/`. The
   SVG multiplies `shade.png` over the print and screens `sheen.png` over
-  it. Re-render after the geometry changes (about 40 s):
+  it. The face splits along the vertical grooves, or, if the geometry
+  lists `sections` (rectangles), into those: Wesley's panel uses this for
+  a grid (`art/wesley/faceplate.py`). Re-render after the geometry changes (about 40 s):
 
   ```sh
   cd blender

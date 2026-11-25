@@ -95,11 +95,11 @@ together: Beverley's crush chain on each of three bands.
     Beverley is dark teal-blue: each band a column, as on the plain
     faceplate, holding Beverley's strip folded into rows (name, ON and
     SOLO; its crush display; GAIN, AUTO, DETECT, DECAY; GAMMA, BIT
-    DEPTH, SMOOTHING; CRUSH, LEVEL, MIX), the title, crossovers, STEREO
-    and MIX in a first column. The engraved dividers between columns run
-    the full height (ticket 0036). A first layout, each band a row on
-    shared columns, came out 1444 px wide and was dropped for this one
-    (1192 × 560).
+    DEPTH, SMOOTHING; CRUSH, LEVEL, MIX), and a row along the bottom with
+    the title, the crossovers, STEREO and MIX. Engraved grooves part the
+    face into that grid (ticket 0036). Earlier layouts, each band a row
+    (1444 px wide) and the shared controls in a first column (1192 px),
+    were dropped for this one (972 × 700).
 
 ## Consequences
 

@@ -149,17 +149,26 @@ def build(geom):
     # The face is in sections, a groove's width apart, over a backing
     # plate a groove's depth down: each section's rounded edge is the
     # groove's lip. Cutting the grooves into one face instead leaves its
-    # long top face shading in facets.
-    xs = sorted(x for x, _, _ in geom["grooves"])
-    bounds = [-0.02 * w] + [e for x in xs for e in (x - GROOVE / 2, x + GROOVE / 2)] + [1.02 * w]
+    # long top face shading in facets. A panel may list its sections as
+    # rectangles ([x0, y0, x1, y1], `sections`), for grooves across it as
+    # well as down; otherwise they run the full height between its
+    # vertical grooves.
     face_h = (h - 2 * gap) * U
+    if "sections" in geom:
+        rects = geom["sections"]
+    else:
+        xs = sorted(x for x, _, _ in geom["grooves"])
+        bounds = ([-0.02 * w] + [e for x in xs for e in (x - GROOVE / 2, x + GROOVE / 2)]
+                  + [1.02 * w])
+        rects = [[x0, gap, x1, h - gap] for x0, x1 in zip(bounds[::2], bounds[1::2])]
     back = studio.prism("backing", studio.rounded_rect(w * U * 1.04, face_h, 1 * U), 0.0,
                         top - GROOVE_DEPTH * U)
     sections = [back]
-    for x0, x1 in zip(bounds[::2], bounds[1::2]):
-        section = studio.prism("face", studio.rounded_rect((x1 - x0) * U, face_h, 1 * U),
+    for x0, y0, x1, y1 in rects:
+        section = studio.prism("face",
+                               studio.rounded_rect((x1 - x0) * U, (y1 - y0) * U, 1 * U),
                                0.0, top, bevel=BEVEL * U, segments=4)
-        section.location.x = ((x0 + x1) / 2 - w / 2) * U
+        section.location.x, section.location.y = to_scene((x0 + x1) / 2, (y0 + y1) / 2, size)
         sections.append(section)
     for section in sections:
         cut_by(section, operand_type="COLLECTION", collection=cuts)
