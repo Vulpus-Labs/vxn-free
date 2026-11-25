@@ -112,7 +112,8 @@ voices on the floor, at rest, for good.
 - The bench's `--no-decorrelate` is now `--set decorrelate=0`; the
   engine's `set_decorrelation` is gone.
 - CPU, 64 voices, 96 kHz, block 32, best of interleaved runs: on 8.40 %
-  of a core (8.47 % before the switch), off 7.1 %. A first version that
+  of a core (8.47 % before the switch), off 7.1 %; re-measured on mains
+  power (the battery had been nearly flat): on 8.40 %, off 7.06 %. A first version that
   branched three ways (off, on, fading) inside the voice loop, or moved
   the loop into its own function (even `#[inline(always)]`, const
   generic per mode), cost 15 % more (9.7 %); the loop stays inline with

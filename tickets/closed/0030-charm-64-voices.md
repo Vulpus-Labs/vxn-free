@@ -73,3 +73,23 @@ structure-of-arrays.
   (speed limit, range, pitch glide) and in the engine's settings (so
   block-size identity, levels, mono guard and no allocation run at 64);
   hand-built display frames stay at eight voices.
+
+## Re-measured on mains power (2026-11-25)
+
+The figures above were taken partly on a nearly flat battery, when macOS
+throttles the CPU (one build swung from 10.6 % to 14.5 % between runs).
+Re-measured on AC, best of three, block 32, 96 kHz; "before" is the
+build just before this ticket (`ef803be`):
+
+| VOICES | before (8 max, scalar) | now, chains on | now, chains off |
+|---|---|---|---|
+| 4 | 1.45 | 1.27 | |
+| 8 | 2.58 | 1.35 | 1.14 (before: 1.21) |
+| 16 | | 2.21 | 1.86 |
+| 32 | | 4.07 | 3.34 |
+| 64 | | 8.40 | 7.06 |
+
+The "64 max, scalar" column above has no commit of its own and wasn't
+re-measured. The conclusions stand: the lanes halve the cost at 8
+voices and more, and the chains, half the scalar cost, are now about a
+sixth.
