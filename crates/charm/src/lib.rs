@@ -84,9 +84,10 @@ pub static PARAMS: [ParamSpec; 15] = [
         .id(2),
     // The range of delays above the 7.5 ms floor. Up to 25 ms the voices
     // fuse with the dry signal; beyond about 40 ms they are heard as
-    // separate entries (experimental range, ticket 0024).
-    ParamSpec::new("Spread", 1.0, 150.0, 10.0)
-        .taper(Taper::Exp { mid: 12.0 })
+    // separate entries; at hundreds of ms they scatter the input into a
+    // cloud (experimental range, ticket 0024).
+    ParamSpec::new("Spread", 1.0, 2000.0, 10.0)
+        .taper(Taper::Exp { mid: 45.0 })
         .unit("ms")
         .decimals(1)
         .id(3),

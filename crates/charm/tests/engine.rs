@@ -51,8 +51,9 @@ fn settings() -> Vec<Vec<(ParamIndex, f32)>> {
             (SPREAD, 4.0),
             (TURBULENCE, 0.0),
         ],
-        // The widest SPREAD.
+        // Wide and widest SPREAD.
         vec![(VOICES, 14.0), (DETUNE, 40.0), (SPREAD, 150.0)],
+        vec![(VOICES, 30.0), (DETUNE, 40.0), (SPREAD, 2000.0)],
         // The most voices (ticket 0030).
         vec![
             (VOICES, 62.0),

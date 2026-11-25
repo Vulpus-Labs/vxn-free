@@ -52,7 +52,7 @@ const FADE_MS: f32 = 30.0;
 pub const MID_HIGH_XOVER: f32 = 2500.0;
 /// The longest delay a voice can have, seconds: the floor plus SPREAD's
 /// top.
-const MAX_DELAY: f64 = FLOOR + 0.150;
+const MAX_DELAY: f64 = FLOOR + 2.0;
 /// Each band's flock has its own turbulence.
 const SEEDS: [u32; BANDS] = [0x9E37_79B9, 0x85EB_CA6B];
 

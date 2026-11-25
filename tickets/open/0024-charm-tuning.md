@@ -153,3 +153,17 @@ steady-sine envelope is unchanged too (45–49 %), as expected: the wider
 range should show on changing material, not a held tone. To decide by
 ear here: the range, whether the floor moves, and whether the flock
 controls stay.
+
+## Progress (2026-11-25): SPREAD to 2 s, towards granular
+
+- SPREAD 1 ms–2 s (taper centre 45 ms; default still 10 ms). Delay
+  lines hold 2.0075 s: 4 MB an instance at 96 kHz (line and side-buffer,
+  two bands). CPU at 64 voices, 96 kHz: 8.43 % at 10 ms, 8.50 % at
+  500 ms, 8.75 % at 2 s. `reset` 0.09 ms at 96 kHz.
+- The catch: DETUNE is the speed limit, so a voice crosses SPREAD in
+  SPREAD / speed limit. At 2 s that's 290 s at 12 cents, 88 s at 40:
+  the voices hardly move, and wide settings give a near-static
+  multi-tap cloud. Moving voices at that scale needs either far more
+  DETUNE (pitch-shifted grains), voices that jump (grains in the usual
+  sense: fade out, reappear elsewhere), or speed not tied to pitch.
+  Not decided.
