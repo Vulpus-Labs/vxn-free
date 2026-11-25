@@ -11,6 +11,7 @@ use silkscreen::{
     ParamSelector, ParamSpec, ParamToggle, PluginUi,
 };
 
+pub mod chain;
 pub mod crush;
 pub mod engine;
 
