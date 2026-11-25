@@ -76,3 +76,12 @@ check, as the summary allows. The faceplate design itself waits for
     some voice's shape below 0.5
 - To do: the faceplate design and grouping, dimmed controls, the hand
   check on a drum loop and a pad.
+
+## Fix (2026-11-25): frames reach the display in a DAW
+
+First look in a DAW: the display's grid drew but no flock. The CLAP
+processor wraps the engine in silkscreen's licence gate, which didn't
+forward `Engine::frame`, so no frame was ever published. Fixed in
+silkscreen 0.3.1 (with a test that every `Engine` hook passes the gate);
+the workspace moves to v0.3.1. A test here now runs the editor over a
+real bridge sized by `UI.frame`, as the plugin does.

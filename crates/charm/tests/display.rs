@@ -10,7 +10,7 @@ use charm::flock::{FLOOR, max_velocity};
 use charm::observe::{BandObs, FRAME_WORDS, HIGH, MID, Observation, VoiceObs};
 use charm::{AUTO_WIDTH, BLOOM, DUCK, WIDTH};
 use silkscreen::ParamIndex;
-use silkscreen::bridge::Engine;
+use silkscreen::bridge::{Engine, EngineSide};
 use silkscreen_harness::{Harness, assert_snapshot};
 
 const SPREAD: f32 = 0.010;
@@ -229,4 +229,26 @@ fn an_onset_ducks_the_voices_it_reaches_first() {
         .map(|v| v.shape)
         .fold(1.0_f32, f32::min);
     assert!(ducked < 0.5, "the deepest duck seen: {ducked}");
+}
+
+/// The plugin's path: the editor over a real bridge sized by `UI.frame`,
+/// the engine publishing through `write_block` as the CLAP processor does.
+#[test]
+fn the_editor_over_a_real_bridge_draws_the_engines_flock() {
+    let defaults: Vec<f32> = charm::PARAMS.iter().map(|p| p.default).collect();
+    let (ui, mut end) = silkscreen_bridge::bridge_with_frame(&defaults, 1024, charm::UI.frame);
+    let mut harness = Harness::with_link(charm::editor, Box::new(ui), 1.0);
+    let empty = harness.snapshot().clone();
+    let mut engine = CharmEngine::new(48_000.0);
+    end.seed_engine(&mut engine);
+    let input = noise(4800, 21);
+    for block in input.chunks(480) {
+        let (mut left, mut right) = (block.to_vec(), block.to_vec());
+        engine.process(&mut [&mut left, &mut right]);
+        end.telemetry().write_block(&mut engine, &[&left, &right]);
+        harness.advance(10.0);
+    }
+    let (frame, generation) = harness.editor().state().engine_frame();
+    assert_eq!(frame.len(), FRAME_WORDS, "generation {generation}");
+    assert_ne!(*harness.snapshot(), empty, "the flock is drawn");
 }
