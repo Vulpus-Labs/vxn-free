@@ -18,7 +18,7 @@ Revised 2026-11-25: the manual is a PDF built as Beverley's is (ADR
 - [ ] Trademark search in class 9 (ADR 0004, point 1).
 - [x] The release workflow builds `wesley-clap` (CLAP and VST3, signed
       and notarized on macOS) beside Beverley.
-- [ ] Wesley 0.2.0 (and Beverley 0.2.0) on downloads.vulpuslabs.com,
+- [x] Wesley 0.2.0 (and Beverley 0.2.0) on downloads.vulpuslabs.com,
       linked from vulpuslabs.com, with the manual.
 
 ## Progress (2026-11-25)
@@ -46,3 +46,13 @@ Revised 2026-11-25: the manual is a PDF built as Beverley's is (ADR
   software; that isn't a register search, so the box stays open.
 - The DAW check (0034) and tuning by ear (0035) are still open; 0.2.0
   ships the draft ranges and defaults.
+
+## Published (2026-11-25)
+
+- `beverley/0.2.0` and `wesley/0.2.0` on downloads.vulpuslabs.com, six
+  zips and `SHA256SUMS` each. All twelve fetched back match, and the
+  quarantined macOS CLAPs and VST3s pass Gatekeeper as `Notarized
+  Developer ID`.
+- vulpuslabs.com (vulpus-labs-site 837ef9e): Wesley's product page and
+  manual; Beverley's page and manual at 0.2.0 with the new panel.
+- Open until the class 9 trademark search is done.
