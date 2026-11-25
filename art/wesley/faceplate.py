@@ -3,17 +3,20 @@ Beverley's `blender/panel.py` renders, `crates/wesley/art/panel/geometry.json`.
 
 Wesley is Beverley's sibling (ADR 0003): the same 1990s rack style, the
 same knobs and switches (Beverley's skins, `crates/beverley/art/controls/`),
-in wine red where Beverley is dark teal-blue. Each band is a row laid out
-as Beverley's strip, on the same columns, so the engraved dividers run
-the panel's full height (the relief splits its face only along them) and
-printed rules part the rows:
+in wine red where Beverley is dark teal-blue. Each band is a column, as on
+the plain faceplate it replaced, so the engraved dividers between them run
+the panel's full height (the relief splits its face only along them). A
+band column is Beverley's strip folded into rows:
 
-    [title, crossovers, STEREO, MIX] [band, ON, SOLO] [GAIN AUTO DETECT
-    DECAY] [GAMMA BIT DEPTH SMOOTHING] [1 CYCLE] [CRUSH LEVEL MIX]
+    [title]        [LOW  ON SOLO]   [MID ...]   [HIGH ...]
+    [LOW X HIGH X] [1 CYCLE LCD ]
+    [STEREO]       [GAIN AUTO DETECT DECAY]
+    [MIX]          [GAMMA BIT DEPTH SMOOTHING]
+                   [CRUSH LEVEL MIX]
 
     python3 faceplate.py            (from this folder)
 
-Then re-render the relief (about a minute):
+Then re-render the relief (a minute or two):
 
     cd ../beverley/blender
     /Applications/Blender.app/Contents/MacOS/Blender -b -P panel.py -- \\
@@ -33,11 +36,15 @@ import os
 HERE = os.path.dirname(os.path.abspath(__file__))
 CRATE = os.path.join(HERE, "..", "..", "crates", "wesley")
 
-ROW = 140          # a band row's height
-ROWS = 3
 GAP = 3
-W, H = 1444, ROWS * ROW + 2 * GAP + 4
 EAR = 36
+# Columns: the first for the title and shared controls, then a band each.
+FIRST = 220
+BAND_W = 300
+W = EAR + FIRST + 3 * BAND_W + EAR
+H = 560
+# Rows within a column: (label line, control centre line).
+ROWS_Y = [(190, 252), (320, 382), (450, 512)]
 KR = 25
 KNOB_BOX = 64
 TOGGLE_BOX = 46
@@ -47,8 +54,9 @@ PAINT = "#561019"
 INK = "#f1ece2"
 DIM = "#c9b3ae"
 ACCENT = "#e2b25a"  # the title stripe: warm gold on the red
-# The crush display's window, as Beverley's.
+# Each band's crush display, as Beverley's window.
 WIN_W, WIN_H = 160, 84
+WIN_Y = 76
 LCD_INSET = 5
 BANDS = (("low", "LOW"), ("mid", "MID"), ("high", "HIGH"))
 
@@ -57,15 +65,6 @@ o = out.append
 geometry = {"size": [W, H], "gap": GAP, "slots": [], "screws": [], "grooves": [],
             "windows": []}
 controls = []
-
-
-def ky(row):
-    """A row's control centre line."""
-    return GAP + 2 + row * ROW + 89
-
-
-def label_y(row):
-    return GAP + 2 + row * ROW + 27
 
 
 def polar(cx, cy, r, deg):
@@ -100,14 +99,15 @@ def scale(cx, cy, ticks, labels):
 
 
 def knob(name, cx, row, label, ticks, labels):
-    text(cx, label_y(row), label, 10.5, spacing=1.6)
-    scale(cx, ky(row), ticks, labels)
-    controls.append(("knob", name, cx, ky(row), KNOB_BOX, "knob"))
+    ly, y = ROWS_Y[row]
+    text(cx, ly, label, 10.5, spacing=1.6)
+    scale(cx, y, ticks, labels)
+    controls.append(("knob", name, cx, y, KNOB_BOX, "knob"))
 
 
 def bat(name, cx, row, label, top, bottom, skin="toggle2", middle=None):
-    y = ky(row)
-    text(cx, label_y(row), label, 10.5, spacing=1.6)
+    ly, y = ROWS_Y[row]
+    text(cx, ly, label, 10.5, spacing=1.6)
     text(cx, y - 22, top, 8, fill=DIM)
     text(cx, y + 29, bottom, 8, fill=DIM)
     if middle:
@@ -115,20 +115,21 @@ def bat(name, cx, row, label, top, bottom, skin="toggle2", middle=None):
     controls.append(("toggle", name, cx, y, TOGGLE_BOX, skin))
 
 
-def button(name, cx, row, label, below=False):
-    y = ky(row)
-    if below:
-        text(cx, y + 29, label, 8, fill=DIM, spacing=1.2)
+def button(name, cx, row, label, y=None):
+    """A push-button with its LED: in a row, labelled above; given `y`,
+    labelled small underneath."""
+    if y is None:
+        ly, y = ROWS_Y[row]
+        text(cx, ly, label, 10.5, spacing=1.6)
     else:
-        text(cx, label_y(row), label, 10.5, spacing=1.6)
+        text(cx, y + 28, label, 8, fill=DIM, spacing=1.2)
     controls.append(("button", name, cx, y, BUTTON_BOX, "button"))
 
 
-def window(name, cx, row):
+def window(name, cx):
     """A display: a recess the relief cuts part way into the face, a dark
     bezel printed in it, and the LCD the editor's widget draws."""
-    x, y = cx - WIN_W / 2, ky(row) - WIN_H / 2 + 2
-    text(cx, label_y(row), "1 CYCLE", 10.5, spacing=1.6)
+    x, y = cx - WIN_W / 2, WIN_Y
     geometry["windows"].append([x, y, WIN_W, WIN_H])
     o(f'  <rect x="{x}" y="{y}" width="{WIN_W}" height="{WIN_H}" rx="3" fill="#0b0b0c"/>')
     o(f'  <rect x="{x + LCD_INSET - 1}" y="{y + LCD_INSET - 1}" '
@@ -154,14 +155,14 @@ def slot_and_screw(cx, cy):
 
 
 def divider(x):
-    """An engraved line between column groups, the panel's full height: the
+    """An engraved line between columns, the panel's full height: the
     relief cuts the groove."""
     geometry["grooves"].append([x, 20, H - 20])
     o(f'  <line x1="{x}" y1="20" x2="{x}" y2="{H - 20}" stroke="#1d0508" stroke-width="1.2"/>')
 
 
 def rule(y, x0, x1):
-    """A printed line between band rows."""
+    """A printed line under a column's header."""
     o(f'  <line x1="{x0}" y1="{y}" x2="{x1}" y2="{y}" stroke="#2a080c" stroke-width="1.2"/>')
 
 
@@ -195,45 +196,45 @@ for x in (EAR / 2, W - EAR / 2):
         slot_and_screw(x, y)
 
 o('  <g font-family="\'Jost*\'" font-weight="500">')
-# The columns: dividers run the full height, rules part the rows.
-COL = [EAR, 264, 344, 644, 952, 1152, W - EAR]
+COL = [EAR, EAR + FIRST] + [EAR + FIRST + k * BAND_W for k in (1, 2, 3)]
 for x in COL[1:-1]:
     divider(x)
-for r in range(1, ROWS):
-    y = GAP + 2 + r * ROW
-    rule(y, COL[0] + 6, COL[1] - 6)
-    for x0, x1 in zip(COL[1:-1], COL[2:]):
-        rule(y, x0 + 6, x1 - 6)
 
 # The title block, then the shared controls, in the first column.
 o(f'  <rect x="{EAR + 14}" y="22" width="5" height="106" fill="{ACCENT}"/>')
 text(EAR + 27, 68, "WESLEY", 24, anchor="start", spacing=2.5)
 text(EAR + 28, 86, "3-BAND CRUSHER", 9.5, anchor="start", fill=ACCENT, spacing=3.2)
 text(EAR + 28, 126, "VULPUS LABS", 8, anchor="start", fill=DIM, spacing=2.4)
-knob("low_xover", 102, 1, "LOW X", lin(9),
+rule(172, EAR + 8, COL[1] - 8)
+mid0 = EAR + FIRST / 2
+knob("low_xover", mid0 - 52, 0, "LOW X", lin(9),
      {0: "40", exp_pos(200, 40, 1000): "200", 1: "1k"})
-knob("high_xover", 204, 1, "HIGH X", lin(9),
+knob("high_xover", mid0 + 52, 0, "HIGH X", lin(9),
      {0: "500", exp_pos(2500, 500, 12000): "2.5k", 1: "12k"})
-bat("stereo", 102, 2, "STEREO", "LINK", "MONO", skin="toggle3", middle="SEP")
-knob("mix", 204, 2, "MIX", lin(11), {0: "DRY", 1: "WET"})
+bat("stereo", mid0, 1, "STEREO", "LINK", "MONO", skin="toggle3", middle="SEP")
+knob("mix", mid0, 2, "MIX", lin(11), {0: "DRY", 1: "WET"})
 
-# The band rows, each as Beverley's strip.
-for row, (key, name) in enumerate(BANDS):
-    text(304, label_y(row), name, 12, spacing=2.4)
-    button(f"{key}_on", 286, row, "ON", below=True)
-    button(f"{key}_solo", 324, row, "SOLO", below=True)
-    knob(f"{key}_gain", 394, row, "GAIN", lin(11), {0: "0", 0.5: "10", 1: "20 dB"})
-    button(f"{key}_auto_gain", 456, row, "AUTO")
-    bat(f"{key}_detect", 516, row, "DETECT", "RANGE", "PEAK")
-    knob(f"{key}_decay", 586, row, "DECAY", lin(9), {0: "1 ms", 0.5: "70", 1: "5 s"})
-    knob(f"{key}_gamma", 696, row, "GAMMA", lin(9), {0: "0.1", 0.5: "1", 1: "10"})
-    knob(f"{key}_bit_depth", 794, row, "BIT DEPTH", lin(9),
+# The band columns, each Beverley's strip folded into rows.
+for k, (key, name) in enumerate(BANDS):
+    x0 = COL[1] + k * BAND_W
+    cx = x0 + BAND_W / 2
+    text(cx, 40, name, 13, spacing=3)
+    button(f"{key}_on", x0 + 46, 0, "ON", y=34)
+    button(f"{key}_solo", x0 + BAND_W - 46, 0, "SOLO", y=34)
+    window(f"{key}_display", cx)
+    rule(172, x0 + 8, x0 + BAND_W - 8)
+    knob(f"{key}_gain", x0 + 56, 0, "GAIN", lin(11), {0: "0", 0.5: "10", 1: "20 dB"})
+    button(f"{key}_auto_gain", x0 + 122, 0, "AUTO")
+    bat(f"{key}_detect", x0 + 176, 0, "DETECT", "RANGE", "PEAK")
+    knob(f"{key}_decay", x0 + 246, 0, "DECAY", lin(9), {0: "1 ms", 0.5: "70", 1: "5 s"})
+    knob(f"{key}_gamma", x0 + 54, 1, "GAMMA", lin(9), {0: "0.1", 0.5: "1", 1: "10"})
+    knob(f"{key}_bit_depth", cx, 1, "BIT DEPTH", lin(9),
          {0: "1", 0.25: "2", 0.5: "4", 0.75: "8", 1: "16"})
-    knob(f"{key}_smoothing", 892, row, "SMOOTHING", lin(9), {0: "0", 0.5: "20", 1: "100 %"})
-    window(f"{key}_display", 1052, row)
-    bat(f"{key}_crush_mode", 1190, row, "CRUSH", "SYM", "ASYM")
-    knob(f"{key}_level", 1276, row, "LEVEL", lin(10), {0: "-24", 24 / 36: "0", 1: "+12"})
-    knob(f"{key}_mix", 1366, row, "MIX", lin(11), {0: "DRY", 1: "WET"})
+    knob(f"{key}_smoothing", x0 + BAND_W - 54, 1, "SMOOTHING", lin(9),
+         {0: "0", 0.5: "20", 1: "100 %"})
+    bat(f"{key}_crush_mode", x0 + 54, 2, "CRUSH", "SYM", "ASYM")
+    knob(f"{key}_level", cx, 2, "LEVEL", lin(10), {0: "-24", 24 / 36: "0", 1: "+12"})
+    knob(f"{key}_mix", x0 + BAND_W - 54, 2, "MIX", lin(11), {0: "DRY", 1: "WET"})
 o('  </g>')
 
 # Blender's relief over the print: light and shadow multiplied, the

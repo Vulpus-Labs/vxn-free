@@ -49,3 +49,13 @@ change the controls, and the script redraws the panel in a minute.
   its param (the three SOLO buttons all SOLO); one solo lit at a time,
   and pressing the lit one clears it; LOW's row undims when switched
   on; a display repaints only for its own band.
+
+## Amended (2026-11-25): bands as columns
+
+The first panel (each band a row, 1444 × 430) was too wide. Redrawn
+closer to the plain faceplate: a column a band (300 px), Beverley's strip
+folded into three rows under the band's name, ON and SOLO and its LCD;
+the title, LOW X, HIGH X, STEREO and MIX in a first column (220 px).
+1192 × 560. The dividers between columns still run the full height, so
+the relief needed no change; re-rendered (2 min 40 s). Snapshots
+re-blessed; every editor test passes unchanged.

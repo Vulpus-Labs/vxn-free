@@ -92,11 +92,14 @@ together: Beverley's crush chain on each of three bands.
 
 10. **Faceplate.** Original, in Beverley's family (the 1990s rack style
     of ticket 0013), rendered the same way and in wine red where
-    Beverley is dark teal-blue: each band a row laid out as Beverley's
-    strip (ON and SOLO; GAIN, AUTO, DETECT, DECAY; GAMMA, BIT DEPTH,
-    SMOOTHING; its crush display; CRUSH, LEVEL, MIX), the rows on shared
-    columns so the engraved dividers run the full height, and the title,
-    crossovers, STEREO and MIX in the first column (ticket 0036).
+    Beverley is dark teal-blue: each band a column, as on the plain
+    faceplate, holding Beverley's strip folded into rows (name, ON and
+    SOLO; its crush display; GAIN, AUTO, DETECT, DECAY; GAMMA, BIT
+    DEPTH, SMOOTHING; CRUSH, LEVEL, MIX), the title, crossovers, STEREO
+    and MIX in a first column. The engraved dividers between columns run
+    the full height (ticket 0036). A first layout, each band a row on
+    shared columns, came out 1444 px wide and was dropped for this one
+    (1192 × 560).
 
 ## Consequences
 
