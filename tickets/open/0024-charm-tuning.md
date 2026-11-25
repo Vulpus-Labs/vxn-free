@@ -71,3 +71,30 @@ unmusical warble.
   with SPREAD, how fast they swing. Pitch reverses about every
   SPREAD / speed limit (1.45 s at the defaults). A smaller SPREAD
   swings faster.
+
+## Fix (2026-11-25): voices stuck on the floor after SPREAD moves
+
+Seen on the flock display (0019): after SPREAD was raised and lowered a
+few times, voices sat on the delay floor and never left, only panning.
+Reproduced offline: three sweeps between 1 and 25 ms put all eight
+voices on the floor, at rest, for good.
+
+- Cause: the edge brake added in the first listen above. A voice at rest
+  exactly on the floor has no room and a stopping distance of zero, so
+  `stopping >= room` held, and `-signum(0.0)` is −1: it braked
+  downwards, was clamped back to the floor at rest, and the same
+  happened every tick. SPREAD sweeps land voices on the floor because
+  the hard stop clamps them there. (Pan at hard left could stick the
+  same way.)
+- Fix: only a voice moving towards an edge brakes.
+- After the sweeps the flock is like a fresh one: the spread of
+  heights within a band, averaged over 5 s windows for 60 s, was
+  0.08–0.18 of the range, against 0.11–0.17 from reset.
+- Tests: a flock with every voice at rest on the floor and at the sides
+  is lifted off within 2 s; the engine, after eight SPREAD sweeps, takes
+  every voice above 0.3 of its range within 5 s. Both fail without the
+  fix.
+- Noted for tuning: at the defaults the flock often moves as one herd
+  (all near the top, then all near the bottom, every few seconds),
+  fresh or not. That is cohesion and alignment at work, and may be
+  heard as the voices sweeping together; worth a listen here.

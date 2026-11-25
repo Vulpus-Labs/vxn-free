@@ -141,8 +141,9 @@ fn wall(at: f64) -> f64 {
 /// Smooth and limit one voice's steering `a`, in place: on the delay
 /// axis smoothed (by `keep` a step) so pitch glides and never jerks, and
 /// limited; pan, which carries no pitch, only limited. Then, on each axis,
-/// once an edge is within the stopping distance at the limit, brake at the
-/// limit: the hard stop at the edge would otherwise snap the pitch.
+/// once a voice moving towards an edge has it within the stopping
+/// distance at the limit, brake at the limit: the hard stop at the edge
+/// would otherwise snap the pitch.
 fn steer(
     smoothed: &mut [f64; 2],
     a: &mut [f64; 2],
@@ -163,7 +164,10 @@ fn steer(
         let speed = velocity[k];
         let room = if speed > 0.0 { 1.0 - at[k] } else { at[k] };
         let stopping = speed * speed / (2.0 * most) + 2.0 * speed.abs() * dt;
-        if stopping >= room {
+        // Only a voice moving towards an edge brakes. One at rest on the
+        // floor has no room and no stopping distance either, and braking
+        // it (signum(0.0) is 1, so downwards) pinned it there for good.
+        if speed != 0.0 && stopping >= room {
             a[k] = -speed.signum() * most;
             smoothed[k] = a[k];
         }
@@ -440,6 +444,28 @@ mod tests {
         // On average at least a fifth of the speed limit.
         let mean = sum / f64::from(steps);
         assert!(mean > 0.2 * set.max_velocity, "{mean}");
+    }
+
+    #[test]
+    fn a_voice_at_rest_on_an_edge_leaves_it() {
+        // SPREAD swept up and down puts voices on the floor at rest; the
+        // walls must lift them off (they once stayed there for good).
+        let set = settings(4, 12.0, 10.0, 0.5, 0.5, 0.4);
+        let mut flock = Flock::new(7, set.spread);
+        for (i, v) in flock.voices.iter_mut().enumerate() {
+            v.delay = FLOOR;
+            v.pan = if i % 2 == 0 { -1.0 } else { 1.0 };
+            v.accel = [0.0; 2];
+        }
+        flock.unit_velocity = [[0.0; 2]; MAX_VOICES];
+        for _ in 0..(2.0 / DT) as usize {
+            flock.step(&set, DT);
+        }
+        for v in &flock.voices()[..4] {
+            let up = (v.delay - FLOOR) / set.spread;
+            assert!(up > 0.05, "a voice still on the floor: {up}");
+            assert!(v.pan.abs() < 0.99, "a voice still at the side: {}", v.pan);
+        }
     }
 
     #[test]

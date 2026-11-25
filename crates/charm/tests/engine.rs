@@ -249,3 +249,39 @@ fn one_channel_is_chorused_too() {
     let wet: Vec<f32> = x.iter().zip(&input).map(|(o, i)| o - i).collect();
     assert!(rms(&wet[24_000..]) > 0.1 * rms(&input));
 }
+
+/// Sweeping SPREAD up and down landed voices on the floor at rest, where
+/// the edge brake held them for good (seen in a DAW, ticket 0019). After
+/// the sweeps every voice must keep moving through its range.
+#[test]
+fn voices_keep_moving_after_spread_is_swept() {
+    let mut e = engine(48_000.0, &[]);
+    let x = noise(480, 5);
+    let block = |e: &mut CharmEngine| {
+        let (mut l, mut r) = (x.clone(), x.clone());
+        e.process(&mut [&mut l, &mut r]);
+    };
+    for k in 0..8 {
+        e.set_param(SPREAD, if k % 2 == 0 { 25.0 } else { 1.0 });
+        for _ in 0..50 {
+            block(&mut e);
+        }
+    }
+    e.set_param(SPREAD, 10.0);
+    let mut highest = [[0.0f32; charm::MAX_VOICES]; 2];
+    for _ in 0..500 {
+        block(&mut e);
+        let o = e.observation();
+        for (b, band) in o.bands.iter().enumerate() {
+            for (v, top) in band.voices.iter().zip(&mut highest[b]) {
+                *top = top.max((v.delay - FLOOR as f32) / o.spread);
+            }
+        }
+    }
+    let active = usize::from(e.observation().bands[0].active);
+    for (b, band) in highest.iter().enumerate() {
+        for (i, top) in band[..active].iter().enumerate() {
+            assert!(*top > 0.3, "band {b} voice {i} stayed low: {top}");
+        }
+    }
+}
