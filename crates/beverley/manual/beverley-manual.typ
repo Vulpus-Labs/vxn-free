@@ -3,7 +3,7 @@
 // `cargo run -p beverley --example manual` writes from the plugin's own code (ADR 0003).
 #import "/docs/manual/vulpus-manual.typ": *
 
-#show: manual.with(title: "Beverley", kind: "Bitcrusher", version: "0.1.1")
+#show: manual.with(title: "Beverley", kind: "Bitcrusher", version: "0.2.0")
 
 #let pos = json("data/positions.json")
 #let img(name) = read("data/faces/" + name + ".png", encoding: none)
@@ -11,7 +11,8 @@
 
 // The faceplate's groups, in panel units (crates/beverley/beverley.svg).
 #let gain-group = (200, 0, 300, 150)
-#let right-group = (808, 0, 282, 150)
+#let display-group = (808, 0, 200, 150)
+#let right-group = (1008, 0, 282, 150)
 
 #let unit-axis(title) = (min: -1, max: 1, ticks: (-1, -0.5, 0, 0.5, 1), title: title)
 
@@ -90,7 +91,7 @@
     ],
   )
   #place(bottom + left, text(font: sans, size: 7.5pt, fill: ink-3)[
-    Vulpus Labs · manual for version 0.1.1
+    Vulpus Labs · manual for version 0.2.0
   ])
 ]
 
@@ -111,7 +112,8 @@ then adjusts itself to the level, so quiet and loud passages are crushed alike.
 #figure(
   face(img("init"), pos, callouts: (
     (1, "gain"), (2, "auto_gain"), (3, "detect"), (4, "decay"), (5, "gamma"),
-    (6, "bit_depth"), (7, "smoothing"), (8, "crush_mode"), (9, "stereo"), (10, "mix"),
+    (6, "bit_depth"), (7, "smoothing"), (8, "display"), (9, "crush_mode"), (10, "stereo"),
+    (11, "mix"),
   )),
   caption: [The controls, at their defaults.],
 )
@@ -124,9 +126,10 @@ then adjusts itself to the level, so quiet and loud passages are crushed alike.
   (5, "GAMMA", [Whether quiet or loud parts break up first.]),
   (6, "BIT DEPTH", [How coarse the steps are: the amount.]),
   (7, "SMOOTHING", [How sharp the steps' edges are.]),
-  (8, "CRUSH", [Buzzing (ASYM) or gating (SYM) character.]),
-  (9, "STEREO", [How left and right are treated.]),
-  (10, "MIX", [Dry to crushed.]),
+  (8, "1 CYCLE", [The display: what the settings do to a wave.]),
+  (9, "CRUSH", [Buzzing (ASYM) or gating (SYM) character.]),
+  (10, "STEREO", [How left and right are treated.]),
+  (11, "MIX", [Dry to crushed.]),
   columns: 2,
 )
 
@@ -145,6 +148,20 @@ signals, one per row. The original is the grey dashed line, the result is in blu
 
 #summary[*BIT DEPTH* sets how coarse the steps are, *CRUSH* where they sit, *SMOOTHING* how sharp
   their edges are, and *GAMMA* whether quiet or loud parts of the sound break up first.]
+
+== The display
+
+The window marked *1 CYCLE* shows what the settings do to one cycle of a pure tone: the tone is
+the faint line, and the dark line is what comes out. It follows *GAIN*, *AUTO*, *GAMMA*, *BIT
+DEPTH*, *SMOOTHING*, *CRUSH* and *MIX* as you turn them, whether or not anything is playing, so
+you can see the steps change before you hear them.
+
+#block(breakable: false, grid(columns: (50mm, 1fr), column-gutter: 6mm, align: horizon,
+  face(img("init"), pos, crop: display-group, width: 50mm),
+  [With *AUTO* off, the tone in the window is at half of full level before *GAIN*, so turning
+    *GAIN* up drives it into more steps, then flattens and lowers its peaks, as the music would
+    be. With *AUTO* on it is at full level, the way auto gain sets the sound up for the crush.],
+))
 
 == Bit depth
 

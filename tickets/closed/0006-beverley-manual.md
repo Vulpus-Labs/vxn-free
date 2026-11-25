@@ -74,3 +74,12 @@ Labs' instrument manuals are, with graphs generated from the engine
   - GAIN doesn't keep loud parts at their level. A clipped peak comes out
     quieter: at 20 dB, a full-level peak comes out at a tenth of full
     level.
+
+## Follow-up (2026-11-25)
+
+- For 0.2.0: the faceplate is redrawn from the plugin (teal-blue, 1290
+  wide, 0041), and the crush display (0039) is numbered among the
+  controls, with a section of its own under The crush. The Stereo and mix
+  crop moves right with the panel. Every measurement came back unchanged
+  (only `positions.json` moved), so 0032's shared chain left the sound
+  alone. Ten pages.

@@ -1,5 +1,5 @@
 {
-  "panelWidthPx": 1090,
+  "panelWidthPx": 1290,
   "panelHeightPx": 150,
   "controls": {
     "gain": {"left": 218, "top": 60, "width": 64, "height": 64},
@@ -7,10 +7,11 @@
     "gamma": {"left": 520, "top": 60, "width": 64, "height": 64},
     "bit_depth": {"left": 618, "top": 60, "width": 64, "height": 64},
     "smoothing": {"left": 716, "top": 60, "width": 64, "height": 64},
-    "mix": {"left": 960, "top": 60, "width": 64, "height": 64},
+    "mix": {"left": 1160, "top": 60, "width": 64, "height": 64},
     "auto_gain": {"left": 297, "top": 77, "width": 30, "height": 30},
     "detect": {"left": 349, "top": 69, "width": 46, "height": 46},
-    "crush_mode": {"left": 823, "top": 69, "width": 46, "height": 46},
-    "stereo": {"left": 885, "top": 69, "width": 46, "height": 46}
+    "crush_mode": {"left": 1023, "top": 69, "width": 46, "height": 46},
+    "stereo": {"left": 1085, "top": 69, "width": 46, "height": 46},
+    "display": {"left": 833, "top": 45, "width": 150, "height": 74}
   }
 }
