@@ -356,6 +356,8 @@ impl CharmEngine {
         let level = voice_level(self.voices);
         let fs = f64::from(self.sample_rate);
         self.obs.tick += 1;
+        self.obs.spread = settings.spread as f32;
+        self.obs.max_velocity = settings.max_velocity as f32;
         for (band, obs) in self.bands.iter_mut().zip(&mut self.obs.bands) {
             band.auto.set_target(if self.auto_width {
                 auto_width(obs.coherence)
@@ -371,6 +373,7 @@ impl CharmEngine {
             band.flock.step(&settings, dt);
             let after = band.flock.voices();
             obs.active = self.voices as u8;
+            obs.width = width_to;
             for i in 0..MAX_VOICES {
                 let g_from = band.level[i].value();
                 band.level[i].set_target(if i < self.voices { level } else { 0.0 });
@@ -386,6 +389,7 @@ impl CharmEngine {
                 o.pan = guarded(after[i].pan as f32 * width_to);
                 o.velocity = after[i].delay_velocity as f32;
                 o.gain = g_to;
+                o.shape = band.side.read(o.delay * self.sample_rate);
             }
         }
         self.into_tick = 0;

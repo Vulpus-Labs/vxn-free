@@ -192,19 +192,26 @@ Charm addresses each of these, and stays a zero-latency effect.
 
 10. **The flock display.** The editor plots what the engine is doing. It
     is part of the design, because it shows what the flock controls mean.
-    - Horizontal: pan, −WIDTH to +WIDTH. AUTO WIDTH's limits are drawn as
-      walls that close in.
+    - Horizontal: pan, hard left to hard right, so narrowing shows as
+      narrowing. Each band's limit (WIDTH times AUTO WIDTH's share) is
+      drawn as walls in its colour that close in, and the mono guard as
+      faint lines. (First drafted as −WIDTH to +WIDTH; changed in ticket
+      0019, since that scale hid WIDTH's own effect.)
     - Vertical: delay, from the floor (bottom, "front of the stage") to
       floor + SPREAD.
     - Each voice is a dot, MID and HIGH in two colours. A tail shows its
       velocity on the delay axis, which is its detune, as a fraction of
       DETUNE.
-    - Duck and Bloom scale each dot's size and brightness, so an onset
-      shows as a pulse across the flock.
+    - Duck and Bloom scale each dot's size and brightness, as the gain
+      where that voice reads, so an onset shows as a pulse climbing the
+      flock from the floor.
+    - A frame older than 250 ms isn't drawn: with the host stopped, the
+      flock goes dark rather than freezing.
 
     The engine publishes one consistent frame per flock tick: every
-    voice's delay, pan, velocity and gain, plus each band's onset and
-    coherence. Silkscreen's telemetry holds 16 separate values with no
+    voice's delay, pan, velocity, gain and Duck/Bloom gain, each band's
+    onset, coherence and pan limit, and the tick's SPREAD and speed
+    limit (91 floats). Silkscreen's telemetry holds 16 separate values with no
     consistent snapshot, which is not enough for this. Silkscreen
     therefore gains telemetry frames: a fixed-size block per instance,
     published as one snapshot, with no allocation or lock on the audio

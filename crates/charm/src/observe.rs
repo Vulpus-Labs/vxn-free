@@ -31,6 +31,9 @@ pub struct VoiceObs {
     pub velocity: f32,
     /// The voice's gain, 0 while silent (beyond VOICES, or fading).
     pub gain: f32,
+    /// Duck and Bloom's gain where the voice reads (1 between onsets):
+    /// an onset reaches each voice at its own delay.
+    pub shape: f32,
 }
 
 impl VoiceObs {
@@ -54,6 +57,9 @@ pub struct BandObs {
     pub onset_start: u64,
     /// Inter-channel coherence of the input, −1 to 1 (0015, 0018).
     pub coherence: f32,
+    /// The furthest a voice may be panned: WIDTH times AUTO WIDTH's
+    /// share, before the mono guard. AUTO WIDTH's walls.
+    pub width: f32,
 }
 
 /// Everything the engine reports, as of the end of one tick.
@@ -61,37 +67,50 @@ pub struct BandObs {
 pub struct Observation {
     /// Ticks since the engine was reset.
     pub tick: u64,
+    /// SPREAD as the flocks used it this tick, seconds: delays run from
+    /// the floor to the floor plus this.
+    pub spread: f32,
+    /// DETUNE as a speed limit on the delay axis, seconds per second:
+    /// the largest |velocity|.
+    pub max_velocity: f32,
     /// MID, then HIGH.
     pub bands: [BandObs; BANDS],
 }
 
-/// Words per voice in a frame: delay, pan, velocity, gain.
-const VOICE_WORDS: usize = 4;
-/// Words per band in a frame: active, onset, coherence, then the voices.
-const BAND_WORDS: usize = 3 + MAX_VOICES * VOICE_WORDS;
+/// Words per voice in a frame: delay, pan, velocity, gain, shape.
+const VOICE_WORDS: usize = 5;
+/// Words per band in a frame: active, onset, coherence, width, then the
+/// voices.
+const BAND_WORDS: usize = 4 + MAX_VOICES * VOICE_WORDS;
+/// Words before the bands: tick, spread, max velocity.
+const HEAD_WORDS: usize = 3;
 
 /// Exact for whole numbers below this, so a frame's tick is exact.
 const TICK_WRAP: u64 = 1 << 24;
 
-/// Words in Charm's telemetry frame: the tick (modulo 2^24), then each
-/// band's active count, onset, coherence and voices (delay, pan, velocity,
-/// gain). `onset_start` stays on the audio side.
-pub const FRAME_WORDS: usize = 1 + BANDS * BAND_WORDS;
+/// Words in Charm's telemetry frame: the tick (modulo 2^24), spread and
+/// max velocity, then each band's active count, onset, coherence, width
+/// and voices (delay, pan, velocity, gain, shape). `onset_start` stays on
+/// the audio side.
+pub const FRAME_WORDS: usize = HEAD_WORDS + BANDS * BAND_WORDS;
 
 impl Observation {
     /// This observation as a telemetry frame.
     pub fn to_frame(&self, out: &mut [f32; FRAME_WORDS]) {
         out[0] = (self.tick % TICK_WRAP) as f32;
-        for (band, words) in self.bands.iter().zip(out[1..].chunks_exact_mut(BAND_WORDS)) {
-            words[0] = f32::from(band.active);
-            words[1] = band.onset;
-            words[2] = band.coherence;
-            for (v, w) in band
-                .voices
-                .iter()
-                .zip(words[3..].chunks_exact_mut(VOICE_WORDS))
-            {
-                w.copy_from_slice(&[v.delay, v.pan, v.velocity, v.gain]);
+        out[1] = self.spread;
+        out[2] = self.max_velocity;
+        let bands = out[HEAD_WORDS..].chunks_exact_mut(BAND_WORDS);
+        for (band, words) in self.bands.iter().zip(bands) {
+            words[..4].copy_from_slice(&[
+                f32::from(band.active),
+                band.onset,
+                band.coherence,
+                band.width,
+            ]);
+            let voices = words[4..].chunks_exact_mut(VOICE_WORDS);
+            for (v, w) in band.voices.iter().zip(voices) {
+                w.copy_from_slice(&[v.delay, v.pan, v.velocity, v.gain, v.shape]);
             }
         }
     }
@@ -104,26 +123,24 @@ impl Observation {
         }
         let mut obs = Self {
             tick: frame[0] as u64,
+            spread: frame[1],
+            max_velocity: frame[2],
             ..Self::default()
         };
-        for (band, words) in obs
-            .bands
-            .iter_mut()
-            .zip(frame[1..].chunks_exact(BAND_WORDS))
-        {
+        let bands = frame[HEAD_WORDS..].chunks_exact(BAND_WORDS);
+        for (band, words) in obs.bands.iter_mut().zip(bands) {
             band.active = words[0] as u8;
             band.onset = words[1];
             band.coherence = words[2];
-            for (v, w) in band
-                .voices
-                .iter_mut()
-                .zip(words[3..].chunks_exact(VOICE_WORDS))
-            {
+            band.width = words[3];
+            let voices = words[4..].chunks_exact(VOICE_WORDS);
+            for (v, w) in band.voices.iter_mut().zip(voices) {
                 *v = VoiceObs {
                     delay: w[0],
                     pan: w[1],
                     velocity: w[2],
                     gain: w[3],
+                    shape: w[4],
                 };
             }
         }
@@ -139,6 +156,8 @@ mod tests {
     fn a_frame_round_trips_all_but_the_onset_start() {
         let mut obs = Observation {
             tick: TICK_WRAP + 7,
+            spread: 0.01,
+            max_velocity: 0.007,
             ..Observation::default()
         };
         for (b, band) in obs.bands.iter_mut().enumerate() {
@@ -146,6 +165,7 @@ mod tests {
             band.onset = 0.25 * b as f32;
             band.onset_start = 99;
             band.coherence = -0.5;
+            band.width = 0.6;
             for (i, v) in band.voices.iter_mut().enumerate() {
                 let x = (b * 100 + i) as f32;
                 *v = VoiceObs {
@@ -153,6 +173,7 @@ mod tests {
                     pan: -x,
                     velocity: x * 0.5,
                     gain: x * 2.0,
+                    shape: x * 0.25,
                 };
             }
         }

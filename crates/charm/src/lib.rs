@@ -10,17 +10,19 @@
 //! On each onset the ensemble ducks (DUCK) and can fade back in (BLOOM).
 //! AUTO WIDTH narrows the ensemble for bands whose input is already wide,
 //! and no voice is panned so far that it loses more than 2 dB in mono.
-//! The editor arrives with the plugin (ticket 0020).
+//! The editor arrives with the plugin (ticket 0020); its flock display
+//! (ticket 0019) draws the engine's telemetry frame.
 //! (CLARITY, which steered voices' comb notches off strong partials, was
 //! dropped after measurement: ticket 0017.)
 
 use silkscreen::model::{ParamSpec, Taper};
 use silkscreen::{
-    Binding, Editor, EditorState, EngineLink, ParamIndex, ParamKnob, ParamToggle, PluginUi,
+    Binding, Editor, EditorState, EngineLink, ParamIndex, ParamKnob, ParamToggle, PluginUi, Unbound,
 };
 
 pub mod analysis;
 pub mod decorrelate;
+pub mod display;
 pub mod engine;
 pub mod flock;
 pub mod observe;
@@ -151,8 +153,13 @@ pub fn state(link: Box<dyn EngineLink>) -> EditorState {
         high_depth: knob(HIGH_DEPTH),
         duck: knob(DUCK),
         bloom: knob(BLOOM),
+        flock: Box::new(Unbound),
     };
-    EditorState::new(&faceplate::LAYOUT, &PARAMS, controls.into_array(), link)
+    let mut state = EditorState::new(&faceplate::LAYOUT, &PARAMS, controls.into_array(), link);
+    state.set_widget(faceplate::ids::FLOCK, |_| {
+        Box::new(display::FlockDisplay::default())
+    });
+    state
 }
 
 /// What every host needs to know about the editor.
