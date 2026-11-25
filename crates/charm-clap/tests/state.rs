@@ -40,6 +40,7 @@ fn a_saved_state_comes_back_with_its_sound() {
         (12, 20.0),
         (13, 500.0),
         (14, 0.0),
+        (15, 0.0),
     ];
     run(&mut plugin, 48_000.0, &events(first), &x, &x);
     let saved = save(&mut plugin);

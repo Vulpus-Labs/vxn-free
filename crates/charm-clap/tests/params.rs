@@ -33,7 +33,7 @@ fn every_param_is_listed_with_its_id_name_and_range() {
     }
     assert_eq!(
         ids,
-        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
         "ids never change or move"
     );
 }

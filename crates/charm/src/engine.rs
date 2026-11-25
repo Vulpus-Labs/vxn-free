@@ -38,8 +38,8 @@ use crate::flock::{FLOOR, Flock, FlockSettings, max_velocity};
 use crate::observe::{BANDS, FRAME_WORDS, Observation};
 use crate::wet::{Shape, WetGain};
 use crate::{
-    AUTO_WIDTH, BLOOM, COHESION, DETUNE, DUCK, HIGH_DEPTH, LOW_XOVER, MAX_VOICES, MID_DEPTH,
-    MIN_VOICES, MIX, PARAMS, SEPARATION, SPREAD, TURBULENCE, VOICES, WIDTH,
+    AUTO_WIDTH, BLOOM, COHESION, DECORRELATE, DETUNE, DUCK, HIGH_DEPTH, LOW_XOVER, MAX_VOICES,
+    MID_DEPTH, MIN_VOICES, MIX, PARAMS, SEPARATION, SPREAD, TURBULENCE, VOICES, WIDTH,
 };
 
 /// Samples per control tick.
@@ -55,6 +55,15 @@ pub const MID_HIGH_XOVER: f32 = 2500.0;
 const MAX_DELAY: f64 = FLOOR + 0.025;
 /// Each band's flock has its own turbulence.
 const SEEDS: [u32; BANDS] = [0x9E37_79B9, 0x85EB_CA6B];
+
+/// Whether this tick's voices pass through their allpass chains.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Allpass {
+    Off,
+    On,
+    /// DECORRELATE was switched: the chains crossfade in or out.
+    Fading,
+}
 
 /// Voices in groups of [`LANES`], run side by side.
 const CHUNKS: usize = MAX_VOICES / LANES;
@@ -275,8 +284,11 @@ pub struct CharmEngine {
     /// 0 to 1, and samples.
     duck: f32,
     bloom: f32,
-    /// Whether voices pass through their allpass chains (0028).
-    decorrelate: bool,
+    /// How much of each voice comes through its allpass chain (0028), 0
+    /// to 1: DECORRELATE, crossfaded so switching it doesn't click.
+    allpass: Glide,
+    allpass_ramp: Ramp,
+    allpass_mode: Allpass,
     analysis: Analysis,
     obs: Observation,
     /// The tick last published as a telemetry frame, and room to encode
@@ -339,18 +351,18 @@ impl CharmEngine {
             position: 0,
             duck: default_of(DUCK) * 0.01,
             bloom: default_of(BLOOM) * 0.001 * sample_rate,
-            decorrelate: true,
+            allpass: glide(if default_of(DECORRELATE) >= 0.5 {
+                1.0
+            } else {
+                0.0
+            }),
+            allpass_ramp: Ramp::default(),
+            allpass_mode: Allpass::On,
             analysis,
             obs: Observation::default(),
             published: None,
             frame: [0.0; FRAME_WORDS],
         }
-    }
-
-    /// Turn the voices' allpass decorrelation on or off (for measuring
-    /// it: ticket 0028).
-    pub fn set_decorrelation(&mut self, on: bool) {
-        self.decorrelate = on;
     }
 
     /// What the engine is doing, as of the latest tick.
@@ -398,6 +410,14 @@ impl CharmEngine {
         }
         let mix_from = self.mix.value();
         self.mix_ramp = Ramp::new(mix_from, self.mix.tick(), TICK);
+        let allpass_from = self.allpass.value();
+        let allpass_to = self.allpass.tick();
+        self.allpass_ramp = Ramp::new(allpass_from, allpass_to, TICK);
+        self.allpass_mode = match (allpass_from, allpass_to) {
+            (0.0, 0.0) => Allpass::Off,
+            (1.0, 1.0) => Allpass::On,
+            _ => Allpass::Fading,
+        };
 
         let level = voice_level(self.voices);
         let fs = f64::from(self.sample_rate);
@@ -464,6 +484,7 @@ impl CharmEngine {
         let (m, h) = self.split.split(rest);
         let (mut wl, mut wr) = (0.0, 0.0);
         self.position += 1;
+        let (allpass, allpass_mix) = (self.allpass_mode, self.allpass_ramp.at(i));
         for (band, x) in self.bands.iter_mut().zip([m, h]) {
             band.line.push(x);
             band.side.push(band.wet.step());
@@ -483,9 +504,15 @@ impl CharmEngine {
                 let audio = band.line.gather(&whole, &weights);
                 let shape = band.side.gather(&whole, &weights);
                 let mut voice: [f32; LANES] = std::array::from_fn(|lane| audio[lane] * shape[lane]);
-                if self.decorrelate {
+                if allpass != Allpass::Off {
+                    let dry = voice;
                     for stage in &mut lanes.chain {
                         stage.process(&mut voice);
+                    }
+                    if allpass == Allpass::Fading {
+                        for lane in 0..LANES {
+                            voice[lane] = dry[lane] + allpass_mix * (voice[lane] - dry[lane]);
+                        }
                     }
                 }
                 for lane in 0..LANES {
@@ -554,6 +581,9 @@ impl Engine for CharmEngine {
             MID_DEPTH => self.bands[0].depth.set_target(value * 0.01),
             HIGH_DEPTH => self.bands[1].depth.set_target(value * 0.01),
             MIX => self.mix.set_target(value * 0.01),
+            DECORRELATE => self
+                .allpass
+                .set_target(if value >= 0.5 { 1.0 } else { 0.0 }),
             DUCK => self.duck = value * 0.01,
             BLOOM => self.bloom = value * 0.001 * self.sample_rate,
             _ => {}
@@ -601,6 +631,7 @@ impl Engine for CharmEngine {
             &mut self.width,
             &mut self.low_xover,
             &mut self.mix,
+            &mut self.allpass,
         ] {
             glide.snap();
         }

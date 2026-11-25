@@ -54,13 +54,16 @@
     <text x="24" y="257">L</text>
     <text x="696" y="257" text-anchor="end">R</text>
     <text x="360" y="257" text-anchor="middle">FRONT</text>
+    <text x="476" y="257">DECORRELATE</text>
     <circle cx="566" cy="254" r="3" fill="#e8be5e"/>
     <text x="574" y="257">MID</text>
     <circle cx="614" cy="254" r="3" fill="#6ccfd6"/>
     <text x="622" y="257">HIGH</text>
   </g>
+  <rect x="437" y="243" width="36" height="22" rx="6" fill="none" stroke="#565c6c" stroke-width="1.5"/>
   <g id="controls">
     <rect id="canvas.flock" x="24" y="66" width="672" height="172" fill="#ff00ff"/>
+    <rect id="toggle.decorrelate" x="440" y="246" width="30" height="16" fill="#ff00ff"/>
     <circle id="knob.voices" cx="72" cy="302" r="28" fill="#ff00ff"/>
     <circle id="knob.detune" cx="168" cy="302" r="28" fill="#ff00ff"/>
     <circle id="knob.spread" cx="264" cy="302" r="28" fill="#ff00ff"/>

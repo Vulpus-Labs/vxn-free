@@ -20,7 +20,8 @@
 //! - `--out DIR`: where results go (default the workspace's
 //!   `target/charm-bench`).
 //! - `--cpu`: measure CPU per block at 16, 32, 64 and 512 samples, 96 kHz.
-//! - `--no-decorrelate`: turn the voices' allpass chains off.
+//! - `--no-decorrelate`: turn the voices' allpass chains off (as
+//!   `--set decorrelate=0`).
 //!
 //! For each input it writes `NAME.wav` (the output, stereo float),
 //! `NAME-mono.wav` (its mono sum), `NAME-voices.csv` (every voice at every
@@ -62,8 +63,6 @@ struct Args {
     seconds: f32,
     out: PathBuf,
     cpu: bool,
-    /// Turn the voices' allpass decorrelation off (0028).
-    no_decorrelate: bool,
 }
 
 /// The param called `name`, matched without case, spaces, `-` or `_`.
@@ -148,7 +147,9 @@ fn parse_args() -> Result<Args, String> {
             "--out" => args.out = PathBuf::from(value("--out")?),
             "--corpus" => args.corpus = true,
             "--cpu" => args.cpu = true,
-            "--no-decorrelate" => args.no_decorrelate = true,
+            // DECORRELATE off, as `--set decorrelate=0` (the switch came
+            // before the param: ticket 0024).
+            "--no-decorrelate" => args.sets.push((charm::DECORRELATE, 0.0)),
             "--help" | "-h" => {
                 return Err("see the doc comment at the top of examples/bench/main.rs".into());
             }
@@ -239,7 +240,6 @@ fn render(
 ) -> [Vec<f32>; 2] {
     let len = input.channels[0].len();
     let mut e = CharmEngine::new(input.rate);
-    e.set_decorrelation(!args.no_decorrelate);
     for (p, v) in values_at(args, 0, len) {
         e.set_param(p, v);
     }
@@ -556,7 +556,6 @@ fn cpu(args: &Args, report: &mut String) {
     let _ = writeln!(report, "== CPU at 96 kHz (stereo pink noise, {seconds} s)");
     for block in [16usize, 32, 64, 512] {
         let mut e = CharmEngine::new(rate);
-        e.set_decorrelation(!args.no_decorrelate);
         for (p, v) in values_at(args, 0, 1) {
             e.set_param(p, v);
         }

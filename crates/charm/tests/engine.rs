@@ -294,3 +294,40 @@ fn voices_keep_moving_after_spread_is_swept() {
         }
     }
 }
+
+/// DECORRELATE crossfades the voices' allpass chains in and out over a
+/// glide, so switching it doesn't click: the change it makes to the
+/// output starts from nothing.
+#[test]
+fn switching_decorrelate_fades_rather_than_clicks() {
+    let input = noise(24_000, 17);
+    let render = |switch: bool| {
+        let mut engine = engine(48_000.0, &[]);
+        let (mut left, mut right) = (input.clone(), input.clone());
+        let (a, b) = (12_000, 24_000);
+        engine.process(&mut [&mut left[..a], &mut right[..a]]);
+        if switch {
+            engine.set_param(charm::DECORRELATE, 0.0);
+        }
+        engine.process(&mut [&mut left[a..b], &mut right[a..b]]);
+        left
+    };
+    let (on, switched) = (render(false), render(true));
+    let diff: Vec<f32> = on.iter().zip(&switched).map(|(a, b)| a - b).collect();
+    assert!(
+        diff[..12_000].iter().all(|&d| d == 0.0),
+        "nothing before the switch"
+    );
+    let rms = |s: &[f32]| (s.iter().map(|v| v * v).sum::<f32>() / s.len() as f32).sqrt();
+    let settled = rms(&diff[18_000..]);
+    assert!(settled > 0.01, "the chains change the sound: {settled}");
+    // The first millisecond after the switch differs far less than the
+    // settled difference: a fade, not a step.
+    let first = diff[12_000..12_048]
+        .iter()
+        .fold(0.0f32, |m, d| m.max(d.abs()));
+    assert!(
+        first < 0.25 * settled,
+        "a step at the switch: {first} against {settled}"
+    );
+}

@@ -48,10 +48,11 @@ pub const MIX: ParamIndex = ParamIndex(10);
 pub const DUCK: ParamIndex = ParamIndex(11);
 pub const BLOOM: ParamIndex = ParamIndex(12);
 pub const AUTO_WIDTH: ParamIndex = ParamIndex(13);
+pub const DECORRELATE: ParamIndex = ParamIndex(14);
 
-/// Ids reserved so none is taken by anything else: a control for the
-/// voices' decorrelation, if 0024 gives it one.
-pub const RESERVED_IDS: [u32; 1] = [15];
+/// Ids reserved so none is taken by anything else: none at present
+/// (15 was held for DECORRELATE, which now has it).
+pub const RESERVED_IDS: [u32; 0] = [];
 
 /// VOICES's positions: the number of voices in each flock. Position `k`
 /// is `k + 2` voices, so saved values keep their meaning as the range
@@ -71,7 +72,7 @@ pub const MAX_VOICES: usize = 64;
 /// The parameter table: index `i` is `ParamIndex(i)`. Each `id` is what
 /// presets and host projects store, so never change or reuse one. Ranges
 /// and defaults are provisional until ticket 0024 tunes them.
-pub static PARAMS: [ParamSpec; 14] = [
+pub static PARAMS: [ParamSpec; 15] = [
     // Voices per flock (MID and HIGH each have this many).
     ParamSpec::stepped("Voices", VOICE_COUNTS, 2).id(1),
     // The furthest out of tune any voice may be: the flock's speed limit
@@ -140,6 +141,10 @@ pub static PARAMS: [ParamSpec; 14] = [
     // Narrow WIDTH for bands whose input is already wide (ADR 0002,
     // point 7).
     ParamSpec::toggle("Auto Width", true).id(14),
+    // Each voice through its own allpass chain, so voices don't comb
+    // alike (ticket 0028). Provisional: a switch to A/B it by ear, which
+    // 0024 keeps, makes always-on or removes.
+    ParamSpec::toggle("Decorrelate", true).id(15),
 ];
 
 /// The editor's long-lived state, bound to the engine through `link`.
@@ -155,6 +160,7 @@ pub fn state(link: Box<dyn EngineLink>) -> EditorState {
         mix: knob(MIX),
         width: knob(WIDTH),
         auto_width: Box::new(ParamToggle::new(AUTO_WIDTH)),
+        decorrelate: Box::new(ParamToggle::new(DECORRELATE)),
         low_xover: knob(LOW_XOVER),
         mid_depth: knob(MID_DEPTH),
         high_depth: knob(HIGH_DEPTH),

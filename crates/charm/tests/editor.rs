@@ -4,8 +4,8 @@
 
 use charm::faceplate::ids;
 use charm::{
-    AUTO_WIDTH, BLOOM, COHESION, DETUNE, DUCK, HIGH_DEPTH, LOW_XOVER, MID_DEPTH, MIX, SEPARATION,
-    SPREAD, TURBULENCE, VOICES, WIDTH,
+    AUTO_WIDTH, BLOOM, COHESION, DECORRELATE, DETUNE, DUCK, HIGH_DEPTH, LOW_XOVER, MID_DEPTH, MIX,
+    SEPARATION, SPREAD, TURBULENCE, VOICES, WIDTH,
 };
 use silkscreen_harness::{Harness, assert_snapshot};
 
@@ -46,4 +46,7 @@ fn every_control_moves_its_param() {
     assert_eq!(h.model().get(AUTO_WIDTH), 1.0);
     h.click(ids::AUTO_WIDTH);
     assert_eq!(h.model().get(AUTO_WIDTH), 0.0);
+    assert_eq!(h.model().get(DECORRELATE), 1.0);
+    h.click(ids::DECORRELATE);
+    assert_eq!(h.model().get(DECORRELATE), 0.0);
 }

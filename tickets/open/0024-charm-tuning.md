@@ -98,3 +98,22 @@ voices on the floor, at rest, for good.
   (all near the top, then all near the bottom, every few seconds),
   fresh or not. That is cohesion and alignment at work, and may be
   heard as the voices sweeping together; worth a listen here.
+
+## Progress (2026-11-25): DECORRELATE, to A/B the allpass chains by ear
+
+- DECORRELATE (id 15, the id reserved for it; a toggle, on by default)
+  switches every voice's allpass chain (0028) in or out. Provisional:
+  this ticket's A/B decides whether it stays a control, becomes
+  always-on, or goes. On the plain faceplate beside the display's
+  legend.
+- Switching crossfades over the settings' 20 ms glide, so it doesn't
+  click; a test checks the change to the output starts from nothing
+  (under a quarter of its settled size in the first millisecond).
+- The bench's `--no-decorrelate` is now `--set decorrelate=0`; the
+  engine's `set_decorrelation` is gone.
+- CPU, 64 voices, 96 kHz, block 32, best of interleaved runs: on 8.40 %
+  of a core (8.47 % before the switch), off 7.1 %. A first version that
+  branched three ways (off, on, fading) inside the voice loop, or moved
+  the loop into its own function (even `#[inline(always)]`, const
+  generic per mode), cost 15 % more (9.7 %); the loop stays inline with
+  one `if` for the chains and one for the fade.
