@@ -33,7 +33,7 @@ use vxn_free_dsp::{Crossover, DelayLine, Glide, Ramp, SideBuffer};
 use crate::analysis::Analysis;
 use crate::decorrelate::Chain;
 use crate::flock::{FLOOR, Flock, FlockSettings, max_velocity};
-use crate::observe::{BANDS, Observation};
+use crate::observe::{BANDS, FRAME_WORDS, Observation};
 use crate::wet::{Shape, WetGain};
 use crate::{
     AUTO_WIDTH, BLOOM, COHESION, DETUNE, DUCK, HIGH_DEPTH, LOW_XOVER, MAX_VOICES, MID_DEPTH,
@@ -233,6 +233,10 @@ pub struct CharmEngine {
     decorrelate: bool,
     analysis: Analysis,
     obs: Observation,
+    /// The tick last published as a telemetry frame, and room to encode
+    /// the next.
+    published: Option<u64>,
+    frame: [f32; FRAME_WORDS],
 }
 
 fn default_of(index: ParamIndex) -> f32 {
@@ -292,6 +296,8 @@ impl CharmEngine {
             decorrelate: true,
             analysis,
             obs: Observation::default(),
+            published: None,
+            frame: [0.0; FRAME_WORDS],
         }
     }
 
@@ -497,6 +503,16 @@ impl Engine for CharmEngine {
         }
     }
 
+    /// The latest tick's observation, once per tick: the flock display
+    /// reads the newest whole.
+    fn frame(&mut self, write: &mut dyn FnMut(&[f32])) {
+        if self.published != Some(self.obs.tick) {
+            self.obs.to_frame(&mut self.frame);
+            write(&self.frame);
+            self.published = Some(self.obs.tick);
+        }
+    }
+
     fn reset(&mut self) {
         for glide in [
             &mut self.detune,
@@ -536,6 +552,7 @@ impl Engine for CharmEngine {
             }
         }
         self.obs = Observation::default();
+        self.published = None;
         self.position = 0;
         self.into_tick = TICK;
     }

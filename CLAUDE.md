@@ -48,7 +48,7 @@ cargo build -p vxn-free-dsp --target wasm32-unknown-unknown
 
 Bundles are built with silkscreen's tool, installed from the same tag as
 the crates:
-`cargo install --locked --git https://github.com/Vulpus-Labs/silkscreen --tag v0.2.2 silkscreen-tool`,
+`cargo install --locked --git https://github.com/Vulpus-Labs/silkscreen --tag v0.3.0 silkscreen-tool`,
 then `cargo silkscreen bundle <package>`.
 
 ## Code

@@ -41,6 +41,7 @@ fn process_and_set_param_never_allocate() {
             e.process(&mut [&mut l, &mut r]);
             e.process(&mut [&mut l[..77]]);
             let _ = e.observation();
+            e.frame(&mut |f| assert!(!f.is_empty()));
         }
         e.reset();
     });

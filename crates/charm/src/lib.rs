@@ -164,6 +164,7 @@ pub const UI: PluginUi = PluginUi {
     specs: &PARAMS,
     factory: &[],
     faceplate: &faceplate::FACEPLATE,
+    frame: observe::FRAME_WORDS,
     state,
 };
 
