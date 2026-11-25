@@ -1,6 +1,6 @@
 # Beverley's faceplate art
 
-Beverley looks like a two-unit, 1990s rack effects unit: charcoal
+Beverley looks like a two-unit, 1990s rack effects unit: dark teal-blue
 textured paint, white legends, black fluted knobs with a white line,
 chrome miniature toggles, a grey push-button with a red LED, and rack
 screws on nylon cup washers.

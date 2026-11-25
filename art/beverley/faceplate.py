@@ -34,7 +34,8 @@ KR = 25            # knob radius as rendered (the marker is larger)
 KNOB_BOX = 64      # knob marker: the rendered frame, drop shadow and all
 TOGGLE_BOX = 46
 BUTTON_BOX = 30
-PAINT = "#232427"
+# A dark teal-blue: Beverley's colour (Wesley's panel is a wine red).
+PAINT = "#0d3550"
 INK = "#ecebe4"     # white legends
 DIM = "#9d9c96"     # scales
 ACCENT = "#d9572b"  # the 90s signal orange of the title stripe

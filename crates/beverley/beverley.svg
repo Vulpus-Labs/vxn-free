@@ -11,7 +11,7 @@
     </filter>
   </defs>
   <rect width="1290" height="150" fill="#08080a"/>
-  <rect x="0" y="3" width="1290" height="144" fill="#232427"/>
+  <rect x="0" y="3" width="1290" height="144" fill="#0d3550"/>
   <rect x="0" y="3" width="1290" height="144" filter="url(#paint)" opacity="0.06"/>
   <rect x="8.0" y="22.5" width="20" height="11" rx="5.5" fill="#0a0a0b"/>
   <circle cx="15.5" cy="28" r="7.5" fill="#cfccc2"/>
