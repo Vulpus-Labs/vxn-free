@@ -17,6 +17,10 @@ The `wesley` crate: params and engine (ADR 0003, points 3–7).
       CRUSH MODE, MIX, LEVEL, ON, SOLO; shared LOW XOVER, HIGH XOVER,
       STEREO, DETECT, DECAY, MIX. Draft ranges and defaults from
       Beverley's; ids fixed here.
+- [ ] LOW's ON defaults to off: at the defaults the bass passes
+      uncrushed (test: a bass sine below the lower crossover comes out
+      as it went in, through the split's allpass), and MID and HIGH are
+      crushed.
 - [ ] Every band off (or every MIX at 0) gives the input through the
       split's allpass: flat within 0.01 dB.
 - [ ] Global MIX blends against the uncrushed bands' sum, so a partial

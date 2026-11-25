@@ -25,6 +25,9 @@ faceplate.
 | 0036 | Faceplate in Beverley's family |
 | 0037 | Manual and release |
 
+Beverley's own open tickets (0005, 0027) go on in parallel; 0032 is the
+only one here that touches Beverley, and leaves its sound unchanged.
+
 ## Dependency order
 
 0031 and 0032 first, in either order; 0033 after both; 0034 after 0033;

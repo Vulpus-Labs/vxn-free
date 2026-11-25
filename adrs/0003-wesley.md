@@ -43,6 +43,15 @@ together: Beverley's crush chain on each of three bands.
    is quieter than the whole, and auto gain brings each to full scale
    before it is crushed.
 
+   LOW's crusher is off by default (its ON param), so out of the box
+   Wesley leaves the bass clean below the lower crossover and crushes
+   MID and HIGH apart. Crushed bass is a sound of its own (a slow
+   waveform quantised into a staircase gives a square-edged fuzz) and is
+   wanted on a bass part alone, but on a full mix or a drum bus the bass
+   is what most needs protecting, and crushing it adds products in MID
+   and HIGH's range. Tuning decides whether LOW keeps a full strip, a
+   reduced one (ON, BIT DEPTH, MIX, LEVEL) or none.
+
 5. **Shared settings.** STEREO (mono, separate, linked, as Beverley's)
    and auto gain's DETECT and DECAY apply to every band, so the bands
    stay one instrument. A global MIX blends the summed bands against the
@@ -77,11 +86,11 @@ together: Beverley's crush chain on each of three bands.
 
 ## Consequences
 
-- About 33 params: 9 a band (GAIN, AUTO GAIN, GAMMA, BIT DEPTH,
+- Up to about 33 params: 9 a band (GAIN, AUTO GAIN, GAMMA, BIT DEPTH,
   SMOOTHING, CRUSH MODE, MIX, LEVEL, and ON or SOLO) and 6 shared
-  (LOW XOVER, HIGH XOVER, STEREO, DETECT, DECAY, MIX). The faceplate is
-  wide; whether every band needs every control is a question for
-  tuning.
+  (LOW XOVER, HIGH XOVER, STEREO, DETECT, DECAY, MIX), fewer if LOW's
+  strip is cut down. The faceplate is wide; whether every band needs
+  every control is a question for tuning.
 - CPU is about three Beverleys plus five filters a channel; Beverley's
   chain is cheap, so Wesley stays well under a percent of a core.
 - `vxn-free-dsp` gains a three-band split. Charm's crates keep using

@@ -17,5 +17,7 @@ Settle by ear in a DAW what the engine ticket drafted.
 - [ ] Out-of-band products (ADR 0003, point 7): kept, filtered, or a
       control. ADR updated.
 - [ ] Whether every band needs every control, or some are shared or
-      dropped, before the faceplate is drawn. ADR updated.
+      dropped, before the faceplate is drawn; in particular whether LOW
+      keeps a full strip, a reduced one (ON, BIT DEPTH, MIX, LEVEL) or
+      none (ADR 0003, point 4). ADR updated.
 - [ ] Listened to on drums, bass, a full mix and voice; notes recorded.
