@@ -65,3 +65,8 @@ Everything but the DAW check is done; this closes when you've listened.
   The first run after a fresh bundle warned on scan time, as for
   Beverley (0005).
 - Installed with `cargo silkscreen bundle charm-clap --install`.
+
+## Deferred (2026-11-25)
+
+Charm is shelved: its flock and decorrelation made no audible
+difference in a DAW. See ADR 0002's Outcome.

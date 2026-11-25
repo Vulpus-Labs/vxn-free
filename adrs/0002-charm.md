@@ -1,6 +1,6 @@
 # 0002: Charm, a listening ensemble chorus
 
-Status: proposed (2026-11-24)
+Status: shelved (2026-11-25). See [Outcome](#outcome-2026-11-25).
 
 ## Context
 
@@ -276,3 +276,45 @@ first adaptive or flock-driven chorus.
   frames.
 - The minimum delay of 7.5 ms rules out flanger territory. Charm is
   a chorus and ensemble, not a flanger.
+
+## Outcome (2026-11-25)
+
+Charm was built through its engine, analysis, CLAP plugin and flock
+display, and listened to in a DAW. It is shelved: its distinctive ideas
+didn't make an audible difference.
+
+- **The flock.** Detune is the speed limit on the delay axis, so the
+  only thing a voice contributes to the sound is its pitch offset over
+  time. Whatever COHESION, SEPARATION and TURBULENCE do to the paths,
+  every voice spends its time at 60–70 % of DETUNE (ticket 0024's
+  bench). The rules change the display, not the sound.
+- **Voice count.** A sum of detuned copies is a random sum by a handful
+  of voices: on a sine, the wet signal's envelope varies by 45–55 % at 2
+  voices and at 64 alike. Beyond 4–8 voices more change little (0030,
+  0024).
+- **Decorrelation.** The per-voice allpass chains (0028) refine comb
+  colouring, which is subtle to begin with; steering combs off partials
+  (point 7, 0017) was already dropped.
+- **Wider delay.** SPREAD was raised from 25 ms to 2 s, so voices would
+  be heard as separate entries. But with detune as the speed limit,
+  voices crawl at that scale (2 s takes 88 s to cross at 40 cents): a
+  static cloud of taps, not a moving ensemble.
+
+The root is point 3's founding choice: detune as the speed limit keeps
+every voice in tune, and so leaves the flock nothing to express but
+tuning, the one thing the rules barely change.
+
+What carries on:
+
+- The multiband split (point 5): LOW left alone, MID and HIGH processed,
+  through Linkwitz-Riley crossovers in `vxn-free-dsp`. Wesley, a
+  multiband Beverley, builds on it (ADR 0003).
+- From `vxn-free-dsp`: the modulated delay line and its lane-wise
+  `gather`, `AllpassBank`, the side-buffer.
+- silkscreen's telemetry frames (0022), released in v0.3.0 and v0.3.1.
+
+The `charm` and `charm-clap` crates stay in the workspace and keep
+passing CI, so the work can be picked up again; Charm is not released.
+Its epic (E004) and open tickets (0019, 0020, 0021, 0024) are in
+`deferred/`.
+

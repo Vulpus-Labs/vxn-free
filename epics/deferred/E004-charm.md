@@ -1,7 +1,7 @@
 ---
 id: E004
 title: "Charm: a listening ensemble chorus"
-status: open
+status: deferred
 created: 2026-11-24
 ---
 
@@ -59,3 +59,8 @@ after 0019.
 
 0007 belongs to E003, which can run beside E004. Glow-Up's own analysis
 work is in 0025, so Charm doesn't wait on it.
+
+## Deferred (2026-11-25)
+
+Charm is shelved: its flock and decorrelation made no audible
+difference in a DAW. See ADR 0002's Outcome.

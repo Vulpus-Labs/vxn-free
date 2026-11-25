@@ -167,3 +167,8 @@ controls stay.
   DETUNE (pitch-shifted grains), voices that jump (grains in the usual
   sense: fade out, reappear elsewhere), or speed not tied to pitch.
   Not decided.
+
+## Deferred (2026-11-25)
+
+Charm is shelved: its flock and decorrelation made no audible
+difference in a DAW. See ADR 0002's Outcome.

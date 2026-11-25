@@ -85,3 +85,8 @@ forward `Engine::frame`, so no frame was ever published. Fixed in
 silkscreen 0.3.1 (with a test that every `Engine` hook passes the gate);
 the workspace moves to v0.3.1. A test here now runs the editor over a
 real bridge sized by `UI.frame`, as the plugin does.
+
+## Deferred (2026-11-25)
+
+Charm is shelved: its flock and decorrelation made no audible
+difference in a DAW. See ADR 0002's Outcome.

@@ -19,3 +19,8 @@ depends: ["0019"]
       guitar, vocals and a drum bus; automation of DETUNE, WIDTH, DUCK
       and MIX; mono sum checked.
 - [ ] Ticket 0002 (releases) includes Charm in its builds.
+
+## Deferred (2026-11-25)
+
+Charm is shelved: its flock and decorrelation made no audible
+difference in a DAW. See ADR 0002's Outcome.
