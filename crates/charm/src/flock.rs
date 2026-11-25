@@ -163,7 +163,11 @@ fn steer(
         a[k] = smoothed[k].clamp(-most, most);
         let speed = velocity[k];
         let room = if speed > 0.0 { 1.0 - at[k] } else { at[k] };
-        let stopping = speed * speed / (2.0 * most) + 2.0 * speed.abs() * dt;
+        // Allow for one more step at the limit towards the edge before the
+        // brake bites: crowding can push a voice that hard (seen with 64
+        // voices in 1 ms of SPREAD).
+        let ahead = speed.abs() + most * dt;
+        let stopping = ahead * ahead / (2.0 * most) + 2.0 * ahead * dt;
         // Only a voice moving towards an edge brakes. One at rest on the
         // floor has no room and no stopping distance either, and braking
         // it (signum(0.0) is 1, so downwards) pinned it there for good.
@@ -193,7 +197,9 @@ impl Flock {
     pub fn reset(&mut self, spread: f64) {
         self.rng = self.seed;
         for (i, v) in self.voices.iter_mut().enumerate() {
-            let at = (i as f64 + 0.5) / MAX_VOICES as f64;
+            // Golden-ratio steps: however many voices are in use, the
+            // first few already cover the range.
+            let at = 0.05 + 0.9 * (0.5 + 0.618_034 * i as f64).fract();
             let side = if i % 2 == 0 { -1.0 } else { 1.0 };
             *v = Voice {
                 // Spread up the delay range, alternating sides.
@@ -258,8 +264,10 @@ impl Flock {
                 }
                 let dx = q[i][0] - q[j][0];
                 let dy = q[i][1] - q[j][1];
-                let dist = (dx * dx + dy * dy).sqrt();
-                if dist < reach {
+                let dist2 = dx * dx + dy * dy;
+                // Most pairs are out of reach: no root for them.
+                if dist2 < reach * reach {
+                    let dist = dist2.sqrt();
                     let push = accel * SEPARATION * s.separation * (1.0 - dist / reach);
                     if dist > 1.0e-6 {
                         a[0] += push * dx / dist;
@@ -375,6 +383,8 @@ mod tests {
     fn no_voice_outruns_detune_or_leaves_its_range() {
         for (voices, cents, spread, c, s, t) in [
             (8, 40.0, 1.0, 1.0, 1.0, 1.0),
+            (64, 40.0, 1.0, 1.0, 1.0, 1.0),
+            (64, 12.0, 25.0, 0.5, 0.5, 0.4),
             (8, 1.0, 25.0, 0.0, 1.0, 1.0),
             (2, 12.0, 10.0, 1.0, 0.0, 1.0),
             (5, 25.0, 3.0, 0.3, 0.7, 0.4),
@@ -404,6 +414,8 @@ mod tests {
         // pitch changes, which must stay within the limit, walls included.
         for (voices, cents, spread, c, s, t) in [
             (8, 40.0, 1.0, 1.0, 1.0, 1.0),
+            (64, 40.0, 1.0, 1.0, 1.0, 1.0),
+            (64, 12.0, 25.0, 0.5, 0.5, 0.4),
             (4, 12.0, 10.0, 0.5, 0.5, 0.4),
             (2, 25.0, 3.0, 0.0, 1.0, 1.0),
         ] {

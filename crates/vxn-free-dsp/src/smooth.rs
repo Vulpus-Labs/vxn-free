@@ -87,6 +87,12 @@ impl Ramp {
     pub fn at(&self, i: usize) -> f32 {
         self.from + self.step * (i + 1) as f32
     }
+
+    /// The change from one sample to the next.
+    #[inline]
+    pub fn step(&self) -> f32 {
+        self.step
+    }
 }
 
 #[cfg(test)]

@@ -85,7 +85,8 @@ Charm addresses each of these, and stays a zero-latency effect.
    - The MID/HIGH crossover is fixed (draft 2.5 kHz, settled in the
      engine ticket), not a control.
    - MID and HIGH each have **their own flock**: their own delay line,
-     VOICES voices and seed. The flock controls apply to both. Each
+     VOICES voices (2 to 64, ticket 0030) and seed. The flock controls
+     apply to both. Each
      flock responds only to its own band's analysis (onsets and
      coherence). Two flocks also decorrelate the bands from each other,
      at the cost of twice the taps.
@@ -223,7 +224,12 @@ Charm addresses each of these, and stays a zero-latency effect.
     largest DETUNE and at 44.1, 48 and 96 kHz. The numbers go in the
     ticket. Ticket 0026 chose 4-point (third-order) Lagrange: it has the
     least error of the non-recursive interpolators, for about 0.8 ns a
-    sample more than linear.
+    sample more than linear. Ticket 0030 runs the voices eight to a group
+    as structure-of-arrays (plain arrays the compiler vectorises): each
+    voice's Lagrange weights are worked out once a sample and shared by
+    its audio and side-buffer reads, and the allpass chains run a stage
+    at a time across the group. 64 voices a band cost about 9 % of a
+    core at 96 kHz.
 
 ## Prior art
 

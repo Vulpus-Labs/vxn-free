@@ -36,7 +36,13 @@ fn frame(width: [f32; 2], voice: impl Fn(usize, usize) -> VoiceObs) -> Vec<f32> 
             active: 8,
             width: width[b],
             coherence: 1.0,
-            voices: std::array::from_fn(|i| voice(b, i)),
+            voices: std::array::from_fn(|i| {
+                if i < 8 {
+                    voice(b, i)
+                } else {
+                    VoiceObs::default()
+                }
+            }),
             ..BandObs::default()
         };
     }

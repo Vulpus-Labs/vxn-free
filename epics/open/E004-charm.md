@@ -37,6 +37,7 @@ Phase 2: the analysis features, each measured on the bench.
 | 0017 | Clarity: comb-notch avoidance (dropped after measurement) |
 | 0028 | Allpass decorrelation of the voices |
 | 0029 | Onset detection: spectral flux against band envelopes |
+| 0030 | Up to 64 voices, the voices run as SIMD lanes |
 | 0016 | Duck and Bloom through the side-buffer |
 | 0018 | Auto width and the mono guard (milestone M2) |
 

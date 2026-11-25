@@ -28,10 +28,12 @@ use std::f32::consts::FRAC_PI_4;
 
 use silkscreen::ParamIndex;
 use silkscreen::bridge::Engine;
-use vxn_free_dsp::{Crossover, DelayLine, Glide, Ramp, SideBuffer};
+use vxn_free_dsp::{
+    AllpassBank, Crossover, DelayLine, Glide, LANES, Ramp, SideBuffer, lagrange4_weights,
+};
 
 use crate::analysis::Analysis;
-use crate::decorrelate::Chain;
+use crate::decorrelate::{STAGES, chain_filters};
 use crate::flock::{FLOOR, Flock, FlockSettings, max_velocity};
 use crate::observe::{BANDS, FRAME_WORDS, Observation};
 use crate::wet::{Shape, WetGain};
@@ -54,27 +56,71 @@ const MAX_DELAY: f64 = FLOOR + 0.025;
 /// Each band's flock has its own turbulence.
 const SEEDS: [u32; BANDS] = [0x9E37_79B9, 0x85EB_CA6B];
 
-/// A voice's delay across one tick, in samples, worked out in f64 so the
-/// rate of change is the flock's velocity exactly, whatever the delay's
-/// size. Each sample's value is rounded to f32 for the read, which jitters
-/// it by at most half an f32 step but never drifts.
-#[derive(Clone, Copy, Debug, Default)]
-struct DelayRamp {
-    from: f64,
-    step: f64,
+/// Voices in groups of [`LANES`], run side by side.
+const CHUNKS: usize = MAX_VOICES / LANES;
+const _: () = assert!(MAX_VOICES.is_multiple_of(LANES), "voices fill whole lanes");
+
+/// [`LANES`] voices' state for one tick, as structure-of-arrays so each
+/// sample's sums run on every lane at once (SIMD).
+///
+/// A voice's delay across the tick is split into a whole number of
+/// samples and a fraction, so each sample's delay, `whole + frac + step ×
+/// (i + 1)`, is exact to well under a hundredth of an f32 step of the
+/// whole delay: the rate of change is the flock's velocity, and it never
+/// drifts, since each tick starts afresh from the flock's f64 delays.
+#[derive(Clone, Copy, Debug)]
+struct Lanes {
+    whole: [f32; LANES],
+    frac: [f32; LANES],
+    step: [f32; LANES],
+    /// Left and right gains, from and per sample.
+    left: [f32; LANES],
+    left_step: [f32; LANES],
+    right: [f32; LANES],
+    right_step: [f32; LANES],
+    /// Each voice's allpass chain (`decorrelate`), a stage at a time.
+    chain: [AllpassBank<LANES>; STAGES],
 }
 
-impl DelayRamp {
-    fn new(from: f64, to: f64) -> Self {
+impl Lanes {
+    fn new(band: usize, chunk: usize, sample_rate: f32) -> Self {
+        let filters: [_; LANES] =
+            std::array::from_fn(|l| chain_filters(band, chunk * LANES + l, sample_rate));
         Self {
-            from,
-            step: (to - from) / TICK as f64,
+            whole: [0.0; LANES],
+            frac: [0.0; LANES],
+            step: [0.0; LANES],
+            left: [0.0; LANES],
+            left_step: [0.0; LANES],
+            right: [0.0; LANES],
+            right_step: [0.0; LANES],
+            chain: std::array::from_fn(|stage| {
+                AllpassBank::new(&std::array::from_fn(|l| filters[l][stage]))
+            }),
         }
     }
 
-    #[inline]
-    fn at(&self, i: usize) -> f32 {
-        (self.from + self.step * (i + 1) as f64) as f32
+    /// Lane `l`'s delay ramp across the tick, from `from` to `to`
+    /// samples.
+    fn set_delay(&mut self, l: usize, from: f64, to: f64) {
+        let whole = from.floor();
+        self.whole[l] = whole as f32;
+        self.frac[l] = (from - whole) as f32;
+        self.step[l] = ((to - from) / TICK as f64) as f32;
+    }
+
+    /// Lane `l`'s gains across the tick.
+    fn set_gains(&mut self, l: usize, left: Ramp, right: Ramp) {
+        (self.left[l], self.left_step[l]) = (left.at(0) - left.step(), left.step());
+        (self.right[l], self.right_step[l]) = (right.at(0) - right.step(), right.step());
+    }
+
+    /// Silence lane `l` for the tick.
+    fn mute(&mut self, l: usize) {
+        self.left[l] = 0.0;
+        self.left_step[l] = 0.0;
+        self.right[l] = 0.0;
+        self.right_step[l] = 0.0;
     }
 }
 
@@ -85,16 +131,14 @@ struct Band {
     flock: Flock,
     /// Each voice's level: 1/√VOICES in use, 0 otherwise.
     level: [Glide; MAX_VOICES],
-    /// This tick's delay (samples) and left and right gains, per voice.
-    delay: [DelayRamp; MAX_VOICES],
-    left: [Ramp; MAX_VOICES],
-    right: [Ramp; MAX_VOICES],
-    /// Whether a voice is heard at all this tick.
-    sounding: [bool; MAX_VOICES],
+    /// This tick's delays, gains and allpass chains, [`LANES`] voices
+    /// to a group.
+    lanes: Box<[Lanes; CHUNKS]>,
+    /// One past the highest voice sounding this tick: the per-sample loop
+    /// stops at the group holding it, so unused voices cost nothing.
+    reach: usize,
     depth: Glide,
     depth_ramp: Ramp,
-    /// Each voice's allpass chain (`decorrelate`).
-    chains: [Chain; MAX_VOICES],
     /// The wet gain after onsets (Duck, Bloom), and the side-buffer it is
     /// written into, read by each voice at its own delay.
     wet: WetGain,
@@ -123,13 +167,15 @@ impl Band {
             line: DelayLine::new(max_delay(sample_rate)),
             flock: Flock::new(seed, f64::from(spread)),
             level,
-            delay: [DelayRamp::default(); MAX_VOICES],
-            left: [Ramp::default(); MAX_VOICES],
-            right: [Ramp::default(); MAX_VOICES],
-            sounding: [false; MAX_VOICES],
+            // Boxed: 64 voices' chains are too big for the stack.
+            lanes: (0..CHUNKS)
+                .map(|chunk| Lanes::new(band, chunk, sample_rate))
+                .collect::<Box<[Lanes]>>()
+                .try_into()
+                .expect("CHUNKS groups"),
+            reach: 0,
             depth: Glide::new(1.0, GLIDE_MS, tick_rate),
             depth_ramp: Ramp::new(1.0, 1.0, TICK),
-            chains: std::array::from_fn(|voice| Chain::new(band, voice, sample_rate)),
             wet: WetGain::new(sample_rate),
             auto: Glide::new(1.0, AUTO_WIDTH_MS, sample_rate / TICK as f32),
             width: 0.0,
@@ -373,24 +419,38 @@ impl CharmEngine {
             band.flock.step(&settings, dt);
             let after = band.flock.voices();
             obs.active = self.voices as u8;
+            let mut reach = 0;
             obs.width = width_to;
             for i in 0..MAX_VOICES {
                 let g_from = band.level[i].value();
                 band.level[i].set_target(if i < self.voices { level } else { 0.0 });
                 let g_to = band.level[i].tick();
-                band.sounding[i] = g_from > 0.0 || g_to > 0.0;
-                band.delay[i] = DelayRamp::new(before[i].delay * fs, after[i].delay * fs);
-                let (l0, r0) = pan_gains(guarded(before[i].pan as f32 * width_from));
-                let (l1, r1) = pan_gains(guarded(after[i].pan as f32 * width_to));
-                band.left[i] = Ramp::new(l0 * g_from, l1 * g_to, TICK);
-                band.right[i] = Ramp::new(r0 * g_from, r1 * g_to, TICK);
+                let sounding = g_from > 0.0 || g_to > 0.0;
                 let o = &mut obs.voices[i];
                 o.delay = after[i].delay as f32;
                 o.pan = guarded(after[i].pan as f32 * width_to);
                 o.velocity = after[i].delay_velocity as f32;
                 o.gain = g_to;
+                let lanes = &mut band.lanes[i / LANES];
+                let l = i % LANES;
+                lanes.set_delay(l, before[i].delay * fs, after[i].delay * fs);
+                if !sounding {
+                    // Silent and staying so: nothing to ramp or read.
+                    lanes.mute(l);
+                    o.shape = 1.0;
+                    continue;
+                }
+                reach = i + 1;
                 o.shape = band.side.read(o.delay * self.sample_rate);
+                let (l0, r0) = pan_gains(guarded(before[i].pan as f32 * width_from));
+                let (l1, r1) = pan_gains(guarded(after[i].pan as f32 * width_to));
+                lanes.set_gains(
+                    l,
+                    Ramp::new(l0 * g_from, l1 * g_to, TICK),
+                    Ramp::new(r0 * g_from, r1 * g_to, TICK),
+                );
             }
+            band.reach = reach;
         }
         self.into_tick = 0;
     }
@@ -407,19 +467,33 @@ impl CharmEngine {
         for (band, x) in self.bands.iter_mut().zip([m, h]) {
             band.line.push(x);
             band.side.push(band.wet.step());
-            let (mut bl, mut br) = (0.0, 0.0);
-            for v in 0..MAX_VOICES {
-                if !band.sounding[v] {
-                    continue;
+            let at = (i + 1) as f32;
+            let (mut bl, mut br) = ([0.0f32; LANES], [0.0f32; LANES]);
+            for lanes in &mut band.lanes[..band.reach.div_ceil(LANES)] {
+                let mut whole = [0usize; LANES];
+                let mut frac = [0.0f32; LANES];
+                for lane in 0..LANES {
+                    let pos = lanes.frac[lane] + lanes.step[lane] * at;
+                    let down = pos.floor();
+                    whole[lane] = (lanes.whole[lane] + down) as usize;
+                    frac[lane] = pos - down;
                 }
-                let delay = band.delay[v].at(i);
-                let mut y = band.line.read(delay) * band.side.read(delay);
+                // One set of weights for the audio and its side-buffer.
+                let weights = lagrange4_weights(&frac);
+                let audio = band.line.gather(&whole, &weights);
+                let shape = band.side.gather(&whole, &weights);
+                let mut voice: [f32; LANES] = std::array::from_fn(|lane| audio[lane] * shape[lane]);
                 if self.decorrelate {
-                    y = band.chains[v].process(y);
+                    for stage in &mut lanes.chain {
+                        stage.process(&mut voice);
+                    }
                 }
-                bl += y * band.left[v].at(i);
-                br += y * band.right[v].at(i);
+                for lane in 0..LANES {
+                    bl[lane] += voice[lane] * (lanes.left[lane] + lanes.left_step[lane] * at);
+                    br[lane] += voice[lane] * (lanes.right[lane] + lanes.right_step[lane] * at);
+                }
             }
+            let (bl, br): (f32, f32) = (bl.iter().sum(), br.iter().sum());
             let depth = band.depth_ramp.at(i);
             wl += bl * depth;
             wr += br * depth;
@@ -545,8 +619,10 @@ impl Engine for CharmEngine {
             band.auto.set_target(1.0);
             band.auto.snap();
             band.width = self.width.value();
-            for c in &mut band.chains {
-                c.reset();
+            for lanes in band.lanes.iter_mut() {
+                for stage in &mut lanes.chain {
+                    stage.reset();
+                }
             }
             band.flock.reset(spread);
             band.depth.snap();

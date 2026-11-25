@@ -53,13 +53,20 @@ pub const AUTO_WIDTH: ParamIndex = ParamIndex(13);
 /// voices' decorrelation, if 0024 gives it one.
 pub const RESERVED_IDS: [u32; 1] = [15];
 
-/// VOICES's positions: the number of voices in each flock.
-const VOICE_COUNTS: &[&str] = &["2", "3", "4", "5", "6", "7", "8"];
+/// VOICES's positions: the number of voices in each flock. Position `k`
+/// is `k + 2` voices, so saved values keep their meaning as the range
+/// grows (it was 2–8 until ticket 0030).
+const VOICE_COUNTS: &[&str] = &[
+    "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18",
+    "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34",
+    "35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49", "50",
+    "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62", "63", "64",
+];
 
 /// The fewest voices a flock has; VOICES's position 0.
 pub const MIN_VOICES: usize = 2;
 /// The most voices a flock has.
-pub const MAX_VOICES: usize = 8;
+pub const MAX_VOICES: usize = 64;
 
 /// The parameter table: index `i` is `ParamIndex(i)`. Each `id` is what
 /// presets and host projects store, so never change or reuse one. Ranges

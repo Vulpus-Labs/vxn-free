@@ -44,7 +44,7 @@ impl VoiceObs {
 }
 
 /// One band's flock and analysis.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BandObs {
     /// Voices in use (VOICES); the rest of `voices` are silent.
     pub active: u8,
@@ -60,6 +60,20 @@ pub struct BandObs {
     /// The furthest a voice may be panned: WIDTH times AUTO WIDTH's
     /// share, before the mono guard. AUTO WIDTH's walls.
     pub width: f32,
+}
+
+// By hand: `Default` isn't derived for arrays over 32 long.
+impl Default for BandObs {
+    fn default() -> Self {
+        Self {
+            active: 0,
+            voices: [VoiceObs::default(); MAX_VOICES],
+            onset: 0.0,
+            onset_start: 0,
+            coherence: 0.0,
+            width: 0.0,
+        }
+    }
 }
 
 /// Everything the engine reports, as of the end of one tick.

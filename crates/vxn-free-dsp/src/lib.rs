@@ -21,10 +21,10 @@ pub mod stft;
 pub mod svf;
 
 pub use crossover::Crossover;
-pub use delay::{DelayLine, SideBuffer};
+pub use delay::{DelayLine, LANES, SideBuffer, lagrange4_weights};
 pub use fft::RealPackedFft;
 pub use peak::{PeakFollower, RangeFollower};
 pub use smooth::{Glide, Ramp};
 pub use spectrum::{Peak, peaks, peaks_between};
 pub use stft::{Frame, Stft};
-pub use svf::{Svf, SvfOut};
+pub use svf::{AllpassBank, Svf, SvfOut};

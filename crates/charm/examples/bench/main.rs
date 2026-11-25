@@ -13,7 +13,7 @@
 //! Options:
 //!
 //! - `--set NAME=VALUE`: set a param (`--set detune=20 --set "mid depth=50"`;
-//!   VOICES takes a count, 2–8).
+//!   VOICES takes a count, 2–64).
 //! - `--ramp NAME=FROM:TO`: move a param in a straight line over the run.
 //! - `--rate HZ`: the synthetic signals' rate (default 48000).
 //! - `--seconds S`: the synthetic signals' length (default 10).

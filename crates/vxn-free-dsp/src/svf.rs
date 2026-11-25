@@ -87,6 +87,55 @@ impl Svf {
     }
 }
 
+/// Allpass [`Svf`]s side by side, one a lane, as structure-of-arrays: the
+/// same sums as [`Svf::allpass`] on each lane, laid out so the compiler
+/// runs the lanes together in SIMD. For per-voice decorrelation, where
+/// every voice has its own, fixed, filter.
+#[derive(Clone, Copy, Debug)]
+pub struct AllpassBank<const N: usize> {
+    k2: [f32; N],
+    a1: [f32; N],
+    a2: [f32; N],
+    a3: [f32; N],
+    ic1: [f32; N],
+    ic2: [f32; N],
+}
+
+impl<const N: usize> AllpassBank<N> {
+    /// Lane `l` filters as `filters[l]` does, from its state.
+    pub fn new(filters: &[Svf; N]) -> Self {
+        Self {
+            k2: filters.map(|f| 2.0 * f.k),
+            a1: filters.map(|f| f.a1),
+            a2: filters.map(|f| f.a2),
+            a3: filters.map(|f| f.a3),
+            ic1: filters.map(|f| f.ic1),
+            ic2: filters.map(|f| f.ic2),
+        }
+    }
+
+    /// Each lane's next sample, in place.
+    // Lanes index several parallel arrays at once: the plain form vectorises.
+    #[allow(clippy::needless_range_loop)]
+    #[inline]
+    pub fn process(&mut self, x: &mut [f32; N]) {
+        for l in 0..N {
+            let v3 = x[l] - self.ic2[l];
+            let v1 = self.a1[l] * self.ic1[l] + self.a2[l] * v3;
+            let v2 = self.ic2[l] + self.a2[l] * self.ic1[l] + self.a3[l] * v3;
+            self.ic1[l] = 2.0 * v1 - self.ic1[l];
+            self.ic2[l] = 2.0 * v2 - self.ic2[l];
+            x[l] -= self.k2[l] * v1;
+        }
+    }
+
+    /// Forget the past.
+    pub fn reset(&mut self) {
+        self.ic1 = [0.0; N];
+        self.ic2 = [0.0; N];
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -110,6 +159,25 @@ mod tests {
                 }
                 let db = 10.0 * (so / si).log10();
                 assert!(db.abs() < 0.01, "Q {q}, {hz} Hz: {db} dB");
+            }
+        }
+    }
+
+    #[test]
+    fn a_bank_filters_each_lane_as_its_own_allpass() {
+        let rate = 48_000.0;
+        let mut one: [Svf; 4] =
+            std::array::from_fn(|l| Svf::new(300.0 * (l + 1) as f32, 0.7 + l as f32, rate));
+        let mut bank = AllpassBank::new(&one);
+        for n in 0..500 {
+            let mut x: [f32; 4] = std::array::from_fn(|l| ((n * (l + 3)) as f32 * 0.01).sin());
+            let want: [f32; 4] = std::array::from_fn(|l| one[l].allpass(x[l]));
+            bank.process(&mut x);
+            for l in 0..4 {
+                assert!(
+                    (x[l] - want[l]).abs() <= 4.0 * f32::EPSILON * want[l].abs().max(1.0),
+                    "lane {l} sample {n}"
+                );
             }
         }
     }

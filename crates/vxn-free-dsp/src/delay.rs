@@ -64,6 +64,31 @@ impl DelayLine {
         self.buf[self.write.wrapping_sub(age) & self.mask] = value;
     }
 
+    /// Each lane's read at whole age `whole[l]` (its delay's floor) with
+    /// the weights from [`lagrange4_weights`] for its fraction: the same
+    /// as [`read`](Self::read) at `whole + f`, for [`LANES`] delays at
+    /// once. Ages wrap around the ring, so any age is safe to read, but
+    /// only `1..=max_delay` are meaningful.
+    #[inline]
+    pub fn gather(&self, whole: &[usize; LANES], w: &[[f32; LANES]; 4]) -> [f32; LANES] {
+        let mut taps = [[0.0f32; LANES]; 4];
+        for l in 0..LANES {
+            let i = whole[l];
+            taps[0][l] = self.at(i.wrapping_sub(1));
+            taps[1][l] = self.at(i);
+            taps[2][l] = self.at(i + 1);
+            taps[3][l] = self.at(i + 2);
+        }
+        let mut out = [0.0f32; LANES];
+        for l in 0..LANES {
+            out[l] = w[0][l] * taps[0][l]
+                + w[1][l] * taps[1][l]
+                + w[2][l] * taps[2][l]
+                + w[3][l] * taps[3][l];
+        }
+        out
+    }
+
     /// The signal `delay` samples ago, interpolated, with `delay` clamped
     /// to [`MIN_DELAY`](Self::MIN_DELAY)..=[`max_delay`](Self::max_delay).
     #[inline]
@@ -79,6 +104,34 @@ impl DelayLine {
             d - whole,
         )
     }
+}
+
+/// Voices read side by side: [`lagrange4_weights`] and
+/// [`DelayLine::gather`] work on this many lanes at once, as plain arrays
+/// the compiler turns into SIMD (NEON, SSE, AVX).
+pub const LANES: usize = 8;
+
+/// The four Lagrange weights for each lane's fraction `f` (0..1), for
+/// the taps at ages i − 1, i, i + 1, i + 2: what [`DelayLine::read`]
+/// works out for one read, worked out once per lane and shared by every
+/// line read at the same delays (a voice's audio and its
+/// [`SideBuffer`]).
+#[inline]
+pub fn lagrange4_weights(f: &[f32; LANES]) -> [[f32; LANES]; 4] {
+    let mut w = [[0.0; LANES]; 4];
+    for l in 0..LANES {
+        let f = f[l];
+        let fp1 = f + 1.0;
+        let fm1 = f - 1.0;
+        let fm2 = f - 2.0;
+        let a = fp1 * f;
+        let b = fm1 * fm2;
+        w[0][l] = -f * b * (1.0 / 6.0);
+        w[1][l] = fp1 * b * 0.5;
+        w[2][l] = -a * fm2 * 0.5;
+        w[3][l] = a * fm1 * (1.0 / 6.0);
+    }
+    w
 }
 
 /// Third-order Lagrange through `y0..y3` at ages i − 1, i, i + 1, i + 2,
@@ -150,12 +203,39 @@ impl SideBuffer {
     pub fn read(&self, delay: f32) -> f32 {
         self.line.read(delay)
     }
+
+    /// [`DelayLine::gather`] over these values: read exactly as the audio
+    /// is, with the same weights.
+    #[inline]
+    pub fn gather(&self, whole: &[usize; LANES], w: &[[f32; LANES]; 4]) -> [f32; LANES] {
+        self.line.gather(whole, w)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::f64::consts::TAU;
+
+    #[test]
+    fn a_gather_reads_as_read_does() {
+        let mut line = DelayLine::new(64);
+        for n in 0..100 {
+            line.push((n as f32 * 0.37).sin());
+        }
+        let delays: [f32; LANES] = [1.0, 1.25, 3.5, 7.999, 12.0, 20.3, 40.7, 60.01];
+        let whole = delays.map(|d| d.floor() as usize);
+        let frac: [f32; LANES] = std::array::from_fn(|l| delays[l] - delays[l].floor());
+        let got = line.gather(&whole, &lagrange4_weights(&frac));
+        for (l, &d) in delays.iter().enumerate() {
+            let want = line.read(d);
+            assert!(
+                (got[l] - want).abs() <= 2.0 * f32::EPSILON * want.abs().max(1.0),
+                "{d}: {} {want}",
+                got[l]
+            );
+        }
+    }
 
     /// Least-squares amplitude and phase of a sinusoid at `w` (radians per
     /// sample) in `y`, whose first sample is at time `n0`.

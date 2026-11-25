@@ -40,23 +40,31 @@ fn frac(x: f32) -> f32 {
     x - x.floor()
 }
 
+/// The filters of voice `voice`'s chain in band `band` (0 MID, 1 HIGH),
+/// fresh: what [`Chain::new`] runs, for the engine to lay out side by side.
+pub fn chain_filters(band: usize, voice: usize, sample_rate: f32) -> [Svf; STAGES] {
+    let (lo, hi) = if band == 0 {
+        (MID_LOW, MID_HIGH_XOVER)
+    } else {
+        (MID_HIGH_XOVER, HIGH_TOP.min(0.4 * sample_rate))
+    };
+    let offset = frac(GOLDEN * (voice + 1) as f32 + 0.37 * band as f32);
+    let mut stages = [Svf::new(1000.0, 1.0, sample_rate); STAGES];
+    for (j, s) in stages.iter_mut().enumerate() {
+        let at = (j as f32 + offset) / STAGES as f32;
+        let hz = lo * (hi / lo).powf(at);
+        let q = Q_LOW + Q_SPAN * frac(GOLDEN * (voice * STAGES + j + 1) as f32 * 1.7);
+        *s = Svf::new(hz, q, sample_rate);
+    }
+    stages
+}
+
 impl Chain {
     /// The chain for voice `voice` of band `band` (0 MID, 1 HIGH).
     pub fn new(band: usize, voice: usize, sample_rate: f32) -> Self {
-        let (lo, hi) = if band == 0 {
-            (MID_LOW, MID_HIGH_XOVER)
-        } else {
-            (MID_HIGH_XOVER, HIGH_TOP.min(0.4 * sample_rate))
-        };
-        let offset = frac(GOLDEN * (voice + 1) as f32 + 0.37 * band as f32);
-        let mut stages = [Svf::new(1000.0, 1.0, sample_rate); STAGES];
-        for (j, s) in stages.iter_mut().enumerate() {
-            let at = (j as f32 + offset) / STAGES as f32;
-            let hz = lo * (hi / lo).powf(at);
-            let q = Q_LOW + Q_SPAN * frac(GOLDEN * (voice * STAGES + j + 1) as f32 * 1.7);
-            *s = Svf::new(hz, q, sample_rate);
+        Self {
+            stages: chain_filters(band, voice, sample_rate),
         }
-        Self { stages }
     }
 
     /// One sample through the chain.
