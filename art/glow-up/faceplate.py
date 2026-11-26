@@ -8,10 +8,10 @@ aluminium knobs and soft-touch keys with LEDs (`blender/controls.py`),
 black hex button-head rack screws. No engraved grooves: the sections are
 parted by printed hairlines. The scope is the centrepiece:
 
-    [title  ] [BOOST A] [BOOST B] [  scope            ] [FILTER         ] [OUTPUT ]
-    [       ] [AMOUNT ] [AMOUNT ] [                   ] [RESONANCE FOCUS] [  MIX  ]
-    [       ] [ MULT  ] [ MULT  ] [                   ] [               ] [       ]
-    [MODE   ] [  DIV  ] [  DIV  ] [THRESHOLD    GRID  ] [WIDTH TONE SPEED][DRY CUT]
+    [title       ] [BOOST A] [BOOST B] [  scope            ] [FILTER         ]
+    [            ] [AMOUNT ] [AMOUNT ] [                   ] [RESONANCE FOCUS]
+    [MIX  DRY CUT] [ MULT  ] [ MULT  ] [                   ] [               ]
+    [MODE        ] [  DIV  ] [  DIV  ] [THRESHOLD    GRID  ] [WIDTH TONE SPEED]
 
     python3 faceplate.py            (from this folder)
 
@@ -38,8 +38,8 @@ CRATE = os.path.join(HERE, "..", "..", "crates", "glow-up")
 GAP = 3
 EAR = 36
 # The sections' left edges, then the right ear's.
-TITLE, BOOST_A, BOOST_B, DISPLAY, FILTER, OUTPUT, RIGHT = (
-    EAR, 188, 300, 412, 768, 1012, 1128)
+TITLE, BOOST_A, BOOST_B, DISPLAY, FILTER, RIGHT = (
+    EAR, 188, 300, 412, 768, 1012)
 W = RIGHT + EAR
 H = 330
 # Rows: the big knobs' centre line, the small controls', and the header.
@@ -50,6 +50,8 @@ SMALL_Y = 258
 AMOUNT_Y = 100
 MULT_Y = 194
 DIV_Y = 272
+# The output's row, under the title.
+OUT_Y = 160
 # Markers: the rendered frame (knob 0.8 of it, shadow round it).
 BIG_BOX = 80
 SMALL_BOX = 48
@@ -207,7 +209,7 @@ for x in (EAR / 2, W - EAR / 2):
         slot_and_screw(x, y)
 
 o('  <g font-family="\'Jost*\'" font-weight="500">')
-for x in (BOOST_A, BOOST_B, DISPLAY, FILTER, OUTPUT):
+for x in (BOOST_A, BOOST_B, DISPLAY, FILTER):
     hairline(x)
 
 # The title.
@@ -216,9 +218,13 @@ text(TITLE + 14, 90, "GLOW-UP", 26, anchor="start", spacing=2.5)
 o(f'  <rect x="{TITLE + 15}" y="101" width="30" height="2" fill="{ACCENT}"/>')
 text(TITLE + 15, 120, "HARMONIC FILTER", 8.5, anchor="start", fill=ACCENT, spacing=2.6)
 text(TITLE + 15, H - 22, "VULPUS LABS", 7.5, anchor="start", fill=DIM, spacing=2.4)
-text(TITLE + 15, SMALL_Y - 32, "MODE", 8, anchor="start", spacing=1.6)
+text(TITLE + 15, SMALL_Y - 28, "MODE", 8, anchor="start", spacing=1.6)
 key("mono", TITLE + 34, SMALL_Y, "MONO")
 key("stereo", TITLE + 90, SMALL_Y, "STEREO")
+# The output, tucked under the title.
+knob("mix", TITLE + 40, OUT_Y, "MIX", lin(11), {0: "DRY", 1: "WET"}, big=False,
+     label_gap=18)
+key("dry_cut", TITLE + 108, OUT_Y, "DRY CUT")
 
 boost(BOOST_A, "A")
 boost(BOOST_B, "B")
@@ -233,7 +239,7 @@ key("grid_irr", DISPLAY + 256, SMALL_Y, "IRR")
 key("grid_tet", DISPLAY + 312, SMALL_Y, "TET")
 
 # The filters' character.
-header(FILTER, OUTPUT, "FILTER")
+header(FILTER, RIGHT, "FILTER")
 knob("resonance", FILTER + 66, BIG_Y, "RESONANCE", lin(11), {0: "0", 0.5: "SING", 1: "100"})
 knob("focus", FILTER + 176, BIG_Y, "FOCUS", lin(11), {0: "GRID", 1: "TRACK"})
 knob("width", FILTER + 46, SMALL_Y, "WIDTH", lin(9),
@@ -242,10 +248,6 @@ knob("tone", FILTER + 122, SMALL_Y, "TONE", lin(9), {0: "-6", 0.5: "0", 1: "+6"}
      big=False)
 knob("speed", FILTER + 198, SMALL_Y, "SPEED", lin(9), {0: "SLOW", 1: "FAST"}, big=False)
 
-# The output.
-header(OUTPUT, RIGHT, "OUTPUT")
-knob("mix", OUTPUT + 58, BIG_Y, "MIX", lin(11), {0: "DRY", 1: "WET"})
-key("dry_cut", OUTPUT + 58, SMALL_Y, "DRY CUT")
 o('  </g>')
 
 # Blender's relief over the print: light and shadow multiplied, the

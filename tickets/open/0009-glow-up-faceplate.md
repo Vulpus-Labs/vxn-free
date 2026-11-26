@@ -147,3 +147,9 @@ The display is now an EQ-style plot, as asked: frequency across (log,
 - The title section is 152 wide (was 176): the name at 26 px, the MODE
   keys closer. The face is 1164 × 330. Relief re-rendered, snapshots
   re-blessed.
+
+## Progress (2026-11-26): the output under the title
+
+- The OUTPUT section is gone: MIX (now a small knob) and DRY CUT sit in a
+  row under the title, above MODE. The face is 1048 × 330. Relief
+  re-rendered, snapshots re-blessed.
