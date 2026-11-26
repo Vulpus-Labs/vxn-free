@@ -10,15 +10,30 @@
 //!   scale.
 //! - Its prominence rises from 0 to 1 over the [`PROMINENCE_SPAN_DB`]
 //!   above the threshold.
-//! - Its centre comes from the larger neighbour's share of its magnitude,
-//!   by the closed form that is exact for a steady sine through a Hann
-//!   window: with `a` the neighbour's magnitude over the peak's, the true
-//!   centre is `(2a − 1) / (a + 1)` bins towards that neighbour. Its
-//!   amplitude is `4 |X| / N`, divided by Hann's response that far off a
-//!   bin's centre.
+//! - Its centre comes from its bin's phase, as a phase vocoder's does: over
+//!   a hop `H` a partial at `k + d` bins advances the bin's phase by
+//!   `2π (k + d) H / N`, and the advance beyond `2π k H / N`, wrapped to
+//!   ±π, gives `d`. With a hop of a quarter window that reads offsets up to
+//!   ±2 bins. On the first frame after a restart, with no phase before it,
+//!   the centre comes from the magnitudes instead.
+//! - From the magnitudes: with `a` the larger neighbour's magnitude over
+//!   the peak's, a steady sine through a Hann window is centred
+//!   `(2a − 1) / (a + 1)` bins towards that neighbour. This offset also
+//!   gives the amplitude, `4 |X| / N` divided by Hann's response that far
+//!   off a bin's centre, and the shape test below.
+//! - It must have a lone sine's shape. Given the centre, Hann fixes the
+//!   smaller neighbour's share of the peak's magnitude too; partials closer
+//!   than the window resolves merge into one maximum that doesn't fit, and
+//!   whose centre wanders as they beat. A peak whose smaller neighbour is
+//!   off by up to [`SHAPE_FROM_DB`] keeps its prominence; beyond that it
+//!   fades, to nothing at [`SHAPE_TO_DB`]. Measured at 2048: a lone sine is
+//!   off by 0.00 dB, a 110 Hz saw's partials by at most 0.7 dB, and
+//!   unresolved partials of a chord by 5 to 7 dB.
 //!
 //! Silence is safe: a peak needs a magnitude of its own, so smoothed power
 //! that outlasts the signal finds nothing.
+
+use std::f32::consts::{PI, TAU};
 
 use crate::stft::Frame;
 
@@ -28,6 +43,11 @@ pub const SMOOTHING: f32 = 0.8;
 pub const PROMINENCE_SPAN_DB: f32 = 12.0;
 /// No peak is quieter than this amplitude: 60 dB under full scale.
 pub const FLOOR: f32 = 1.0e-3;
+/// dB a peak's smaller neighbour may be off a lone sine's before its
+/// prominence fades.
+pub const SHAPE_FROM_DB: f32 = 1.5;
+/// dB off at which a peak counts for nothing.
+pub const SHAPE_TO_DB: f32 = 3.0;
 
 /// One peak.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -46,6 +66,10 @@ pub struct DetectedPeak {
 pub struct PeakDetector {
     mag: Box<[f32]>,
     pow: Box<[f32]>,
+    /// Each bin's phase in the last frame.
+    phase: Box<[f32]>,
+    /// Where the last frame ended, if there was one since the restart.
+    last_end: Option<u64>,
     found: Box<[DetectedPeak]>,
     count: usize,
     window: usize,
@@ -59,6 +83,8 @@ impl PeakDetector {
         let mut d = Self {
             mag: vec![0.0; max_window / 2].into_boxed_slice(),
             pow: vec![0.0; max_window / 2].into_boxed_slice(),
+            phase: vec![0.0; max_window / 2].into_boxed_slice(),
+            last_end: None,
             found: vec![DetectedPeak::default(); max_window / 4].into_boxed_slice(),
             count: 0,
             window: max_window,
@@ -83,6 +109,8 @@ impl PeakDetector {
     pub fn restart(&mut self) {
         self.mag.fill(0.0);
         self.pow.fill(0.0);
+        self.phase.fill(0.0);
+        self.last_end = None;
         self.mean_prev = 0.0;
         self.count = 0;
     }
@@ -116,9 +144,17 @@ impl PeakDetector {
             }
         }
         self.count = 0;
+        // The hop since the last frame, if the phases before it are this
+        // stream's and the advance is unambiguous over a peak's ±2 bins.
+        let hop = self
+            .last_end
+            .map(|e| frame.end.wrapping_sub(e) as usize)
+            .filter(|&h| h > 0 && 4 * h <= self.window);
+        self.last_end = Some(frame.end);
         let mean = self.mean_prev;
         self.mean_prev = sum / (half - 1) as f32;
         if mean.is_nan() || mean <= 0.0 {
+            self.store_phases(frame);
             return;
         }
         let floor = FLOOR * self.window as f32 / 4.0;
@@ -141,34 +177,77 @@ impl PeakDetector {
             if db < self.threshold_db || power < floor_power {
                 continue;
             }
-            let d = if mag[k + 1] > mag[k - 1] {
-                let a = mag[k + 1] / m;
-                (2.0 * a - 1.0) / (a + 1.0)
+            let (near, far) = if mag[k + 1] > mag[k - 1] {
+                (mag[k + 1], mag[k - 1])
             } else {
-                let a = mag[k - 1] / m;
-                -(2.0 * a - 1.0) / (a + 1.0)
+                (mag[k - 1], mag[k + 1])
             };
+            let a = near / m;
+            let off = (2.0 * a - 1.0) / (a + 1.0);
+            let d = if mag[k + 1] > mag[k - 1] { off } else { -off };
+            let shape = shape(off, far / m);
+            if shape <= 0.0 {
+                continue;
+            }
             if self.count == self.found.len() {
                 break;
             }
+            let centre = match hop {
+                Some(h) => {
+                    let advance = bin_phase(frame, k) - self.phase[k];
+                    let expected = TAU * k as f32 * h as f32 / self.window as f32;
+                    k as f32 + wrap(advance - expected) * self.window as f32 / (TAU * h as f32)
+                }
+                None => k as f32 + d,
+            };
             self.found[self.count] = DetectedPeak {
-                hz: (k as f32 + d) * per_bin,
+                hz: centre * per_bin,
                 amplitude: 4.0 * m / self.window as f32 / hann_response(d),
-                prominence: ((db - self.threshold_db) / PROMINENCE_SPAN_DB).min(1.0),
+                prominence: ((db - self.threshold_db) / PROMINENCE_SPAN_DB).min(1.0) * shape,
             };
             self.count += 1;
+        }
+        self.store_phases(frame);
+    }
+
+    fn store_phases(&mut self, frame: &Frame<'_>) {
+        for k in 1..self.window / 2 {
+            self.phase[k] = bin_phase(frame, k);
         }
     }
 }
 
-/// A Hann window's magnitude response `d` bins off a sine (|d| ≤ 1/2),
+/// Bin `k`'s phase (1 to `window/2 − 1`).
+fn bin_phase(frame: &Frame<'_>, k: usize) -> f32 {
+    frame.bins[2 * k + 1].atan2(frame.bins[2 * k])
+}
+
+/// `x` wrapped to −π..π.
+fn wrap(x: f32) -> f32 {
+    x - TAU * ((x + PI) / TAU).floor()
+}
+
+/// A Hann window's magnitude response `d` bins off a sine (|d| < 2),
 /// relative to its response on it: `sinc(d) / (1 − d²)`.
 fn hann_response(d: f32) -> f32 {
     if d.abs() < 1.0e-6 {
         return 1.0;
     }
+    if (d.abs() - 1.0).abs() < 1.0e-4 {
+        return 0.5;
+    }
     let x = std::f32::consts::PI * d;
     x.sin() / x / (1.0 - d * d)
+}
+
+/// How much a peak counts, 0 to 1, by how well it fits a lone sine: its
+/// centre `off` bins (0 to 1/2) towards its larger neighbour, and `far` the
+/// smaller neighbour's share of its magnitude.
+fn shape(off: f32, far: f32) -> f32 {
+    let off = off.clamp(0.0, 0.5);
+    let want = hann_response(1.0 + off) / hann_response(off);
+    let db = (20.0 * (far.max(1.0e-12) / want).log10()).abs();
+    (1.0 - (db - SHAPE_FROM_DB) / (SHAPE_TO_DB - SHAPE_FROM_DB)).clamp(0.0, 1.0)
 }
 
 #[cfg(test)]
@@ -245,6 +324,90 @@ mod tests {
             last = p;
         }
         assert!(last > 0.5, "{last}");
+    }
+
+    #[test]
+    fn unresolved_partials_make_no_peak() {
+        // Two sines a bin and a half apart at 2048 merge into one maximum
+        // whose shape is no lone sine's.
+        let bin = f64::from(RATE) / 2048.0;
+        let x = sines(&[(1000.0, 0.3), (1000.0 + 1.5 * bin, 0.3)], 8192);
+        let found = detect(&x, 2048, 6.0);
+        assert!(
+            found
+                .iter()
+                .all(|p| (p.hz - 1017.0).abs() > 40.0 || p.prominence == 0.0),
+            "{found:?}"
+        );
+        // A saw's resolved partials are all found, the strong ones at full
+        // prominence.
+        let saw: Vec<(f64, f32)> = (1..40)
+            .map(|k| (110.0 * f64::from(k), 0.3 / k as f32))
+            .collect();
+        let found = detect(&sines(&saw, 8192), 2048, 6.0);
+        assert!(found.len() >= 10, "{found:?}");
+        for (k, p) in found.iter().enumerate().take(10) {
+            assert!(
+                (p.hz / (110.0 * (k + 1) as f32) - 1.0).abs() < 0.002,
+                "{found:?}"
+            );
+            assert!(p.prominence > 0.0, "{found:?}");
+        }
+        assert!(found[0].prominence == 1.0 && found[1].prominence == 1.0);
+    }
+
+    /// Each frame's peaks for `x`; with `magnitude`, the phases are
+    /// forgotten before every frame, so centres come from the magnitudes.
+    fn every_frame(x: &[f32], magnitude: bool) -> Vec<Vec<DetectedPeak>> {
+        let mut stft = Stft::new(2048, 4, 2048, 512);
+        let mut d = PeakDetector::new(2048);
+        d.set_threshold_db(6.0);
+        let mut out = vec![];
+        stft.push(x, |f| {
+            if magnitude {
+                d.last_end = None;
+            }
+            d.detect(&f, RATE);
+            out.push(d.peaks().to_vec());
+        });
+        out
+    }
+
+    /// The mean move in cents of each peak to its nearest in the next
+    /// frame, after the first eight.
+    fn jitter(frames: &[Vec<DetectedPeak>]) -> f64 {
+        let (mut sum, mut n) = (0.0, 0);
+        for w in frames[8..].windows(2) {
+            for p in &w[1] {
+                let near = w[0]
+                    .iter()
+                    .map(|q| cents(p.hz, f64::from(q.hz)).abs())
+                    .fold(f64::MAX, f64::min);
+                if near < 50.0 {
+                    sum += near;
+                    n += 1;
+                }
+            }
+        }
+        sum / f64::from(n)
+    }
+
+    #[test]
+    fn phase_centres_are_steadier_than_magnitude_centres() {
+        // A saw's partials: measured 0.18 cents a frame from the phase,
+        // 0.43 from the magnitudes.
+        let saw: Vec<(f64, f32)> = (1..40)
+            .map(|k| (110.0 * f64::from(k), 0.3 / k as f32))
+            .collect();
+        let x = sines(&saw, 48_000);
+        let (phase, magnitude) = (
+            jitter(&every_frame(&x, false)),
+            jitter(&every_frame(&x, true)),
+        );
+        assert!(
+            phase < 0.25 && phase < 0.6 * magnitude,
+            "{phase} against {magnitude}"
+        );
     }
 
     #[test]

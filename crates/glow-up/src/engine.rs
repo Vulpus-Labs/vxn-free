@@ -88,6 +88,7 @@ impl GlowUpEngine {
             stereo: false,
             into_block: BLOCK,
         };
+        e.bank.set_hop(max_window / OVERLAP);
         e.controls();
         e.mix.snap();
         e
@@ -118,6 +119,7 @@ impl GlowUpEngine {
             self.window = w;
             self.stft.configure(WINDOWS[w], WINDOWS[w] / OVERLAP);
             self.detector.set_window(WINDOWS[w]);
+            self.bank.set_hop(WINDOWS[w] / OVERLAP);
             self.frame_ready = false;
         }
         self.detector.set_threshold_db(self.value(THRESHOLD));

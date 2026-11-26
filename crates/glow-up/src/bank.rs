@@ -12,15 +12,16 @@
 //!    0.42 fs.
 //! 2. **Targets.** Toward the grid end, each grid point is driven by the
 //!    candidates near it, weighted by the band-pass's own response at the
-//!    distance, summed and capped at 1; its centre is pulled toward its
-//!    strongest candidate by FOCUS. At TRACK, candidates closer than the
+//!    distance, summed and capped at 1; its centre is pulled by FOCUS
+//!    toward its candidates' mean, weighted by drive. At TRACK, candidates closer than the
 //!    tracking window merge, taking the larger salience.
 //! 3. **The twelve kept.** The most salient, a target a filter already
 //!    holds counting the steal margin more, amplitude breaking ties.
 //! 4. **Trackers** are matched to the frame's peaks by their FFT anchors,
 //!    and snapped back when they stray.
 //! 5. **Assignment.** A filter keeps the kept target nearest it within the
-//!    window; one frame without is grace; then it releases. A new target,
+//!    window; without one it waits about 100 ms, its boost fading, then
+//!    releases. A new target,
 //!    kept for enough frames running, takes a free filter, or chokes the
 //!    quietest tail, or steals the weakest active filter if it beats it by
 //!    the margin and that filter has held long enough. A steal fades the
@@ -63,7 +64,11 @@ pub const CHOKE_SECONDS: f64 = 0.010;
 /// A release, to −60 dB.
 pub const RELEASE_SECONDS: f64 = 0.15;
 const TRACK_CENTS: f64 = 50.0;
-const GRACE: u32 = 1;
+/// How long a filter waits for a target that has gone, its boost decaying,
+/// before it releases. A chord's weaker partials drop out of the analysis
+/// for a frame or two as they beat; a frame's grace released and restarted
+/// their filters many times a second (ticket 0043).
+const GRACE_SECONDS: f64 = 0.1;
 /// An oscillation's output, at full boost, as a share of its source peak.
 const OSC_SHARE: f64 = 0.25;
 const GROWTH: f64 = 0.05;
@@ -73,6 +78,20 @@ const NYQUIST_FROM: f64 = 0.25;
 const NYQUIST_TO: f64 = 0.42;
 /// A grid point responds to a candidate within about two bandwidths.
 const DRIVE_LEAST: f64 = 0.2;
+/// A new target needs its peak this prominent to start a filter; a filter
+/// keeps its target at any prominence. The hysteresis stops peaks just
+/// over THRESHOLD, which come and go as a chord's partials beat, from
+/// starting and releasing filters many times a second.
+const START_PROMINENCE: f64 = 0.25;
+/// A tracker rougher than this, cents/s² ([`PartialTracker::roughness`]),
+/// doesn't steer: a neighbouring partial is in its band, and its readings
+/// jump about. Its filter follows the FFT instead. Up to [`ROUGH_FROM_HZ`]
+/// a ±30 cent vibrato at 5.5 Hz reads under 65 000 and a ±100 cent one at
+/// 7 Hz about 190 000; neighbours read 570 000 and up. Above it the
+/// crossings' own error grows, and the limit with it, as the square of the
+/// frequency.
+const ROUGH_MOST: f64 = 300_000.0;
+const ROUGH_FROM_HZ: f64 = 880.0;
 
 /// What a filter is doing.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -123,8 +142,14 @@ struct Target {
     amp: f64,
     /// The grid point, or the target itself at TRACK.
     base: f64,
+    /// Where the boost aims before FOCUS pulls it toward the grid: the
+    /// candidate, or a grid point's drivers' mean.
+    aim: f64,
     /// The source peak's index in the frame.
     peak: usize,
+    /// The source peak's prominence; at the grid end, the strongest
+    /// driver's.
+    prominence: f64,
     ratio: f64,
 }
 
@@ -189,6 +214,8 @@ pub struct Bank {
     prev_streak: [u32; M],
     prev_count: usize,
     g_drive: Box<[f64]>,
+    /// Each grid point's drive-weighted sum of its drivers' log frequency.
+    g_log: Box<[f64]>,
     g_best: Box<[f64]>,
     g_target: Box<[Target]>,
 
@@ -204,6 +231,13 @@ pub struct Bank {
     decay_step: f64,
     hold_samples: u64,
     persist_frames: u32,
+    /// Each block's share of the way to the FFT's target, for a filter
+    /// whose tracker doesn't steer: a time constant of half a hop, so a
+    /// frame's change becomes a glide across it, not a step.
+    fft_glide: f64,
+    /// Frames a filter waits for a lost target: [`GRACE_SECONDS`] at the
+    /// hop.
+    grace_frames: u32,
     speed: f64,
     release_mul: f64,
     choke_step: f64,
@@ -254,6 +288,7 @@ impl Bank {
             prev_streak: [0; M],
             prev_count: 0,
             g_drive: vec![0.0; max_grid].into_boxed_slice(),
+            g_log: vec![0.0; max_grid].into_boxed_slice(),
             g_best: vec![0.0; max_grid].into_boxed_slice(),
             g_target: vec![Target::default(); max_grid].into_boxed_slice(),
             gap: vec![0.0; max_peaks].into_boxed_slice(),
@@ -265,6 +300,8 @@ impl Bank {
             decay_step: 0.0,
             hold_samples: 0,
             persist_frames: 1,
+            grace_frames: 1,
+            fft_glide: 0.3,
             speed: -1.0,
             release_mul: (-(1000f64.ln()) / (RELEASE_SECONDS * sample_rate)).exp(),
             choke_step: 1.0 / (CHOKE_SECONDS * sample_rate),
@@ -308,6 +345,12 @@ impl Bank {
         self.hold_samples = (geo(HOLD_FAST, HOLD_SLOW) * rate) as u64;
         self.persist_frames =
             PERSIST_FAST + (f64::from(PERSIST_SLOW - PERSIST_FAST) * u).round() as u32;
+    }
+
+    /// The analysis's hop, samples: frames come this far apart.
+    pub fn set_hop(&mut self, hop: usize) {
+        self.grace_frames = ((GRACE_SECONDS * self.rate / hop as f64).round() as u32).max(1);
+        self.fft_glide = 1.0 - (-(BLOCK as f64) / (0.5 * hop as f64)).exp();
     }
 
     /// A filter's hold before it can be stolen, samples.
@@ -421,7 +464,9 @@ impl Bank {
                 salience,
                 amp: f64::from(peak.amplitude),
                 base: hz,
+                aim: hz,
                 peak: p,
+                prominence: f64::from(peak.prominence),
                 ratio: s.ratio[b],
             };
             self.count += 1;
@@ -436,6 +481,7 @@ impl Bank {
         let n = grid.len().min(self.g_drive.len());
         let grid = &grid[..n];
         self.g_drive[..n].fill(0.0);
+        self.g_log[..n].fill(0.0);
         self.g_best[..n].fill(0.0);
         let q = 1.0 / self.k0;
         for t in &self.targets[..self.count] {
@@ -448,6 +494,7 @@ impl Bank {
                 }
                 let c = t.salience * w;
                 self.g_drive[j] += c;
+                self.g_log[j] += c * t.hz.ln();
                 if c > self.g_best[j] {
                     self.g_best[j] = c;
                     self.g_target[j] = *t;
@@ -471,9 +518,14 @@ impl Bank {
             if self.g_drive[j] <= 1e-3 {
                 continue;
             }
+            // Pulled toward its drivers' weighted mean, not the strongest:
+            // two near partials taking turns as the strongest would make the
+            // centre jump between them.
             let best = self.g_target[j];
+            let toward = self.g_log[j] / self.g_drive[j];
             self.targets[out] = Target {
-                hz: (g.ln() + focus * (best.hz.ln() - g.ln())).exp(),
+                hz: (g.ln() + focus * (toward - g.ln())).exp(),
+                aim: toward.exp(),
                 salience: self.g_drive[j].min(1.0),
                 base: g,
                 ..best
@@ -494,11 +546,13 @@ impl Bank {
                 let w = o.salience + t.salience;
                 o.hz = (o.hz * o.salience + t.hz * t.salience) / w;
                 o.amp = o.amp.max(t.amp);
+                o.prominence = o.prominence.max(t.prominence);
                 if t.salience > o.salience {
                     o.peak = t.peak;
                     o.ratio = t.ratio;
                 }
                 o.base = o.hz;
+                o.aim = o.hz;
                 o.salience = o.salience.max(t.salience);
             } else {
                 self.targets[out] = t;
@@ -585,20 +639,36 @@ impl Bank {
             if let Some(j) = best {
                 self.claimed[j] = true;
                 let t = self.targets[self.order[j]];
-                let tracker = self.tracker_for(t.peak, peaks);
+                // Keep the tracker it has while that still lands on the
+                // target: near partials take turns as a target's strongest
+                // source, and swapping trackers with them made the filter
+                // jump between them.
+                let kept = self.filters[i].tracker.filter(|&k| {
+                    let tr = &self.trackers[k];
+                    tr.active()
+                        && (self.filters[i].ratio * tr.frequency() - t.aim).abs()
+                            < self.window(t.aim)
+                });
+                let tracker = kept.or_else(|| self.tracker_for(t.peak, peaks));
                 let f = &mut self.filters[i];
                 f.hz_target = t.hz;
                 f.missed = 0;
                 f.prio = t.salience;
                 f.gain_target = BOOST_MAX * t.salience;
                 f.src_amp = t.amp;
-                if tracker.is_some() {
+                if kept.is_some() {
+                    f.base = t.base;
+                } else if tracker.is_some() {
                     f.tracker = tracker;
                     f.ratio = t.ratio;
                     f.base = t.base;
                 }
-            } else if self.filters[i].missed < GRACE {
-                self.filters[i].missed += 1;
+            } else if self.filters[i].missed < self.grace_frames {
+                // Waiting for it to come back, fading, first to be stolen.
+                let f = &mut self.filters[i];
+                f.missed += 1;
+                f.gain_target = 0.0;
+                f.prio = 0.0;
             } else {
                 self.filters[i].state = State::Releasing;
                 self.filters[i].prio = 0.0;
@@ -609,6 +679,9 @@ impl Bank {
                 continue;
             }
             let t = self.targets[self.order[j]];
+            if t.prominence < START_PROMINENCE {
+                continue;
+            }
             let busy = self
                 .filters
                 .iter()
@@ -829,6 +902,7 @@ impl Bank {
     /// A filter's control block: its centre, then its damping.
     fn control(&mut self, i: usize, channels: usize) {
         let (k0, k_min, focus, slew) = (self.k0, self.k_min, self.settings.focus, self.slew);
+        let fft_glide = self.fft_glide;
         let resonance = self.settings.resonance;
         let f = &mut self.filters[i];
         if f.state != State::Active {
@@ -838,7 +912,11 @@ impl Bank {
             f.oscillating = false;
             return;
         }
-        let settled = f.tracker.filter(|&k| self.trackers[k].settled());
+        let settled = f.tracker.filter(|&k| {
+            let t = &self.trackers[k];
+            let over = (t.frequency() / ROUGH_FROM_HZ).max(1.0);
+            t.settled() && t.roughness() < ROUGH_MOST * over * over
+        });
         let mut moved = None;
         if let Some(k) = settled {
             // The tracker gives the ratio now; FOCUS pulls the grid base
@@ -854,7 +932,7 @@ impl Bank {
             }
             moved = Some(nf);
         } else if f.hz != f.hz_target && focus > 0.0 {
-            let step = (0.3 * (f.hz_target / f.hz).ln()).clamp(-slew, slew);
+            let step = (fft_glide * (f.hz_target / f.hz).ln()).clamp(-slew, slew);
             moved = Some(f.hz * step.exp());
         }
         if let Some(nf) = moved {

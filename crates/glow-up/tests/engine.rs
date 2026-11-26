@@ -421,3 +421,50 @@ fn every_grid_plays() {
         assert!(up > 0.5, "GRID {grid}: {up} dB");
     }
 }
+
+/// C3, E3, G3 and C4 as saws, held: the chord whose close and beating
+/// partials made the bank warble (ticket 0043).
+fn chord(seconds: f64) -> Vec<f32> {
+    let mut parts = Vec::new();
+    for hz in [130.81, 164.81, 196.0, 261.63] {
+        for k in 1..60 {
+            let f = hz * f64::from(k);
+            if f < 16_000.0 {
+                parts.push((f, 0.08 / f64::from(k)));
+            }
+        }
+    }
+    sines(&parts, seconds)
+}
+
+#[test]
+fn a_held_chord_holds_its_filters_still() {
+    let x = chord(3.0);
+    for focus in [0.0, 50.0, 100.0] {
+        let mut e = engine(&[(FOCUS, focus)]);
+        let mut prev = [(State::Free, 0.0f64); glow_up::bank::POOL];
+        let (mut starts, mut moved, mut held) = (0u32, 0.0f64, 0u32);
+        let mut y = x.clone();
+        for (b, chunk) in y.chunks_mut(glow_up::bank::BLOCK).enumerate() {
+            e.process(&mut [chunk]);
+            let after = b * glow_up::bank::BLOCK > 72_000;
+            for (i, f) in e.bank().filters().iter().enumerate() {
+                let (state, hz) = prev[i];
+                if after && f.state == State::Active {
+                    if state == State::Active {
+                        moved += (1200.0 * (f.hz / hz).log2()).abs();
+                        held += 1;
+                    } else {
+                        starts += 1;
+                    }
+                }
+                prev[i] = (f.state, f.hz);
+            }
+        }
+        // 1.5 s held. Before 0043: 4 to 27 starts a second, and sounding
+        // filters moving 1.7 to 3.1 cents a block.
+        let mean = moved / f64::from(held.max(1));
+        assert!(starts <= 12, "FOCUS {focus}: {starts} starts in 1.5 s");
+        assert!(mean < 0.3, "FOCUS {focus}: {mean} cents a block");
+    }
+}
