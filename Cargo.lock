@@ -536,6 +536,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "glow-up"
+version = "0.2.0"
+dependencies = [
+ "silkscreen",
+ "silkscreen-bridge",
+ "vxn-free-dsp",
+]
+
+[[package]]
 name = "harfrust"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
