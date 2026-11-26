@@ -38,8 +38,8 @@ unit like Beverley and Wesley, but modern rather than 1990s (decided
   Title and MODE; BOOST A (AMOUNT, NUM / DEN); the display, with WINDOW,
   THRESHOLD and GRID under it; BOOST B; FILTER (RESONANCE, FOCUS; WIDTH,
   TONE, SPEED); OUTPUT (MIX, DRY CUT).
-- `art/glow-up/blender/controls.py`: a machined aluminium knob (60-ridge
-  knurl, turned top, a dark polished-metal line), cycled every 6° with four body
+- `art/glow-up/blender/controls.py`: a machined dark-metal knob (60-ridge
+  knurl, turned top, an amber line), cycled every 6° with four body
   frames, used as `knob` and `knob_small`; a soft-touch key with an amber
   LED, off and lit. About 40 s.
 - Beverley's `blender/panel.py` gains a hex button-head screw with no
@@ -138,3 +138,12 @@ The display is now an EQ-style plot, as asked: frequency across (log,
 - NUM and DEN are MULT and DIV everywhere: the faceplate, the params'
   names ("A Multiplier", "A Divisor"; ids unchanged), the code
   (`A_MULT`, `A_DIV`, …), ADR 0005, E003 and the README.
+
+## Progress (2026-11-26): dark knobs, a narrower title
+
+- The knobs are dark metal (gunmetal, a linear base of about 0.08, the
+  top turned), the line in each amber again: it reads against the dark
+  top where it didn't against bright aluminium. Re-rendered.
+- The title section is 152 wide (was 176): the name at 26 px, the MODE
+  keys closer. The face is 1164 × 330. Relief re-rendered, snapshots
+  re-blessed.

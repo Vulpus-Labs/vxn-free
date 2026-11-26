@@ -1,10 +1,10 @@
 """Glow-Up's controls, modelled and rendered top-down as skin frames for
 `crates/glow-up/glow-up.svg`, in the style of a modern rack unit:
 
-- the knob: machined aluminium, a finely knurled skirt under a smooth
-  band, a chamfered top with concentric turning marks, and a line inlaid
-  in it in dark polished metal, which reads against the bright top as
-  amber didn't. A cycled skin:
+- the knob: machined dark metal (black anodised, like gunmetal), a
+  finely knurled skirt under a smooth band, a chamfered top with
+  concentric turning marks, and a line cut in it and filled with the
+  panel's amber, which reads against the dark top. A cycled skin:
   `knob_pointer.png` (the line alone, at 12 o'clock), then
   `knob_body_N.png`, the body turned evenly across one knurl period
   (`KNURL_PERIOD`). The same frames serve the large knobs and the small
@@ -51,8 +51,8 @@ KNOB_SPAN = 2.5
 KEY_SPAN = 1.3
 # The panel's amber, #f2a33a (faceplate.py's ACCENT), linear.
 AMBER = (0.888, 0.366, 0.0423)
-# The pointer's dark polished metal, like black chrome: linear base colour.
-GUNMETAL = (0.03, 0.032, 0.036)
+# The knob's dark metal, linear base colour.
+GUNMETAL = (0.075, 0.078, 0.085)
 
 
 def args():
@@ -64,10 +64,10 @@ def args():
     return p.parse_args(argv)
 
 
-def aluminium(name, roughness=0.28, turned=False):
-    """Bead-blasted or turned aluminium. Turned: anisotropic about the
+def dark_metal(name, roughness=0.28, turned=False):
+    """Bead-blasted or turned dark metal. Turned: anisotropic about the
     knob's axis, so the top shows the turning marks' radial highlight."""
-    m = studio.material(name, (0.58, 0.585, 0.6), metallic=1.0, roughness=roughness)
+    m = studio.material(name, GUNMETAL, metallic=1.0, roughness=roughness)
     bsdf = m.node_tree.nodes["Principled BSDF"]
     if turned:
         nodes, links = m.node_tree.nodes, m.node_tree.links
@@ -109,10 +109,10 @@ def inspect(s, out, name, target, dist):
 
 def build_knob():
     """The knob, 2 units across; the pointer last."""
-    knurled = aluminium("knurled", roughness=0.35)
-    band = aluminium("band", roughness=0.26)
-    top = aluminium("top", roughness=0.42, turned=True)
-    fill = studio.material("gunmetal", GUNMETAL, metallic=1.0, roughness=0.12)
+    knurled = dark_metal("knurled", roughness=0.35)
+    band = dark_metal("band", roughness=0.26)
+    top = dark_metal("top", roughness=0.42, turned=True)
+    fill = studio.material("amber fill", AMBER, roughness=0.35, emission=AMBER, strength=0.4)
     parts = [
         studio.prism("skirt", studio.fluted(1.0, 0.035, KNURLS, per=8), 0.0, 0.34, knurled,
                      bevel=0.03, segments=3),

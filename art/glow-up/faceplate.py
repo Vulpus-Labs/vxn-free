@@ -39,7 +39,7 @@ GAP = 3
 EAR = 36
 # The sections' left edges, then the right ear's.
 TITLE, BOOST_A, BOOST_B, DISPLAY, FILTER, OUTPUT, RIGHT = (
-    EAR, 212, 324, 436, 792, 1036, 1152)
+    EAR, 188, 300, 412, 768, 1012, 1128)
 W = RIGHT + EAR
 H = 330
 # Rows: the big knobs' centre line, the small controls', and the header.
@@ -211,14 +211,14 @@ for x in (BOOST_A, BOOST_B, DISPLAY, FILTER, OUTPUT):
     hairline(x)
 
 # The title.
-o(f'  <ellipse cx="{TITLE + 98}" cy="84" rx="96" ry="46" fill="url(#glow)"/>')
-text(TITLE + 20, 92, "GLOW-UP", 30, anchor="start", spacing=3)
-o(f'  <rect x="{TITLE + 21}" y="104" width="34" height="2" fill="{ACCENT}"/>')
-text(TITLE + 21, 124, "HARMONIC FILTER", 9, anchor="start", fill=ACCENT, spacing=3)
-text(TITLE + 21, H - 22, "VULPUS LABS", 7.5, anchor="start", fill=DIM, spacing=2.4)
-text(TITLE + 21, SMALL_Y - 32, "MODE", 8, anchor="start", spacing=1.6)
-key("mono", TITLE + 40, SMALL_Y, "MONO")
-key("stereo", TITLE + 100, SMALL_Y, "STEREO")
+o(f'  <ellipse cx="{TITLE + 78}" cy="84" rx="80" ry="42" fill="url(#glow)"/>')
+text(TITLE + 14, 90, "GLOW-UP", 26, anchor="start", spacing=2.5)
+o(f'  <rect x="{TITLE + 15}" y="101" width="30" height="2" fill="{ACCENT}"/>')
+text(TITLE + 15, 120, "HARMONIC FILTER", 8.5, anchor="start", fill=ACCENT, spacing=2.6)
+text(TITLE + 15, H - 22, "VULPUS LABS", 7.5, anchor="start", fill=DIM, spacing=2.4)
+text(TITLE + 15, SMALL_Y - 32, "MODE", 8, anchor="start", spacing=1.6)
+key("mono", TITLE + 34, SMALL_Y, "MONO")
+key("stereo", TITLE + 90, SMALL_Y, "STEREO")
 
 boost(BOOST_A, "A")
 boost(BOOST_B, "B")
