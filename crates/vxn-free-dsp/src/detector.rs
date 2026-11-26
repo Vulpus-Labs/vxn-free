@@ -14,8 +14,12 @@
 //!   a hop `H` a partial at `k + d` bins advances the bin's phase by
 //!   `2π (k + d) H / N`, and the advance beyond `2π k H / N`, wrapped to
 //!   ±π, gives `d`. With a hop of a quarter window that reads offsets up to
-//!   ±2 bins. On the first frame after a restart, with no phase before it,
-//!   the centre comes from the magnitudes instead.
+//!   ±2 bins. The advance is the angle of the bin times the conjugate of
+//!   the last frame's, so it takes one `atan2` a peak, not one a bin: a
+//!   third of the detector's cost at 2048. On the first frame after a
+//!   restart, with no phase before it, and where the bin has risen more
+//!   than 12 dB since the last frame (an onset, whose last phase was
+//!   something else's), the centre comes from the magnitudes instead.
 //! - From the magnitudes: with `a` the larger neighbour's magnitude over
 //!   the peak's, a steady sine through a Hann window is centred
 //!   `(2a − 1) / (a + 1)` bins towards that neighbour. This offset also
@@ -48,6 +52,9 @@ pub const FLOOR: f32 = 1.0e-3;
 pub const SHAPE_FROM_DB: f32 = 1.5;
 /// dB off at which a peak counts for nothing.
 pub const SHAPE_TO_DB: f32 = 3.0;
+/// The least power, as a share of this frame's, that a peak's bin had in
+/// the last frame for its phase advance to be read: −12 dB.
+const PHASE_LEAST: f32 = 1.0 / 16.0;
 
 /// One peak.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -66,8 +73,8 @@ pub struct DetectedPeak {
 pub struct PeakDetector {
     mag: Box<[f32]>,
     pow: Box<[f32]>,
-    /// Each bin's phase in the last frame.
-    phase: Box<[f32]>,
+    /// The last frame's bins, packed as the frame's are.
+    last: Box<[f32]>,
     /// Where the last frame ended, if there was one since the restart.
     last_end: Option<u64>,
     found: Box<[DetectedPeak]>,
@@ -83,7 +90,7 @@ impl PeakDetector {
         let mut d = Self {
             mag: vec![0.0; max_window / 2].into_boxed_slice(),
             pow: vec![0.0; max_window / 2].into_boxed_slice(),
-            phase: vec![0.0; max_window / 2].into_boxed_slice(),
+            last: vec![0.0; max_window].into_boxed_slice(),
             last_end: None,
             found: vec![DetectedPeak::default(); max_window / 4].into_boxed_slice(),
             count: 0,
@@ -109,7 +116,7 @@ impl PeakDetector {
     pub fn restart(&mut self) {
         self.mag.fill(0.0);
         self.pow.fill(0.0);
-        self.phase.fill(0.0);
+        self.last.fill(0.0);
         self.last_end = None;
         self.mean_prev = 0.0;
         self.count = 0;
@@ -154,7 +161,7 @@ impl PeakDetector {
         let mean = self.mean_prev;
         self.mean_prev = sum / (half - 1) as f32;
         if mean.is_nan() || mean <= 0.0 {
-            self.store_phases(frame);
+            self.store(frame);
             return;
         }
         let floor = FLOOR * self.window as f32 / 4.0;
@@ -192,13 +199,17 @@ impl PeakDetector {
             if self.count == self.found.len() {
                 break;
             }
+            let (re, im) = (frame.bins[2 * k], frame.bins[2 * k + 1]);
+            let (lr, li) = (self.last[2 * k], self.last[2 * k + 1]);
             let centre = match hop {
-                Some(h) => {
-                    let advance = bin_phase(frame, k) - self.phase[k];
+                Some(h) if lr * lr + li * li > PHASE_LEAST * m * m => {
+                    // The angle of this bin times the conjugate of the last
+                    // frame's: the phase advance, one atan2.
+                    let advance = (im * lr - re * li).atan2(re * lr + im * li);
                     let expected = TAU * k as f32 * h as f32 / self.window as f32;
                     k as f32 + wrap(advance - expected) * self.window as f32 / (TAU * h as f32)
                 }
-                None => k as f32 + d,
+                _ => k as f32 + d,
             };
             self.found[self.count] = DetectedPeak {
                 hz: centre * per_bin,
@@ -207,19 +218,13 @@ impl PeakDetector {
             };
             self.count += 1;
         }
-        self.store_phases(frame);
+        self.store(frame);
     }
 
-    fn store_phases(&mut self, frame: &Frame<'_>) {
-        for k in 1..self.window / 2 {
-            self.phase[k] = bin_phase(frame, k);
-        }
+    fn store(&mut self, frame: &Frame<'_>) {
+        let n = self.window;
+        self.last[..n].copy_from_slice(&frame.bins[..n]);
     }
-}
-
-/// Bin `k`'s phase (1 to `window/2 − 1`).
-fn bin_phase(frame: &Frame<'_>, k: usize) -> f32 {
-    frame.bins[2 * k + 1].atan2(frame.bins[2 * k])
 }
 
 /// `x` wrapped to −π..π.
@@ -408,6 +413,45 @@ mod tests {
             phase < 0.25 && phase < 0.6 * magnitude,
             "{phase} against {magnitude}"
         );
+    }
+
+    /// The packed bins of the last 2048-sample frame of `x`.
+    fn bins_of(x: &[f32]) -> Vec<f32> {
+        let mut stft = Stft::new(2048, 4, 2048, 512);
+        let mut bins = vec![];
+        stft.push(x, |f| bins = f.bins.to_vec());
+        bins
+    }
+
+    #[test]
+    fn an_onset_takes_its_centre_from_the_magnitudes() {
+        // A weak tone, then a frame where the same bin is 40 dB louder with
+        // an unrelated phase: the advance would be the two phases'
+        // difference, not the partial's. The magnitudes give the centre.
+        let bin = f64::from(RATE) / 2048.0;
+        let hz = 100.3 * bin;
+        let tone = |a: f32, phase: f64| -> Vec<f32> {
+            (0..2048)
+                .map(|n| a * (TAU * hz * f64::from(n) / f64::from(RATE) + phase).sin() as f32)
+                .collect()
+        };
+        let (weak, loud) = (bins_of(&tone(0.005, 0.0)), bins_of(&tone(0.5, 2.0)));
+        let mut d = PeakDetector::new(2048);
+        d.set_threshold_db(6.0);
+        for (i, bins) in [&weak, &weak, &loud].into_iter().enumerate() {
+            let end = 2048 + 512 * i as u64;
+            d.detect(
+                &Frame {
+                    index: i as u64,
+                    end,
+                    bins,
+                },
+                RATE,
+            );
+        }
+        let p = d.peaks();
+        assert_eq!(p.len(), 1, "{p:?}");
+        assert!(cents(p[0].hz, hz).abs() < 0.5, "{p:?} against {hz}");
     }
 
     #[test]
