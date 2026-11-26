@@ -77,3 +77,42 @@ unit like Beverley and Wesley, but modern rather than 1990s (decided
 - Tests: snapshots of the defaults and of TET, STEREO and DRY CUT lit;
   every control moves its param; each key picks its position and
   keeps it when pressed again.
+
+## Progress (2026-11-26): the scope replaces the tracking display
+
+The display is now an EQ-style plot, as asked: frequency across (log,
+40 Hz to 16 kHz), level up (−78 to +6 dB under full scale, a line every
+12 dB).
+
+- `src/observe.rs`: the frame grows to 326 words. It adds the input's
+  spectrum (160 log-spaced points, dB, from the detector's smoothed
+  power: each point the loudest bin in its share of the axis, or
+  interpolated where bins are sparser than points), each filter's live
+  damping, WIDTH's `k0`, and the output's direct and wet gains (MIX and
+  DRY CUT). `Observation::response(hz)` gives the output's gain over the
+  input: `|direct + wet · Σ gain · k0 · bp|`, each band-pass the TPT
+  form's own (prewarped) response, a singing filter's damping taken at
+  `k0 / 4` so its peak is finite.
+- `vxn-free-dsp`'s `PeakDetector` gains `window()` and
+  `smoothed_power()`; the bank's `Filter` gains `damping()`.
+- `src/display.rs`, `ScopeDisplay`: the input as a pale line over a faint
+  area, rising at once and falling at 60 dB/s by the engine's clock; the
+  output as an amber line where it is 0.5 dB or more off the input; the
+  gap between them filled a column at a time with a gradient, amber
+  bright at the boosted line fading to the input's (a cool blue-grey
+  where the output falls under the input); each detected peak a vertical
+  line at its frequency, brighter with prominence; each filter a dot on
+  the output's line, near-white while singing. 250 ms without a frame
+  dims it all.
+- Checked on the engine's own frames for a held four-saw chord (a
+  scratch render, not kept): at TRACK the boosts land on the partials as
+  spikes of 6–10 dB, and the dozen filters' skirts lift the crowded
+  midrange by about half a dB; at GRID the dots sit on grid points; with
+  DRY CUT the output falls under the input everywhere but the boosts.
+- Tests: the engine's frame reads a 0.4 sine at its level within 1.5 dB
+  and under −60 dB at 5 kHz, with +14 dB at its 2/1 filter and flat far
+  off; the response is +14 dB at a centre, 3 dB down half a bandwidth
+  off, flat far off, the filter alone with DRY CUT; the input line rises
+  at once and falls by the engine's clock, across the 2^24 wrap, and
+  starts again on a reset; snapshots of a glide with boosts, a singing
+  filter, DRY CUT and a stopped host.

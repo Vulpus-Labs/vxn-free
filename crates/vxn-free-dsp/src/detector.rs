@@ -132,6 +132,17 @@ impl PeakDetector {
         &self.found[..self.count]
     }
 
+    /// The window it is set to.
+    pub fn window(&self) -> usize {
+        self.window
+    }
+
+    /// Each bin's smoothed power, from DC to just under Nyquist: a steady
+    /// sine of amplitude `A` on a bin reads `(A · window / 4)²`.
+    pub fn smoothed_power(&self) -> &[f32] {
+        &self.pow[..self.window / 2]
+    }
+
     /// Find `frame`'s peaks, at `sample_rate`. The frame's window must be
     /// the detector's.
     pub fn detect(&mut self, frame: &Frame<'_>, sample_rate: f32) {

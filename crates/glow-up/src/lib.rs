@@ -174,12 +174,12 @@ pub fn state(link: Box<dyn EngineLink>) -> EditorState {
         mono: choice(MODE, 0.0),
         stereo: choice(MODE, 1.0),
         dry_cut: Box::new(ParamToggle::new(DRY_CUT)),
-        // The tracking display comes with ticket 0009's telemetry.
+        // The scope is set below, as a widget of its own.
         display: Box::new(Unbound),
     };
     let mut state = EditorState::new(&faceplate::LAYOUT, &PARAMS, controls.into_array(), link);
     state.set_widget(faceplate::ids::DISPLAY, |_| {
-        Box::new(display::TrackDisplay::default())
+        Box::new(display::ScopeDisplay::default())
     });
     state
 }

@@ -180,6 +180,14 @@ pub struct Filter {
     choked_at: u64,
 }
 
+impl Filter {
+    /// Its band-pass's damping now (the first channel's): WIDTH's, or
+    /// lowered by RESONANCE, at or below zero while it sings.
+    pub fn damping(&self) -> f64 {
+        self.res[0].damping()
+    }
+}
+
 /// Counts the tests read.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Stats {

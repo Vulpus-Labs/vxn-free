@@ -1,107 +1,93 @@
-//! The tracking display (ticket 0009), set into the faceplate's window:
-//! what the bank has done over the last [`SPAN_SECONDS`], from the engine's
-//! telemetry frames ([`Observation`]).
+//! The scope (ticket 0009), set into the faceplate's window: an EQ-style
+//! plot of what the bank is doing to the input, from the engine's telemetry
+//! frames ([`Observation`]).
 //!
-//! - Time runs left to right, the newest at the right edge; frequency up a
-//!   log axis from [`LOWEST`] to [`HIGHEST`], with a line at each decade's
-//!   1, 2 and 5.
-//! - Each filter is an amber trace at its centre, its brightness and
-//!   weight its level. A singing filter (self-oscillating) burns
-//!   near-white; a fading one (released, or stolen) is drawn thinner.
-//!   Each filter's latest position ends in a dot.
-//! - The analysis's peaks are faint blue-grey ticks, brighter the more
-//!   prominent.
+//! - Frequency runs left to right on a log axis from [`LOWEST`] to
+//!   [`HIGHEST`], with a line at each decade's 1, 2 and 5; level up, from
+//!   [`DB_BOTTOM`] to [`DB_TOP`] under full scale, a line every 12 dB.
+//! - The input's spectrum is a pale blue-grey line over a faint area. It
+//!   rises at once and
+//!   falls at [`FALL_DB_PER_SECOND`], as an analyser's does, timed by the
+//!   engine's clock.
+//! - The output's is an amber line, drawn where it is [`LEAST_LINE_DB`] or
+//!   more off the input's: the
+//!   input's, times the output's gain over it ([`Observation::response`]),
+//!   every filter's band-pass summed with the direct signal as the engine
+//!   sums them.
+//! - Between the two, each column is filled with a gradient: amber, bright
+//!   at the boosted line and fading towards the input's, so it shows where
+//!   each boost lands and how far its skirts spread. Where the output falls
+//!   under the input (DRY CUT, or MIX turned down), the gap is a cool
+//!   blue-grey.
+//! - Each detected peak is a vertical line at its frequency, brighter the
+//!   more prominent; each filter a dot on the output's line at its centre,
+//!   near-white while it sings.
 //!
-//! The history lives on the editor's side: every new frame is placed by
-//! the engine's own clock, so the traces scroll at the audio's pace however
-//! often the editor draws. A frame older than [`STALE_MS`] dims the
-//! traces: with the host stopped, the screen holds what it last showed.
+//! A frame older than [`STALE_MS`] dims it all: with the host stopped, the
+//! screen holds what it last showed.
 
 use silkscreen::EditorState;
 use silkscreen::EditorWidget;
 use silkscreen::core::tiny_skia::{
-    Color, FillRule, LineCap, Paint, PathBuilder, PixmapMut, Rect as SkRect, Stroke, Transform,
+    Color, FillRule, GradientStop, LineCap, LineJoin, LinearGradient, Paint, PathBuilder,
+    PixmapMut, Point, Rect as SkRect, Shader, SpreadMode, Stroke, Transform,
 };
 use silkscreen::core::{Rect, WidgetState};
 
-use crate::bank::POOL;
-use crate::observe::{Observation, Shown};
+pub use crate::observe::{HIGHEST, LOWEST};
+use crate::observe::{Observation, SPECTRUM, Shown};
 
-/// The frequency axis, Hz.
-pub const LOWEST: f32 = 40.0;
-pub const HIGHEST: f32 = 16_000.0;
-/// How much history the screen holds.
-pub const SPAN_SECONDS: f32 = 2.0;
+/// The level axis, dB under full scale.
+pub const DB_TOP: f32 = 6.0;
+pub const DB_BOTTOM: f32 = -78.0;
+/// How fast the input's line falls when the input does.
+pub const FALL_DB_PER_SECOND: f32 = 60.0;
 /// A frame this old means the host has stopped.
 pub const STALE_MS: f64 = 250.0;
-/// Frames kept: more than the span holds at any likely rate.
-const HISTORY: usize = 512;
-/// Levels are drawn in this many steps, a path each.
-const STEPS: usize = 4;
 /// Px between the plot and the glass's edges.
 const INSET: f32 = 4.0;
+/// A gap between the lines under this many px is not filled.
+const LEAST_FILL: f32 = 0.5;
+/// The output's line is drawn where it is at least this far off the
+/// input's: a dozen filters' skirts lift the midrange by a tenth of a dB,
+/// and a line there would hide the input's.
+pub const LEAST_LINE_DB: f32 = 0.5;
 
 const GLASS: (u8, u8, u8) = (0x0b, 0x0d, 0x10);
-const GRID: (u8, u8, u8) = (0x1c, 0x20, 0x26);
+const GRID: (u8, u8, u8) = (0x1a, 0x1e, 0x24);
 const DECADE: (u8, u8, u8) = (0x2a, 0x2f, 0x37);
 const AMBER: (u8, u8, u8) = (0xf2, 0xa3, 0x3a);
 const HOT: (u8, u8, u8) = (0xff, 0xec, 0xc8);
+const INPUT: (u8, u8, u8) = (0xa9, 0xbc, 0xd4);
 const PEAK: (u8, u8, u8) = (0x7f, 0x9c, 0xbf);
+const CUT: (u8, u8, u8) = (0x5a, 0x78, 0x9e);
 
-/// Segments of a trace that share a look, as one path.
-struct Run {
-    colour: (u8, u8, u8),
-    alpha: f32,
-    width: f32,
-    path: PathBuilder,
-}
-
-/// One frame, as the display keeps it.
-#[derive(Clone, Copy, Debug)]
-struct Entry {
-    /// Seconds on the engine's clock (unwrapped).
-    at: f64,
-    obs: Observation,
-}
-
-/// The tracking display widget.
-#[derive(Debug)]
-pub struct TrackDisplay {
-    history: Vec<Entry>,
-    /// The next slot to write, and how many are filled.
-    head: usize,
-    filled: usize,
-    /// The last frame's generation, its time in samples (modulo 2^24),
-    /// and the clock it was placed at.
+/// The scope widget.
+#[derive(Debug, Default)]
+pub struct ScopeDisplay {
+    /// The latest frame, if any.
+    obs: Option<Observation>,
+    /// The input's line as drawn, dB: the frames' spectra with the fall.
+    shown: Vec<f32>,
+    /// The last frame's generation and time in samples (modulo 2^24).
     seen: Option<u64>,
     last_time: Option<u64>,
-    clock: f64,
     /// When the last frame arrived, by the editor's clock.
     arrived_ms: f64,
     live: bool,
 }
 
-impl Default for TrackDisplay {
-    fn default() -> Self {
-        Self {
-            history: Vec::with_capacity(HISTORY),
-            head: 0,
-            filled: 0,
-            seen: None,
-            last_time: None,
-            clock: 0.0,
-            arrived_ms: 0.0,
-            live: false,
-        }
-    }
-}
-
-/// Where `hz` lands, from 0 at the bottom to 1 at the top.
-pub fn height_of(hz: f32) -> f32 {
+/// Where `hz` lands, from 0 at the left to 1 at the right.
+pub fn across(hz: f32) -> f32 {
     ((hz / LOWEST).ln() / (HIGHEST / LOWEST).ln()).clamp(0.0, 1.0)
 }
 
-impl TrackDisplay {
+/// Where `db` lands, from 0 at the bottom to 1 at the top.
+pub fn up(db: f32) -> f32 {
+    ((db - DB_BOTTOM) / (DB_TOP - DB_BOTTOM)).clamp(0.0, 1.0)
+}
+
+impl ScopeDisplay {
     /// Take `frames` as if they had arrived in turn, the last just now:
     /// for tests and stills.
     pub fn with_frames<'a>(frames: impl IntoIterator<Item = &'a [f32]>) -> Self {
@@ -111,49 +97,54 @@ impl TrackDisplay {
                 d.push(&obs);
             }
         }
-        d.live = true;
+        d.live = d.obs.is_some();
         d
     }
 
-    /// Add a frame, placing it on the engine's clock.
-    fn push(&mut self, obs: &Observation) {
-        const WRAP: u64 = 1 << 24;
-        let rate = f64::from(obs.sample_rate.max(1.0));
-        let step = match self.last_time {
-            // The time is modulo 2^24 samples; a jump back further than
-            // that is a reset, and starts the history again.
-            Some(t) if obs.time >= t => (obs.time - t) as f64 / rate,
-            Some(t) if t - obs.time > WRAP / 2 => (obs.time + WRAP - t) as f64 / rate,
-            Some(_) => {
-                self.filled = 0;
-                0.0
-            }
-            None => 0.0,
-        };
-        self.last_time = Some(obs.time);
-        self.clock += step;
-        let entry = Entry {
-            at: self.clock,
-            obs: *obs,
-        };
-        if self.history.len() < HISTORY {
-            self.history.push(entry);
-        } else {
-            self.history[self.head] = entry;
-        }
-        self.head = (self.head + 1) % HISTORY;
-        self.filled = (self.filled + 1).min(HISTORY);
+    /// The input's line as it would be drawn, dB at each spectrum point.
+    pub fn input_line(&self) -> &[f32] {
+        &self.shown
     }
 
-    /// The kept entries, oldest first.
-    fn entries(&self) -> impl Iterator<Item = &Entry> {
-        let len = self.history.len();
-        let start = (self.head + HISTORY - self.filled) % HISTORY;
-        (0..self.filled).map(move |i| &self.history[(start + i) % HISTORY.min(len.max(1))])
+    /// Take a frame: the input's line rises to it at once, and falls
+    /// toward it at [`FALL_DB_PER_SECOND`] over the time since the last,
+    /// by the engine's clock.
+    fn push(&mut self, obs: &Observation) {
+        const WRAP: u64 = 1 << 24;
+        let rate = obs.sample_rate.max(1.0);
+        let elapsed = match self.last_time {
+            Some(t) if obs.time >= t => Some((obs.time - t) as f32 / rate),
+            // Across the 2^24 wrap.
+            Some(t) if t - obs.time > WRAP / 2 => Some((obs.time + WRAP - t) as f32 / rate),
+            // A reset: start again.
+            _ => None,
+        };
+        self.last_time = Some(obs.time);
+        match elapsed {
+            Some(dt) if self.shown.len() == SPECTRUM => {
+                let fall = FALL_DB_PER_SECOND * dt;
+                for (s, &new) in self.shown.iter_mut().zip(&obs.spectrum) {
+                    *s = new.max(*s - fall);
+                }
+            }
+            _ => {
+                self.shown.clear();
+                self.shown.extend_from_slice(&obs.spectrum);
+            }
+        }
+        self.obs = Some(*obs);
+    }
+
+    /// The input's line at `hz`, dB: interpolated between spectrum points.
+    fn input_at(&self, hz: f32) -> f32 {
+        let at = across(hz) * (SPECTRUM - 1) as f32;
+        let i = (at.floor() as usize).min(SPECTRUM - 2);
+        let t = at - i as f32;
+        self.shown[i] + t * (self.shown[i + 1] - self.shown[i])
     }
 }
 
-impl EditorWidget for TrackDisplay {
+impl EditorWidget for ScopeDisplay {
     fn update(&mut self, state: &EditorState) -> bool {
         let (frame, generation) = state.engine_frame();
         let now = state.now_ms();
@@ -166,7 +157,7 @@ impl EditorWidget for TrackDisplay {
                 changed = true;
             }
         }
-        let live = self.filled > 0 && now - self.arrived_ms < STALE_MS;
+        let live = self.obs.is_some() && now - self.arrived_ms < STALE_MS;
         changed |= live != self.live;
         self.live = live;
         changed
@@ -183,10 +174,22 @@ impl EditorWidget for TrackDisplay {
             rect.h - 2.0 * INSET,
         );
         draw_grid(canvas, plot, t);
-        if self.filled > 0 {
-            draw_history(canvas, plot, t, self, if self.live { 1.0 } else { 0.45 });
+        if let Some(obs) = &self.obs {
+            draw_scope(
+                canvas,
+                plot,
+                t,
+                self,
+                obs,
+                if self.live { 1.0 } else { 0.45 },
+            );
         }
     }
+}
+
+fn colour(rgb: (u8, u8, u8), alpha: f32) -> Color {
+    let a = (alpha.clamp(0.0, 1.0) * 255.0).round() as u8;
+    Color::from_rgba8(rgb.0, rgb.1, rgb.2, a)
 }
 
 fn paint(rgb: (u8, u8, u8), alpha: f32) -> Paint<'static> {
@@ -194,8 +197,7 @@ fn paint(rgb: (u8, u8, u8), alpha: f32) -> Paint<'static> {
         anti_alias: true,
         ..Paint::default()
     };
-    let a = (alpha.clamp(0.0, 1.0) * 255.0).round() as u8;
-    p.set_color(Color::from_rgba8(rgb.0, rgb.1, rgb.2, a));
+    p.set_color(colour(rgb, alpha));
     p
 }
 
@@ -203,148 +205,200 @@ fn stroke(width: f32) -> Stroke {
     Stroke {
         width,
         line_cap: LineCap::Round,
+        line_join: LineJoin::Round,
         ..Stroke::default()
     }
 }
 
-fn y_of(plot: Rect, hz: f32) -> f32 {
-    plot.bottom() - height_of(hz) * plot.h
+fn x_of(plot: Rect, hz: f32) -> f32 {
+    plot.x + across(hz) * plot.w
+}
+
+fn y_of(plot: Rect, db: f32) -> f32 {
+    plot.bottom() - up(db) * plot.h
+}
+
+fn line(canvas: &mut PixmapMut<'_>, t: Transform, from: (f32, f32), to: (f32, f32), p: &Paint) {
+    let mut pb = PathBuilder::new();
+    pb.move_to(from.0, from.1);
+    pb.line_to(to.0, to.1);
+    if let Some(path) = pb.finish() {
+        canvas.stroke_path(&path, p, &stroke(1.0), t, None);
+    }
 }
 
 fn draw_grid(canvas: &mut PixmapMut<'_>, plot: Rect, t: Transform) {
     let mut decade = 10.0f32;
     while decade < HIGHEST {
-        for (step, colour) in [(1.0, DECADE), (2.0, GRID), (5.0, GRID)] {
+        for (step, rgb) in [(1.0, DECADE), (2.0, GRID), (5.0, GRID)] {
             let hz = decade * step;
             if !(LOWEST..=HIGHEST).contains(&hz) {
                 continue;
             }
-            let y = y_of(plot, hz);
-            let mut pb = PathBuilder::new();
-            pb.move_to(plot.x, y);
-            pb.line_to(plot.right(), y);
-            if let Some(path) = pb.finish() {
-                canvas.stroke_path(&path, &paint(colour, 1.0), &stroke(1.0), t, None);
-            }
+            let x = x_of(plot, hz);
+            line(canvas, t, (x, plot.y), (x, plot.bottom()), &paint(rgb, 1.0));
         }
         decade *= 10.0;
     }
+    let mut db = 0.0f32;
+    while db > DB_BOTTOM {
+        let y = y_of(plot, db);
+        let rgb = if db == 0.0 { DECADE } else { GRID };
+        line(canvas, t, (plot.x, y), (plot.right(), y), &paint(rgb, 1.0));
+        db -= 12.0;
+    }
 }
 
-/// A filter's colour, brightness and weight for its state and level.
+/// A filter's dot: colour, brightness and radius for its state and level.
 fn look(shown: Shown, level: f32) -> Option<((u8, u8, u8), f32, f32)> {
     let level = level.clamp(0.0, 1.0);
     match shown {
         Shown::Free => None,
-        Shown::Boosting => Some((AMBER, 0.25 + 0.75 * level, 1.0 + 1.5 * level)),
-        Shown::Singing => Some((HOT, 0.6 + 0.4 * level, 1.5 + 1.5 * level)),
-        Shown::Fading => Some((AMBER, 0.15 + 0.5 * level, 1.0)),
+        Shown::Boosting => Some((AMBER, 0.35 + 0.65 * level, 1.5 + 1.0 * level)),
+        Shown::Singing => Some((HOT, 0.7 + 0.3 * level, 2.5 + 1.0 * level)),
+        Shown::Fading => Some((AMBER, 0.2 + 0.4 * level, 1.5)),
     }
 }
 
-fn draw_history(
+/// A column `width` wide at `left`, from `top` to `bottom`, filled with
+/// `rgb` at alpha `bright` along its top edge fading to `faint` at its
+/// bottom.
+fn gradient_column(
     canvas: &mut PixmapMut<'_>,
-    plot: Rect,
     xf: Transform,
-    display: &TrackDisplay,
-    dim: f32,
+    (left, width): (f32, f32),
+    (top, bottom): (f32, f32),
+    rgb: (u8, u8, u8),
+    (bright, faint): (f32, f32),
 ) {
-    let Some(newest) = display.entries().last().map(|e| e.at) else {
+    let Some(rect) = SkRect::from_xywh(left, top, width, bottom - top) else {
         return;
     };
-    let x_of = |at: f64| plot.right() - ((newest - at) as f32 / SPAN_SECONDS) * plot.w;
-    let shown: Vec<&Entry> = display
-        .entries()
-        .filter(|e| newest - e.at <= f64::from(SPAN_SECONDS) + 0.1)
+    let shader = LinearGradient::new(
+        Point::from_xy(left, top),
+        Point::from_xy(left, bottom),
+        vec![
+            GradientStop::new(0.0, colour(rgb, bright)),
+            GradientStop::new(1.0, colour(rgb, faint)),
+        ],
+        SpreadMode::Pad,
+        Transform::identity(),
+    )
+    .unwrap_or(Shader::SolidColor(colour(rgb, 0.5 * (bright + faint))));
+    let fill = Paint {
+        shader,
+        anti_alias: false,
+        ..Paint::default()
+    };
+    canvas.fill_rect(rect, &fill, xf, None);
+}
+
+fn draw_scope(
+    canvas: &mut PixmapMut<'_>,
+    plot: Rect,
+    t: Transform,
+    scope: &ScopeDisplay,
+    obs: &Observation,
+    dim: f32,
+) {
+    // The peaks: a vertical line at each, brighter with prominence.
+    for p in &obs.peaks[..usize::from(obs.peak_count)] {
+        if !(LOWEST..=HIGHEST).contains(&p.hz) {
+            continue;
+        }
+        let x = x_of(plot, p.hz);
+        let alpha = dim * (0.15 + 0.45 * p.prominence.clamp(0.0, 1.0));
+        line(
+            canvas,
+            t,
+            (x, plot.y),
+            (x, plot.bottom()),
+            &paint(PEAK, alpha),
+        );
+    }
+
+    // Each column's input and output, px.
+    let columns = plot.w.ceil().max(1.0) as usize;
+    let points: Vec<(f32, f32, f32)> = (0..=columns)
+        .map(|c| {
+            let x = plot.x + (c as f32).min(plot.w);
+            let hz = LOWEST * (HIGHEST / LOWEST).powf((x - plot.x) / plot.w);
+            let db_in = scope.input_at(hz);
+            let db_out = db_in + 20.0 * obs.response(hz).max(1e-6).log10();
+            (x, y_of(plot, db_in), y_of(plot, db_out))
+        })
         .collect();
 
-    // Peaks: a short tick at each, per frame.
-    let mut ticks: [PathBuilder; STEPS] = std::array::from_fn(|_| PathBuilder::new());
-    for e in &shown {
-        let x = x_of(e.at).max(plot.x);
-        for p in &e.obs.peaks[..usize::from(e.obs.peak_count)] {
-            if !(LOWEST..=HIGHEST).contains(&p.hz) {
-                continue;
-            }
-            let step = ((p.prominence.clamp(0.0, 1.0) * STEPS as f32) as usize).min(STEPS - 1);
-            let y = y_of(plot, p.hz);
-            ticks[step].move_to(x, y);
-            ticks[step].line_to(x + 1.0, y);
+    // The input: a faint area under a pale line.
+    let mut area = PathBuilder::new();
+    let mut input = PathBuilder::new();
+    area.move_to(plot.x, plot.bottom());
+    for (c, &(x, y_in, _)) in points.iter().enumerate() {
+        area.line_to(x, y_in);
+        if c == 0 {
+            input.move_to(x, y_in);
+        } else {
+            input.line_to(x, y_in);
         }
     }
-    for (step, pb) in ticks.into_iter().enumerate() {
-        if let Some(path) = pb.finish() {
-            let alpha = dim * (0.12 + 0.18 * step as f32);
-            canvas.stroke_path(&path, &paint(PEAK, alpha), &stroke(1.5), xf, None);
-        }
+    area.line_to(plot.right(), plot.bottom());
+    area.close();
+    if let Some(path) = area.finish() {
+        canvas.fill_path(&path, &paint(INPUT, dim * 0.07), FillRule::Winding, t, None);
     }
 
-    // Filters: a trace a slot, joined from frame to frame while the slot
-    // stays in use, its segments grouped by look into a few paths.
-    for slot in 0..POOL {
-        let mut runs: Vec<Run> = Vec::new();
-        let mut last: Option<(f32, f32)> = None;
-        for e in &shown {
-            let filter = e.obs.filters[slot];
-            let Some((colour, alpha, width)) = look(filter.shown, filter.level) else {
-                last = None;
-                continue;
-            };
-            if !(LOWEST..=HIGHEST).contains(&filter.hz) {
-                last = None;
-                continue;
-            }
-            let point = (x_of(e.at), y_of(plot, filter.hz));
-            if let Some(from) = last {
-                // Snap the look to a few steps, so segments share paths.
-                let snapped_alpha = (alpha * STEPS as f32).round() / STEPS as f32;
-                let snapped_width = (width * 2.0).round() / 2.0;
-                let found = runs.iter().position(|r| {
-                    r.colour == colour && r.alpha == snapped_alpha && r.width == snapped_width
-                });
-                let i = found.unwrap_or_else(|| {
-                    runs.push(Run {
-                        colour,
-                        alpha: snapped_alpha,
-                        width: snapped_width,
-                        path: PathBuilder::new(),
-                    });
-                    runs.len() - 1
-                });
-                let path = &mut runs[i].path;
-                path.move_to(from.0.max(plot.x), from.1);
-                path.line_to(point.0, point.1);
-            }
-            last = Some(point);
-        }
-        for run in runs {
-            if let Some(path) = run.path.finish() {
-                let paint = paint(run.colour, dim * run.alpha);
-                canvas.stroke_path(&path, &paint, &stroke(run.width), xf, None);
-            }
+    // The gap between the lines, a column at a time.
+    for pair in points.windows(2) {
+        let ((x, y_in, y_out), (next, _, _)) = (pair[0], pair[1]);
+        let span = (x, next - x);
+        if y_in - y_out > LEAST_FILL {
+            // A boost: bright at the boosted line, fading to the input.
+            gradient_column(canvas, t, span, (y_out, y_in), AMBER, (dim, dim * 0.2));
+        } else if y_out - y_in > LEAST_FILL {
+            // A cut: the input over the output, fading down to it.
+            gradient_column(canvas, t, span, (y_in, y_out), CUT, (dim * 0.4, dim * 0.05));
         }
     }
+    if let Some(path) = input.finish() {
+        canvas.stroke_path(&path, &paint(INPUT, dim * 0.7), &stroke(1.0), t, None);
+    }
 
-    // Each filter's latest position, a dot at the right edge.
-    if let Some(e) = shown.last() {
-        for f in &e.obs.filters {
-            let Some((colour, alpha, width)) = look(f.shown, f.level) else {
-                continue;
-            };
-            if !(LOWEST..=HIGHEST).contains(&f.hz) {
-                continue;
+    // The output's line, only where it leaves the input's, from the column
+    // before to the column after so it joins it.
+    let least = LEAST_LINE_DB / (DB_TOP - DB_BOTTOM) * plot.h;
+    let apart = |&(_, y_in, y_out): &(f32, f32, f32)| (y_in - y_out).abs() > least;
+    let mut output = PathBuilder::new();
+    let mut drawing = false;
+    for (c, p) in points.iter().enumerate() {
+        let near = apart(p)
+            || points.get(c + 1).is_some_and(apart)
+            || c.checked_sub(1)
+                .and_then(|b| points.get(b))
+                .is_some_and(apart);
+        if near {
+            if drawing {
+                output.line_to(p.0, p.2);
+            } else {
+                output.move_to(p.0, p.2);
             }
-            if let Some(path) =
-                PathBuilder::from_circle(plot.right() - 2.0, y_of(plot, f.hz), 1.0 + width)
-            {
-                canvas.fill_path(
-                    &path,
-                    &paint(colour, dim * alpha),
-                    FillRule::Winding,
-                    xf,
-                    None,
-                );
-            }
+        }
+        drawing = near;
+    }
+    if let Some(path) = output.finish() {
+        canvas.stroke_path(&path, &paint(AMBER, dim), &stroke(1.5), t, None);
+    }
+
+    // Each filter, a dot on the output's line at its centre.
+    for f in &obs.filters {
+        let Some((rgb, alpha, radius)) = look(f.shown, f.level) else {
+            continue;
+        };
+        if !(LOWEST..=HIGHEST).contains(&f.hz) {
+            continue;
+        }
+        let db = scope.input_at(f.hz) + 20.0 * obs.response(f.hz).max(1e-6).log10();
+        if let Some(path) = PathBuilder::from_circle(x_of(plot, f.hz), y_of(plot, db), radius) {
+            canvas.fill_path(&path, &paint(rgb, dim * alpha), FillRule::Winding, t, None);
         }
     }
 }
@@ -352,55 +406,55 @@ fn draw_history(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::observe::{FRAME_WORDS, FilterObs};
+    use crate::observe::FRAME_WORDS;
 
     #[test]
-    fn the_axis_runs_from_its_lowest_to_its_highest() {
-        assert_eq!(height_of(LOWEST), 0.0);
-        assert!((height_of(HIGHEST) - 1.0).abs() < 1e-6);
-        assert!(height_of(1000.0) > 0.5 && height_of(1000.0) < 0.6);
+    fn the_axes_run_from_their_ends() {
+        assert_eq!(across(LOWEST), 0.0);
+        assert!((across(HIGHEST) - 1.0).abs() < 1e-6);
+        assert!(across(1000.0) > 0.5 && across(1000.0) < 0.6);
+        assert_eq!(up(DB_BOTTOM), 0.0);
+        assert_eq!(up(DB_TOP), 1.0);
     }
 
-    fn frame(time: u64) -> Vec<f32> {
+    fn frame(time: u64, db: f32) -> Vec<f32> {
         let mut obs = Observation {
             time,
             ..Observation::default()
         };
-        obs.filters[0] = FilterObs {
-            hz: 880.0,
-            level: 0.5,
-            shown: Shown::Boosting,
-        };
+        obs.spectrum.fill(db);
         let mut out = [0.0; FRAME_WORDS];
         obs.to_frame(&mut out);
         out.to_vec()
     }
 
     #[test]
-    fn frames_are_placed_by_the_engines_clock_and_wrap() {
-        let near_wrap = (1u64 << 24) - 480;
-        let frames = [frame(near_wrap - 480), frame(near_wrap), frame(480)];
-        let d = TrackDisplay::with_frames(frames.iter().map(Vec::as_slice));
-        let at: Vec<f64> = d.entries().map(|e| e.at).collect();
-        assert_eq!(at.len(), 3);
-        assert!((at[1] - at[0] - 0.01).abs() < 1e-9, "{at:?}");
-        assert!((at[2] - at[1] - 0.02).abs() < 1e-9, "{at:?}");
+    fn the_input_rises_at_once_and_falls_by_the_engines_clock() {
+        // Up at once; then 0.1 s later, 6 dB down.
+        let frames = [frame(0, -60.0), frame(480, -20.0), frame(5280, -80.0)];
+        let d = ScopeDisplay::with_frames(frames[..2].iter().map(Vec::as_slice));
+        assert!(d.input_line().iter().all(|&v| v == -20.0));
+        let d = ScopeDisplay::with_frames(frames.iter().map(Vec::as_slice));
+        assert!(
+            d.input_line().iter().all(|&v| (v + 26.0).abs() < 1e-3),
+            "{:?}",
+            &d.input_line()[..4]
+        );
     }
 
     #[test]
-    fn a_reset_starts_the_history_again() {
-        let frames = [frame(48_000), frame(96_000), frame(480)];
-        let d = TrackDisplay::with_frames(frames.iter().map(Vec::as_slice));
-        assert_eq!(d.entries().count(), 1);
-    }
-
-    #[test]
-    fn the_history_keeps_its_newest() {
-        let frames: Vec<Vec<f32>> = (0..HISTORY as u64 + 50).map(|k| frame(k * 256)).collect();
-        let d = TrackDisplay::with_frames(frames.iter().map(Vec::as_slice));
-        let times: Vec<u64> = d.entries().map(|e| e.obs.time).collect();
-        assert_eq!(times.len(), HISTORY);
-        assert_eq!(times[0], 50 * 256);
-        assert!(times.windows(2).all(|w| w[0] < w[1]));
+    fn the_fall_is_timed_across_the_wrap_and_a_reset_starts_again() {
+        let near_wrap = (1u64 << 24) - 2400;
+        let frames = [frame(near_wrap, -20.0), frame(2400, -80.0)];
+        let d = ScopeDisplay::with_frames(frames.iter().map(Vec::as_slice));
+        // 0.1 s across the wrap: 6 dB.
+        assert!(
+            (d.input_line()[0] + 26.0).abs() < 1e-3,
+            "{}",
+            d.input_line()[0]
+        );
+        let frames = [frame(96_000, -20.0), frame(480, -80.0)];
+        let d = ScopeDisplay::with_frames(frames.iter().map(Vec::as_slice));
+        assert_eq!(d.input_line()[0], -80.0);
     }
 }

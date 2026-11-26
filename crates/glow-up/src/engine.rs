@@ -266,11 +266,17 @@ impl Engine for GlowUpEngine {
         self.time += frames as u64;
     }
 
-    /// The display's frame: the latest analysis frame's peaks and every
-    /// filter, as of the end of the block.
+    /// The display's frame: the input's spectrum, the latest analysis
+    /// frame's peaks and every filter, as of the end of the block.
     fn frame(&mut self, write: &mut dyn FnMut(&[f32])) {
-        self.obs
-            .observe(self.time, self.rate, &self.bank, self.detector.peaks());
+        let (dry, wet) = equal_power(f64::from(self.mix.value()));
+        self.obs.observe(
+            self.time,
+            self.rate,
+            &self.bank,
+            &self.detector,
+            (dry, wet, self.dry_cut),
+        );
         self.obs.to_frame(&mut self.frame);
         write(&self.frame);
     }
