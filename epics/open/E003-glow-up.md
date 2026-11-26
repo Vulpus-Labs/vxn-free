@@ -25,7 +25,7 @@ tuned by ear, then given its faceplate.
 | 0008 | Engine: the filter bank, grids and control mapping |
 | 0010 | CLAP plugin with a plain faceplate (in a DAW) |
 | 0009 | Faceplate, editor and tracking display |
-| 0011 | Manual |
+| 0011 | Manual and release (closed) |
 | 0043 | Polyphonic warble, found in the DAW |
 | 0043 | Polyphonic warble (closed) |
 
