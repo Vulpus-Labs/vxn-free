@@ -26,7 +26,7 @@ env:
   CLAP_VALIDATOR_TAG: "0.4.1"
   # The plugins' CLAP packages, each with
   # [package.metadata.silkscreen.clap].
-  PACKAGES: "beverley-clap wesley-clap"
+  PACKAGES: "beverley-clap wesley-clap glow-up-clap"
 
 jobs:
   clap:
