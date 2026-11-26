@@ -541,6 +541,23 @@ version = "0.2.0"
 dependencies = [
  "silkscreen",
  "silkscreen-bridge",
+ "silkscreen-build",
+ "silkscreen-harness",
+ "vxn-free-dsp",
+]
+
+[[package]]
+name = "glow-up-clap"
+version = "0.2.0"
+dependencies = [
+ "clack-extensions",
+ "clack-host",
+ "clack-plugin",
+ "glow-up",
+ "silkscreen",
+ "silkscreen-bridge",
+ "silkscreen-build",
+ "silkscreen-clap",
  "vxn-free-dsp",
 ]
 

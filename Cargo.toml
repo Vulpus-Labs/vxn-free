@@ -11,6 +11,7 @@ members = [
     "crates/wesley",
     "crates/wesley-clap",
     "crates/glow-up",
+    "crates/glow-up-clap",
 ]
 
 [workspace.package]

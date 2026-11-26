@@ -7,13 +7,24 @@
 //! resonances fixed on a grid with filters that track each peak exactly,
 //! and RESONANCE takes them up to self-oscillation. The audio never passes
 //! through the analysis, so there is no latency.
+//!
+//! `glow-up.svg` is the plain faceplate (ticket 0010) until 0009's design;
+//! `build.rs` turns it into PNGs and the `faceplate` module below.
 
-use silkscreen::ParamIndex;
 use silkscreen::model::{ParamSpec, Taper};
+use silkscreen::{
+    Binding, Editor, EditorState, EngineLink, ParamIndex, ParamKnob, ParamSelector, ParamToggle,
+    PluginUi,
+};
 
 pub mod bank;
 pub mod engine;
 pub mod grids;
+
+/// Generated from `glow-up.svg` by `silkscreen-build`.
+pub mod faceplate {
+    include!(concat!(env!("OUT_DIR"), "/glow-up.rs"));
+}
 
 pub const A_AMOUNT: ParamIndex = ParamIndex(0);
 pub const A_NUM: ParamIndex = ParamIndex(1);
@@ -109,6 +120,49 @@ pub static PARAMS: [ParamSpec; 17] = [
     ParamSpec::toggle("Dry Cut", false).id(16),
     ParamSpec::stepped("Mode", &["Mono", "Stereo"], 0).id(17),
 ];
+
+/// The editor's long-lived state, bound to the engine through `link`.
+pub fn state(link: Box<dyn EngineLink>) -> EditorState {
+    let knob = |p| -> Box<dyn Binding> { Box::new(ParamKnob::new(p)) };
+    let controls = faceplate::Controls::<Box<dyn Binding>> {
+        a_amount: knob(A_AMOUNT),
+        a_num: knob(A_NUM),
+        a_den: knob(A_DEN),
+        b_amount: knob(B_AMOUNT),
+        b_num: knob(B_NUM),
+        b_den: knob(B_DEN),
+        width: knob(WIDTH),
+        resonance: knob(RESONANCE),
+        focus: knob(FOCUS),
+        mix: knob(MIX),
+        threshold: knob(THRESHOLD),
+        tone: knob(TONE),
+        speed: knob(SPEED),
+        window: knob(WINDOW),
+        grid: Box::new(ParamSelector::new(GRID)),
+        mode: Box::new(ParamSelector::new(MODE)),
+        dry_cut: Box::new(ParamToggle::new(DRY_CUT)),
+    };
+    EditorState::new(&faceplate::LAYOUT, &PARAMS, controls.into_array(), link)
+}
+
+/// What every host needs to know about the editor.
+pub const UI: PluginUi = PluginUi {
+    vendor: "Vulpus Labs",
+    product: "Glow-Up",
+    version: env!("CARGO_PKG_VERSION"),
+    web_prefix: "glow-up",
+    specs: &PARAMS,
+    factory: &[],
+    faceplate: &faceplate::FACEPLATE,
+    frame: 0,
+    state,
+};
+
+/// A whole editor, state and view, for hosts that own both.
+pub fn editor(link: Box<dyn EngineLink>) -> Editor {
+    Editor::new(state(link), UI.raster())
+}
 
 #[cfg(test)]
 mod tests {
