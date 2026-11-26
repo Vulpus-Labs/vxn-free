@@ -1,0 +1,26 @@
+{
+  "panelWidthPx": 1000,
+  "panelHeightPx": 330,
+  "controls": {
+    "mix": {"left": 72, "top": 98, "width": 80, "height": 80},
+    "mono": {"left": 47, "top": 243, "width": 30, "height": 30},
+    "stereo": {"left": 93, "top": 243, "width": 30, "height": 30},
+    "dry_cut": {"left": 147, "top": 243, "width": 30, "height": 30},
+    "a_amount": {"left": 204, "top": 60, "width": 80, "height": 80},
+    "a_mult": {"left": 220, "top": 170, "width": 48, "height": 48},
+    "a_div": {"left": 220, "top": 248, "width": 48, "height": 48},
+    "b_amount": {"left": 316, "top": 60, "width": 80, "height": 80},
+    "b_mult": {"left": 332, "top": 170, "width": 48, "height": 48},
+    "b_div": {"left": 332, "top": 248, "width": 48, "height": 48},
+    "display": {"left": 434, "top": 30, "width": 312, "height": 198},
+    "grid_lin": {"left": 519, "top": 243, "width": 30, "height": 30},
+    "grid_irr": {"left": 575, "top": 243, "width": 30, "height": 30},
+    "grid_tet": {"left": 631, "top": 243, "width": 30, "height": 30},
+    "resonance": {"left": 786, "top": 68, "width": 64, "height": 64},
+    "focus": {"left": 876, "top": 68, "width": 64, "height": 64},
+    "width": {"left": 794, "top": 170, "width": 48, "height": 48},
+    "speed": {"left": 884, "top": 170, "width": 48, "height": 48},
+    "tone": {"left": 794, "top": 248, "width": 48, "height": 48},
+    "threshold": {"left": 884, "top": 248, "width": 48, "height": 48}
+  }
+}

@@ -1,0 +1,3 @@
+# Built by build.sh: the faces and the PDF are regenerated, not committed.
+*.pdf
+data/faces/

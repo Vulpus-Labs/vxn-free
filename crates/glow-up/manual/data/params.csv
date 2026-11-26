@@ -1,0 +1,17 @@
+name,min,max,default
+A Amount,0 %,100 %,25 %
+A Multiplier,1,8,2
+A Divisor,1,8,1
+B Amount,0 %,100 %,25 %
+B Multiplier,1,8,3
+B Divisor,1,8,2
+Width,10 cents,200 cents,50 cents
+Resonance,0 %,100 %,0 %
+Focus,0 %,100 %,0 %
+Mix,0 %,100 %,100 %
+Threshold,0.0 dB,30.0 dB,6.0 dB
+Tone,-6.0 dB/oct,6.0 dB/oct,0.0 dB/oct
+Grid,LIN,TET,IRR
+Speed,0 %,100 %,80 %
+Dry Cut,Off,On,Off
+Mode,Mono,Stereo,Mono
