@@ -57,6 +57,11 @@ WASHER_R = 7.5
 WASHER_H = 1.3
 HEAD_R = 5.0
 HEAD_H = 2.0
+# Or (`"screw": "hex"` in the geometry) a black hex button-head screw,
+# straight on the face, with no washer.
+BUTTON_R = 6.5
+BUTTON_H = 2.2
+SOCKET_R = 2.4
 # The studio's light positions (studio.scene): here, directions for suns.
 LIGHTS = {"key": ((-3.5, 4.0, 6.0), 6.0), "fill": ((4.0, -2.5, 5.0), 1.1),
           "top": ((-0.5, 0.5, 7.0), 1.0)}
@@ -183,8 +188,22 @@ def build(geom):
     bpy.context.scene.collection.children.link(screw_cuts)
     screw_cuts.hide_render = True
     washers, heads = [], []
+    hex_heads = geom.get("screw") == "hex"
     for sx, sy in geom["screws"]:
         x, y = to_scene(sx, sy, size)
+        if hex_heads:
+            head = studio.prism("head", studio.circle(BUTTON_R * U, 64), top,
+                                top + BUTTON_H * U, bevel=BUTTON_H * 0.85 * U, segments=8)
+            head.location.x, head.location.y = x, y
+            socket = studio.prism("socket", studio.polygon(SOCKET_R * U, 6, math.pi / 6),
+                                  top + BUTTON_H * 0.3 * U, top + 1.0)
+            bpy.context.collection.objects.unlink(socket)
+            screw_cuts.objects.link(socket)
+            socket.hide_render = True
+            socket.location.x, socket.location.y = x, y
+            cut_by(head, object=socket)
+            heads.append(head)
+            continue
         # The washers sit in the slots, on the rack rail behind the panel's
         # face; their cups stand proud of it.
         washer = studio.prism("washer", studio.circle(WASHER_R * U, 64), -0.4 * U,

@@ -8,16 +8,19 @@
 //! and RESONANCE takes them up to self-oscillation. The audio never passes
 //! through the analysis, so there is no latency.
 //!
-//! `glow-up.svg` is the plain faceplate (ticket 0010) until 0009's design;
-//! `build.rs` turns it into PNGs and the `faceplate` module below.
+//! `glow-up.svg` is the faceplate, a modern rack unit (ticket 0009), written
+//! by `art/glow-up/faceplate.py`; `build.rs` turns it into PNGs and the
+//! `faceplate` module below.
 
-use silkscreen::model::{ParamSpec, Taper};
+use silkscreen::core::{ControlEvent, WidgetState};
+use silkscreen::model::{Edit, ParamSpec, Taper, binding};
 use silkscreen::{
-    Binding, Editor, EditorState, EngineLink, ParamIndex, ParamKnob, ParamSelector, ParamToggle,
-    PluginUi,
+    Binding, Editor, EditorState, EngineLink, Model, ParamIndex, ParamKnob, ParamToggle, PluginUi,
+    Unbound,
 };
 
 pub mod bank;
+pub mod display;
 pub mod engine;
 pub mod grids;
 
@@ -121,6 +124,31 @@ pub static PARAMS: [ParamSpec; 17] = [
     ParamSpec::stepped("Mode", &["Mono", "Stereo"], 0).id(17),
 ];
 
+/// One key of a row that picks a stepped param's position: pressing it
+/// selects `position`, and it is lit while that is the param's.
+fn choice(param: ParamIndex, position: f32) -> Box<dyn Binding> {
+    Box::new(binding::from_fn(
+        &[param],
+        move |event: &ControlEvent, edit: &mut Edit<'_>| {
+            if let ControlEvent::Click { .. } = event {
+                edit.begin(param);
+                edit.set(param, position);
+                edit.end(param);
+            }
+        },
+        move |model: &Model| {
+            WidgetState::stepped(
+                if model.get(param) == position {
+                    1.0
+                } else {
+                    0.0
+                },
+                2,
+            )
+        },
+    ))
+}
+
 /// The editor's long-lived state, bound to the engine through `link`.
 pub fn state(link: Box<dyn EngineLink>) -> EditorState {
     let knob = |p| -> Box<dyn Binding> { Box::new(ParamKnob::new(p)) };
@@ -139,11 +167,18 @@ pub fn state(link: Box<dyn EngineLink>) -> EditorState {
         tone: knob(TONE),
         speed: knob(SPEED),
         window: knob(WINDOW),
-        grid: Box::new(ParamSelector::new(GRID)),
-        mode: Box::new(ParamSelector::new(MODE)),
+        grid_lin: choice(GRID, GRID_LIN as f32),
+        grid_irr: choice(GRID, GRID_IRR as f32),
+        grid_tet: choice(GRID, GRID_TET as f32),
+        mono: choice(MODE, 0.0),
+        stereo: choice(MODE, 1.0),
         dry_cut: Box::new(ParamToggle::new(DRY_CUT)),
+        // The tracking display comes with ticket 0009's telemetry.
+        display: Box::new(Unbound),
     };
-    EditorState::new(&faceplate::LAYOUT, &PARAMS, controls.into_array(), link)
+    let mut state = EditorState::new(&faceplate::LAYOUT, &PARAMS, controls.into_array(), link);
+    state.set_widget(faceplate::ids::DISPLAY, |_| Box::new(display::TrackDisplay));
+    state
 }
 
 /// What every host needs to know about the editor.

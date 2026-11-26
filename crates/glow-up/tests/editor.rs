@@ -1,4 +1,5 @@
-//! The plain faceplate's editor (ticket 0010), driven headlessly.
+//! The faceplate's editor (ticket 0009: a modern rack unit), driven
+//! headlessly.
 //! Snapshots live in `tests/snapshots/`; after a deliberate visual change,
 //! re-bless them with `SILKSCREEN_BLESS=1 cargo test` and look at the
 //! diffs.
@@ -14,6 +15,15 @@ use silkscreen_harness::{Harness, assert_snapshot};
 fn the_faceplate_draws() {
     let mut h = Harness::new(glow_up::editor, 1.0);
     assert_snapshot!(h, "initial_1x");
+}
+
+#[test]
+fn the_keys_light_for_their_positions() {
+    let mut h = Harness::new(glow_up::editor, 1.0);
+    h.click(ids::GRID_TET)
+        .click(ids::STEREO)
+        .click(ids::DRY_CUT);
+    assert_snapshot!(h, "tet_stereo_dry_cut_1x");
 }
 
 #[test]
@@ -46,11 +56,19 @@ fn every_control_moves_its_param() {
         h.drag(control, drag);
         assert_ne!(h.model().get(param), before, "{control:?}");
     }
-    // A selector moves a position a wheel line.
-    for (control, param) in [(ids::GRID, GRID), (ids::MODE, MODE)] {
-        let before = h.model().get(param);
-        h.wheel(control, 1.0);
-        assert_ne!(h.model().get(param), before, "{control:?}");
+    // Each key of a row picks its position.
+    for (control, param, position) in [
+        (ids::GRID_LIN, GRID, 0.0),
+        (ids::GRID_TET, GRID, 2.0),
+        (ids::GRID_IRR, GRID, 1.0),
+        (ids::STEREO, MODE, 1.0),
+        (ids::MONO, MODE, 0.0),
+    ] {
+        h.click(control);
+        assert_eq!(h.model().get(param), position, "{control:?}");
+        // Pressing it again keeps it.
+        h.click(control);
+        assert_eq!(h.model().get(param), position, "{control:?}");
     }
     assert_eq!(h.model().get(DRY_CUT), 0.0);
     h.click(ids::DRY_CUT);

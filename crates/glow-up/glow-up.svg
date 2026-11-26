@@ -1,84 +1,294 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="436" viewBox="0 0 720 436">
-  <!-- Glow-Up's plain faceplate (ticket 0010): a grid of the params, enough
-       to play it in a DAW. Ticket 0009 replaces it with the real design.
-       Each shape in the "controls" layer marks one control; its id is
-       kind.name. Drawn from scratch. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1512" height="330" viewBox="0 0 1512 330">
+  <!-- Glow-Up's faceplate, written by art/glow-up/faceplate.py: don't edit
+       it, run that. The print, then Blender's relief maps over it
+       (art/beverley/blender/panel.py); each shape in the "controls" layer
+       marks one control, drawn from Glow-Up's skins
+       (art/glow-up/blender/controls.py). -->
   <defs>
-    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#2e2a33"/>
-      <stop offset="1" stop-color="#1c1a21"/>
-    </linearGradient>
+    <!-- Brushed anodising: long, fine horizontal streaks. -->
+    <filter id="brush" x="0" y="0" width="1" height="1">
+      <feTurbulence type="fractalNoise" baseFrequency="0.0025 0.9" numOctaves="3" seed="11"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1.4 0 0 0 -0.55"/>
+    </filter>
+    <!-- The title's glow: amber light fading out round it. -->
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f2a33a" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#f2a33a" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect width="720" height="436" fill="#110f14"/>
-  <rect x="4" y="4" width="712" height="428" rx="6" fill="url(#panel)" stroke="#4a4452"/>
+  <rect width="1512" height="330" fill="#08080a"/>
+  <rect x="0" y="3" width="1512" height="324" fill="#25272b"/>
+  <rect x="0" y="3" width="1512" height="324" filter="url(#brush)" opacity="0.07"/>
+  <rect x="8.0" y="24.5" width="20" height="11" rx="5.5" fill="#08090a"/>
+  <circle cx="15.5" cy="30" r="6.5" fill="#1b1c1f"/>
+  <polygon points="17.58,31.20 15.50,32.40 13.42,31.20 13.42,28.80 15.50,27.60 17.58,28.80" fill="#060607"/>
+  <rect x="8.0" y="294.5" width="20" height="11" rx="5.5" fill="#08090a"/>
+  <circle cx="15.5" cy="300" r="6.5" fill="#1b1c1f"/>
+  <polygon points="17.58,301.20 15.50,302.40 13.42,301.20 13.42,298.80 15.50,297.60 17.58,298.80" fill="#060607"/>
+  <rect x="1484.0" y="24.5" width="20" height="11" rx="5.5" fill="#08090a"/>
+  <circle cx="1491.5" cy="30" r="6.5" fill="#1b1c1f"/>
+  <polygon points="1493.58,31.20 1491.50,32.40 1489.42,31.20 1489.42,28.80 1491.50,27.60 1493.58,28.80" fill="#060607"/>
+  <rect x="1484.0" y="294.5" width="20" height="11" rx="5.5" fill="#08090a"/>
+  <circle cx="1491.5" cy="300" r="6.5" fill="#1b1c1f"/>
+  <polygon points="1493.58,301.20 1491.50,302.40 1489.42,301.20 1489.42,298.80 1491.50,297.60 1493.58,298.80" fill="#060607"/>
   <g font-family="'Jost*'" font-weight="500">
-    <text x="24" y="38" font-size="22" letter-spacing="4" fill="#f4e8d8">GLOW-UP</text>
-    <text x="160" y="38" font-size="9" letter-spacing="2.6" fill="#e0a85e">HARMONIC FILTER</text>
-    <text x="696" y="38" font-size="8" letter-spacing="2.4" fill="#958d9c" text-anchor="end">VULPUS LABS</text>
-    <line x1="24" y1="52" x2="696" y2="52" stroke="#4a4452" stroke-width="1"/>
+  <line x1="236" y1="18" x2="236" y2="312" stroke="#141518" stroke-width="1"/>
+  <line x1="237" y1="18" x2="237" y2="312" stroke="#34373c" stroke-width="1"/>
+  <line x1="436" y1="18" x2="436" y2="312" stroke="#141518" stroke-width="1"/>
+  <line x1="437" y1="18" x2="437" y2="312" stroke="#34373c" stroke-width="1"/>
+  <line x1="876" y1="18" x2="876" y2="312" stroke="#141518" stroke-width="1"/>
+  <line x1="877" y1="18" x2="877" y2="312" stroke="#34373c" stroke-width="1"/>
+  <line x1="1076" y1="18" x2="1076" y2="312" stroke="#141518" stroke-width="1"/>
+  <line x1="1077" y1="18" x2="1077" y2="312" stroke="#34373c" stroke-width="1"/>
+  <line x1="1356" y1="18" x2="1356" y2="312" stroke="#141518" stroke-width="1"/>
+  <line x1="1357" y1="18" x2="1357" y2="312" stroke="#34373c" stroke-width="1"/>
+  <ellipse cx="134" cy="84" rx="96" ry="46" fill="url(#glow)"/>
+  <text x="56.00" y="92.00" font-size="30" text-anchor="start" letter-spacing="3" fill="#e7e5e0">GLOW-UP</text>
+  <rect x="57" y="104" width="34" height="2" fill="#f2a33a"/>
+  <text x="57.00" y="124.00" font-size="9" text-anchor="start" letter-spacing="3" fill="#f2a33a">HARMONIC FILTER</text>
+  <text x="57.00" y="308.00" font-size="7.5" text-anchor="start" letter-spacing="2.4" fill="#8e9096">VULPUS LABS</text>
+  <text x="57.00" y="226.00" font-size="8" text-anchor="start" letter-spacing="1.6" fill="#e7e5e0">MODE</text>
+  <text x="76.00" y="286.00" font-size="7.5" text-anchor="middle" letter-spacing="1.2" fill="#8e9096">MONO</text>
+  <text x="136.00" y="286.00" font-size="7.5" text-anchor="middle" letter-spacing="1.2" fill="#8e9096">STEREO</text>
+  <rect x="250" y="32" width="3" height="10" fill="#f2a33a"/>
+  <text x="258.00" y="40.00" font-size="9" text-anchor="start" letter-spacing="2.4" fill="#e7e5e0">BOOST A</text>
+  <line x1="310.54" y1="151.46" x2="307.01" y2="154.99" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="301.76" y1="137.12" x2="298.91" y2="138.05" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="300.44" y1="120.37" x2="297.48" y2="119.90" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="306.88" y1="104.84" x2="304.45" y2="103.08" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="319.66" y1="93.92" x2="318.29" y2="91.25" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="336.00" y1="90.00" x2="336.00" y2="85.00" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="352.34" y1="93.92" x2="353.71" y2="91.25" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="365.12" y1="104.84" x2="367.55" y2="103.08" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="371.56" y1="120.37" x2="374.52" y2="119.90" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="370.24" y1="137.12" x2="373.09" y2="138.05" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="361.46" y1="151.46" x2="364.99" y2="154.99" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="307.06" y="162.94" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">0</text>
+  <text x="336.00" y="81.00" font-size="7.5" text-anchor="middle" letter-spacing="0" fill="#8e9096">50</text>
+  <text x="364.94" y="162.94" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">100</text>
+  <text x="336.00" y="182.00" font-size="9" text-anchor="middle" letter-spacing="1.6" fill="#e7e5e0">AMOUNT</text>
+  <line x1="273.60" y1="274.40" x2="270.06" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="266.95" y1="260.60" x2="261.98" y2="261.16" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="270.36" y1="245.66" x2="266.12" y2="243.00" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="282.34" y1="236.10" x2="280.69" y2="231.38" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="297.66" y1="236.10" x2="299.31" y2="231.38" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="309.64" y1="245.66" x2="313.88" y2="243.00" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="313.05" y1="260.60" x2="318.02" y2="261.16" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="306.40" y1="274.40" x2="309.94" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="270.11" y="285.89" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">1</text>
+  <text x="260.02" y="264.94" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">2</text>
+  <text x="265.20" y="242.27" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">3</text>
+  <text x="278.37" y="227.78" font-size="7.5" text-anchor="middle" letter-spacing="0" fill="#8e9096">4</text>
+  <text x="301.63" y="227.78" font-size="7.5" text-anchor="middle" letter-spacing="0" fill="#8e9096">5</text>
+  <text x="314.80" y="242.27" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">6</text>
+  <text x="319.98" y="264.94" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">7</text>
+  <text x="309.89" y="285.89" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">8</text>
+  <text x="290.00" y="301.20" font-size="8" text-anchor="middle" letter-spacing="1.6" fill="#e7e5e0">NUM</text>
+  <line x1="365.60" y1="274.40" x2="362.06" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="358.95" y1="260.60" x2="353.98" y2="261.16" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="362.36" y1="245.66" x2="358.12" y2="243.00" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="374.34" y1="236.10" x2="372.69" y2="231.38" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="389.66" y1="236.10" x2="391.31" y2="231.38" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="401.64" y1="245.66" x2="405.88" y2="243.00" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="405.05" y1="260.60" x2="410.02" y2="261.16" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="398.40" y1="274.40" x2="401.94" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="362.11" y="285.89" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">1</text>
+  <text x="352.02" y="264.94" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">2</text>
+  <text x="357.20" y="242.27" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">3</text>
+  <text x="370.37" y="227.78" font-size="7.5" text-anchor="middle" letter-spacing="0" fill="#8e9096">4</text>
+  <text x="393.63" y="227.78" font-size="7.5" text-anchor="middle" letter-spacing="0" fill="#8e9096">5</text>
+  <text x="406.80" y="242.27" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">6</text>
+  <text x="411.98" y="264.94" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">7</text>
+  <text x="401.89" y="285.89" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">8</text>
+  <text x="382.00" y="301.20" font-size="8" text-anchor="middle" letter-spacing="1.6" fill="#e7e5e0">DEN</text>
+  <line x1="341" y1="249" x2="331" y2="267" stroke="#8e9096" stroke-width="1.4" stroke-linecap="round"/>
+  <rect x="456" y="24" width="400" height="184" rx="4" fill="#060607"/>
+  <rect x="461" y="29" width="390" height="174" rx="2" fill="#0b0d10"/>
+  <line x1="479.60" y1="274.40" x2="476.06" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="496.00" y1="234.80" x2="496.00" y2="229.80" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="512.40" y1="274.40" x2="515.94" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="476.11" y="285.89" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">512</text>
+  <text x="496.00" y="225.80" font-size="7.5" text-anchor="middle" letter-spacing="0" fill="#8e9096">1k</text>
+  <text x="515.89" y="285.89" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">2k</text>
+  <text x="496.00" y="301.20" font-size="8" text-anchor="middle" letter-spacing="1.6" fill="#e7e5e0">WINDOW</text>
+  <line x1="575.60" y1="274.40" x2="572.06" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="568.80" y1="258.00" x2="565.80" y2="258.00" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="575.60" y1="241.60" x2="573.47" y2="239.47" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="592.00" y1="234.80" x2="592.00" y2="229.80" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="608.40" y1="241.60" x2="610.53" y2="239.47" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="615.20" y1="258.00" x2="618.20" y2="258.00" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="608.40" y1="274.40" x2="611.94" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="572.11" y="285.89" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">0</text>
+  <text x="592.00" y="225.80" font-size="7.5" text-anchor="middle" letter-spacing="0" fill="#8e9096">15</text>
+  <text x="611.89" y="285.89" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">30 dB</text>
+  <text x="592.00" y="301.20" font-size="8" text-anchor="middle" letter-spacing="1.6" fill="#e7e5e0">THRESHOLD</text>
+  <text x="756.00" y="226.00" font-size="8" text-anchor="middle" letter-spacing="1.6" fill="#e7e5e0">GRID</text>
+  <text x="696.00" y="286.00" font-size="7.5" text-anchor="middle" letter-spacing="1.2" fill="#8e9096">LIN</text>
+  <text x="756.00" y="286.00" font-size="7.5" text-anchor="middle" letter-spacing="1.2" fill="#8e9096">IRR</text>
+  <text x="816.00" y="286.00" font-size="7.5" text-anchor="middle" letter-spacing="1.2" fill="#8e9096">TET</text>
+  <rect x="890" y="32" width="3" height="10" fill="#f2a33a"/>
+  <text x="898.00" y="40.00" font-size="9" text-anchor="start" letter-spacing="2.4" fill="#e7e5e0">BOOST B</text>
+  <line x1="950.54" y1="151.46" x2="947.01" y2="154.99" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="941.76" y1="137.12" x2="938.91" y2="138.05" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="940.44" y1="120.37" x2="937.48" y2="119.90" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="946.88" y1="104.84" x2="944.45" y2="103.08" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="959.66" y1="93.92" x2="958.29" y2="91.25" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="976.00" y1="90.00" x2="976.00" y2="85.00" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="992.34" y1="93.92" x2="993.71" y2="91.25" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1005.12" y1="104.84" x2="1007.55" y2="103.08" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1011.56" y1="120.37" x2="1014.52" y2="119.90" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1010.24" y1="137.12" x2="1013.09" y2="138.05" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1001.46" y1="151.46" x2="1004.99" y2="154.99" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="947.06" y="162.94" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">0</text>
+  <text x="976.00" y="81.00" font-size="7.5" text-anchor="middle" letter-spacing="0" fill="#8e9096">50</text>
+  <text x="1004.94" y="162.94" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">100</text>
+  <text x="976.00" y="182.00" font-size="9" text-anchor="middle" letter-spacing="1.6" fill="#e7e5e0">AMOUNT</text>
+  <line x1="913.60" y1="274.40" x2="910.06" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="906.95" y1="260.60" x2="901.98" y2="261.16" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="910.36" y1="245.66" x2="906.12" y2="243.00" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="922.34" y1="236.10" x2="920.69" y2="231.38" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="937.66" y1="236.10" x2="939.31" y2="231.38" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="949.64" y1="245.66" x2="953.88" y2="243.00" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="953.05" y1="260.60" x2="958.02" y2="261.16" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="946.40" y1="274.40" x2="949.94" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="910.11" y="285.89" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">1</text>
+  <text x="900.02" y="264.94" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">2</text>
+  <text x="905.20" y="242.27" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">3</text>
+  <text x="918.37" y="227.78" font-size="7.5" text-anchor="middle" letter-spacing="0" fill="#8e9096">4</text>
+  <text x="941.63" y="227.78" font-size="7.5" text-anchor="middle" letter-spacing="0" fill="#8e9096">5</text>
+  <text x="954.80" y="242.27" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">6</text>
+  <text x="959.98" y="264.94" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">7</text>
+  <text x="949.89" y="285.89" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">8</text>
+  <text x="930.00" y="301.20" font-size="8" text-anchor="middle" letter-spacing="1.6" fill="#e7e5e0">NUM</text>
+  <line x1="1005.60" y1="274.40" x2="1002.06" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="998.95" y1="260.60" x2="993.98" y2="261.16" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="1002.36" y1="245.66" x2="998.12" y2="243.00" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="1014.34" y1="236.10" x2="1012.69" y2="231.38" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="1029.66" y1="236.10" x2="1031.31" y2="231.38" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="1041.64" y1="245.66" x2="1045.88" y2="243.00" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="1045.05" y1="260.60" x2="1050.02" y2="261.16" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="1038.40" y1="274.40" x2="1041.94" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="1002.11" y="285.89" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">1</text>
+  <text x="992.02" y="264.94" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">2</text>
+  <text x="997.20" y="242.27" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">3</text>
+  <text x="1010.37" y="227.78" font-size="7.5" text-anchor="middle" letter-spacing="0" fill="#8e9096">4</text>
+  <text x="1033.63" y="227.78" font-size="7.5" text-anchor="middle" letter-spacing="0" fill="#8e9096">5</text>
+  <text x="1046.80" y="242.27" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">6</text>
+  <text x="1051.98" y="264.94" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">7</text>
+  <text x="1041.89" y="285.89" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">8</text>
+  <text x="1022.00" y="301.20" font-size="8" text-anchor="middle" letter-spacing="1.6" fill="#e7e5e0">DEN</text>
+  <line x1="981" y1="249" x2="971" y2="267" stroke="#8e9096" stroke-width="1.4" stroke-linecap="round"/>
+  <rect x="1090" y="32" width="3" height="10" fill="#f2a33a"/>
+  <text x="1098.00" y="40.00" font-size="9" text-anchor="start" letter-spacing="2.4" fill="#e7e5e0">FILTER</text>
+  <line x1="1126.54" y1="151.46" x2="1123.01" y2="154.99" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="1117.76" y1="137.12" x2="1114.91" y2="138.05" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1116.44" y1="120.37" x2="1113.48" y2="119.90" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1122.88" y1="104.84" x2="1120.45" y2="103.08" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1135.66" y1="93.92" x2="1134.29" y2="91.25" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1152.00" y1="90.00" x2="1152.00" y2="85.00" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="1168.34" y1="93.92" x2="1169.71" y2="91.25" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1181.12" y1="104.84" x2="1183.55" y2="103.08" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1187.56" y1="120.37" x2="1190.52" y2="119.90" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1186.24" y1="137.12" x2="1189.09" y2="138.05" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1177.46" y1="151.46" x2="1180.99" y2="154.99" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="1123.06" y="162.94" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">0</text>
+  <text x="1152.00" y="81.00" font-size="7.5" text-anchor="middle" letter-spacing="0" fill="#8e9096">SING</text>
+  <text x="1180.94" y="162.94" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">100</text>
+  <text x="1152.00" y="182.00" font-size="9" text-anchor="middle" letter-spacing="1.6" fill="#e7e5e0">RESONANCE</text>
+  <line x1="1254.54" y1="151.46" x2="1251.01" y2="154.99" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="1245.76" y1="137.12" x2="1242.91" y2="138.05" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1244.44" y1="120.37" x2="1241.48" y2="119.90" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1250.88" y1="104.84" x2="1248.45" y2="103.08" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1263.66" y1="93.92" x2="1262.29" y2="91.25" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1280.00" y1="90.00" x2="1280.00" y2="87.00" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1296.34" y1="93.92" x2="1297.71" y2="91.25" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1309.12" y1="104.84" x2="1311.55" y2="103.08" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1315.56" y1="120.37" x2="1318.52" y2="119.90" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1314.24" y1="137.12" x2="1317.09" y2="138.05" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1305.46" y1="151.46" x2="1308.99" y2="154.99" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="1251.06" y="162.94" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">GRID</text>
+  <text x="1308.94" y="162.94" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">TRACK</text>
+  <text x="1280.00" y="182.00" font-size="9" text-anchor="middle" letter-spacing="1.6" fill="#e7e5e0">FOCUS</text>
+  <line x1="1109.60" y1="274.40" x2="1106.06" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="1103.25" y1="262.53" x2="1100.30" y2="263.11" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1104.57" y1="249.12" x2="1101.79" y2="247.97" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1113.11" y1="238.71" x2="1111.44" y2="236.22" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1126.00" y1="234.80" x2="1126.00" y2="229.80" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="1138.89" y1="238.71" x2="1140.56" y2="236.22" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1147.43" y1="249.12" x2="1150.21" y2="247.97" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1148.75" y1="262.53" x2="1151.70" y2="263.11" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1142.40" y1="274.40" x2="1145.94" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="1106.11" y="285.89" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">10</text>
+  <text x="1126.00" y="225.80" font-size="7.5" text-anchor="middle" letter-spacing="0" fill="#8e9096">45</text>
+  <text x="1145.89" y="285.89" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">200</text>
+  <text x="1126.00" y="301.20" font-size="8" text-anchor="middle" letter-spacing="1.6" fill="#e7e5e0">WIDTH</text>
+  <line x1="1199.60" y1="274.40" x2="1196.06" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="1193.25" y1="262.53" x2="1190.30" y2="263.11" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1194.57" y1="249.12" x2="1191.79" y2="247.97" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1203.11" y1="238.71" x2="1201.44" y2="236.22" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1216.00" y1="234.80" x2="1216.00" y2="229.80" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="1228.89" y1="238.71" x2="1230.56" y2="236.22" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1237.43" y1="249.12" x2="1240.21" y2="247.97" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1238.75" y1="262.53" x2="1241.70" y2="263.11" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1232.40" y1="274.40" x2="1235.94" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="1196.11" y="285.89" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">-6</text>
+  <text x="1216.00" y="225.80" font-size="7.5" text-anchor="middle" letter-spacing="0" fill="#8e9096">0</text>
+  <text x="1235.89" y="285.89" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">+6</text>
+  <text x="1216.00" y="301.20" font-size="8" text-anchor="middle" letter-spacing="1.6" fill="#e7e5e0">TONE</text>
+  <line x1="1289.60" y1="274.40" x2="1286.06" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="1283.25" y1="262.53" x2="1280.30" y2="263.11" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1284.57" y1="249.12" x2="1281.79" y2="247.97" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1293.11" y1="238.71" x2="1291.44" y2="236.22" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1306.00" y1="234.80" x2="1306.00" y2="231.80" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1318.89" y1="238.71" x2="1320.56" y2="236.22" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1327.43" y1="249.12" x2="1330.21" y2="247.97" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1328.75" y1="262.53" x2="1331.70" y2="263.11" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1322.40" y1="274.40" x2="1325.94" y2="277.94" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="1286.11" y="285.89" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">SLOW</text>
+  <text x="1325.89" y="285.89" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">FAST</text>
+  <text x="1306.00" y="301.20" font-size="8" text-anchor="middle" letter-spacing="1.6" fill="#e7e5e0">SPEED</text>
+  <rect x="1370" y="32" width="3" height="10" fill="#f2a33a"/>
+  <text x="1378.00" y="40.00" font-size="9" text-anchor="start" letter-spacing="2.4" fill="#e7e5e0">OUTPUT</text>
+  <line x1="1390.54" y1="151.46" x2="1387.01" y2="154.99" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="1381.76" y1="137.12" x2="1378.91" y2="138.05" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1380.44" y1="120.37" x2="1377.48" y2="119.90" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1386.88" y1="104.84" x2="1384.45" y2="103.08" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1399.66" y1="93.92" x2="1398.29" y2="91.25" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1416.00" y1="90.00" x2="1416.00" y2="87.00" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1432.34" y1="93.92" x2="1433.71" y2="91.25" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1445.12" y1="104.84" x2="1447.55" y2="103.08" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1451.56" y1="120.37" x2="1454.52" y2="119.90" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1450.24" y1="137.12" x2="1453.09" y2="138.05" stroke="#8e9096" stroke-width="0.8" stroke-linecap="round"/>
+  <line x1="1441.46" y1="151.46" x2="1444.99" y2="154.99" stroke="#e7e5e0" stroke-width="1.2" stroke-linecap="round"/>
+  <text x="1387.06" y="162.94" font-size="7.5" text-anchor="end" letter-spacing="0" fill="#8e9096">DRY</text>
+  <text x="1444.94" y="162.94" font-size="7.5" text-anchor="start" letter-spacing="0" fill="#8e9096">WET</text>
+  <text x="1416.00" y="182.00" font-size="9" text-anchor="middle" letter-spacing="1.6" fill="#e7e5e0">MIX</text>
+  <text x="1416.00" y="286.00" font-size="7.5" text-anchor="middle" letter-spacing="1.2" fill="#8e9096">DRY CUT</text>
   </g>
-  <rect x="24" y="68" width="288" height="128" rx="5" fill="none" stroke="#4a4452"/>
-  <rect x="408" y="68" width="288" height="128" rx="5" fill="none" stroke="#4a4452"/>
-  <g font-family="'Jost*'" font-weight="500" font-size="16" letter-spacing="2" fill="#e0a85e" text-anchor="middle">
-    <text x="360" y="124">A</text>
-    <text x="360" y="148" font-size="8" letter-spacing="1.6" fill="#958d9c">N / D × PEAK</text>
-    <text x="360" y="172">B</text>
-  </g>
-  <g font-family="'Jost*'" font-weight="500" font-size="9" letter-spacing="1.4" fill="#ddd8e2" text-anchor="middle">
-    <text x="72" y="176">A AMOUNT</text>
-    <text x="168" y="176">A NUM</text>
-    <text x="264" y="176">A DEN</text>
-    <text x="456" y="176">B AMOUNT</text>
-    <text x="552" y="176">B NUM</text>
-    <text x="648" y="176">B DEN</text>
-    <text x="72" y="298">WIDTH</text>
-    <text x="168" y="298">RESONANCE</text>
-    <text x="264" y="298">FOCUS</text>
-    <text x="360" y="298">MIX</text>
-    <text x="456" y="298">THRESHOLD</text>
-    <text x="552" y="298">TONE</text>
-    <text x="648" y="298">SPEED</text>
-    <text x="72" y="420">WINDOW</text>
-    <text x="216" y="420">GRID</text>
-    <text x="408" y="420">MODE</text>
-    <text x="600" y="420">DRY CUT</text>
-  </g>
-  <g fill="none" stroke="#5c5666" stroke-width="2">
-    <circle cx="72" cy="128" r="34"/>
-    <circle cx="168" cy="128" r="34"/>
-    <circle cx="264" cy="128" r="34"/>
-    <circle cx="456" cy="128" r="34"/>
-    <circle cx="552" cy="128" r="34"/>
-    <circle cx="648" cy="128" r="34"/>
-    <circle cx="72" cy="250" r="34"/>
-    <circle cx="168" cy="250" r="34"/>
-    <circle cx="264" cy="250" r="34"/>
-    <circle cx="360" cy="250" r="34"/>
-    <circle cx="456" cy="250" r="34"/>
-    <circle cx="552" cy="250" r="34"/>
-    <circle cx="648" cy="250" r="34"/>
-    <circle cx="72" cy="372" r="34"/>
-    <rect x="153" y="357" width="126" height="30" rx="8"/>
-    <rect x="355" y="357" width="106" height="30" rx="8"/>
-    <rect x="574" y="356" width="52" height="32" rx="8"/>
-  </g>
+  <image href="art/panel/shade.png" x="0" y="0" width="1512" height="330" preserveAspectRatio="none" style="mix-blend-mode:multiply"/>
+  <image href="art/panel/sheen.png" x="0" y="0" width="1512" height="330" preserveAspectRatio="none" style="mix-blend-mode:screen"/>
+
   <g id="controls">
-    <circle id="knob.a_amount" cx="72" cy="128" r="28" fill="#ff00ff"/>
-    <circle id="knob.a_num" cx="168" cy="128" r="28" fill="#ff00ff"/>
-    <circle id="knob.a_den" cx="264" cy="128" r="28" fill="#ff00ff"/>
-    <circle id="knob.b_amount" cx="456" cy="128" r="28" fill="#ff00ff"/>
-    <circle id="knob.b_num" cx="552" cy="128" r="28" fill="#ff00ff"/>
-    <circle id="knob.b_den" cx="648" cy="128" r="28" fill="#ff00ff"/>
-    <circle id="knob.width" cx="72" cy="250" r="28" fill="#ff00ff"/>
-    <circle id="knob.resonance" cx="168" cy="250" r="28" fill="#ff00ff"/>
-    <circle id="knob.focus" cx="264" cy="250" r="28" fill="#ff00ff"/>
-    <circle id="knob.mix" cx="360" cy="250" r="28" fill="#ff00ff"/>
-    <circle id="knob.threshold" cx="456" cy="250" r="28" fill="#ff00ff"/>
-    <circle id="knob.tone" cx="552" cy="250" r="28" fill="#ff00ff"/>
-    <circle id="knob.speed" cx="648" cy="250" r="28" fill="#ff00ff"/>
-    <circle id="knob.window" cx="72" cy="372" r="28" fill="#ff00ff"/>
-    <rect id="selector.grid" x="156" y="360" width="120" height="24" fill="#ff00ff"/>
-    <rect id="selector.mode" x="358" y="360" width="100" height="24" fill="#ff00ff"/>
-    <rect id="toggle.dry_cut" x="578" y="360" width="44" height="24" fill="#ff00ff"/>
+    <rect id="button.mono" x="61.0" y="243.0" width="30" height="30" data-skin="key" fill="#f0f"/>
+    <rect id="button.stereo" x="121.0" y="243.0" width="30" height="30" data-skin="key" fill="#f0f"/>
+    <rect id="knob.a_amount" x="296.0" y="86.0" width="80" height="80" data-skin="knob" fill="#f0f"/>
+    <rect id="knob.a_num" x="266.0" y="234.0" width="48" height="48" data-skin="knob_small" fill="#f0f"/>
+    <rect id="knob.a_den" x="358.0" y="234.0" width="48" height="48" data-skin="knob_small" fill="#f0f"/>
+    <rect id="canvas.display" x="462" y="30" width="388" height="172" fill="#f0f"/>
+    <rect id="knob.window" x="472.0" y="234.0" width="48" height="48" data-skin="knob_small" fill="#f0f"/>
+    <rect id="knob.threshold" x="568.0" y="234.0" width="48" height="48" data-skin="knob_small" fill="#f0f"/>
+    <rect id="button.grid_lin" x="681.0" y="243.0" width="30" height="30" data-skin="key" fill="#f0f"/>
+    <rect id="button.grid_irr" x="741.0" y="243.0" width="30" height="30" data-skin="key" fill="#f0f"/>
+    <rect id="button.grid_tet" x="801.0" y="243.0" width="30" height="30" data-skin="key" fill="#f0f"/>
+    <rect id="knob.b_amount" x="936.0" y="86.0" width="80" height="80" data-skin="knob" fill="#f0f"/>
+    <rect id="knob.b_num" x="906.0" y="234.0" width="48" height="48" data-skin="knob_small" fill="#f0f"/>
+    <rect id="knob.b_den" x="998.0" y="234.0" width="48" height="48" data-skin="knob_small" fill="#f0f"/>
+    <rect id="knob.resonance" x="1112.0" y="86.0" width="80" height="80" data-skin="knob" fill="#f0f"/>
+    <rect id="knob.focus" x="1240.0" y="86.0" width="80" height="80" data-skin="knob" fill="#f0f"/>
+    <rect id="knob.width" x="1102.0" y="234.0" width="48" height="48" data-skin="knob_small" fill="#f0f"/>
+    <rect id="knob.tone" x="1192.0" y="234.0" width="48" height="48" data-skin="knob_small" fill="#f0f"/>
+    <rect id="knob.speed" x="1282.0" y="234.0" width="48" height="48" data-skin="knob_small" fill="#f0f"/>
+    <rect id="knob.mix" x="1376.0" y="86.0" width="80" height="80" data-skin="knob" fill="#f0f"/>
+    <rect id="button.dry_cut" x="1401.0" y="243.0" width="30" height="30" data-skin="key" fill="#f0f"/>
   </g>
 </svg>
