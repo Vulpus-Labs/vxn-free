@@ -8,9 +8,10 @@ aluminium knobs and soft-touch keys with LEDs (`blender/controls.py`),
 black hex button-head rack screws. No engraved grooves: the sections are
 parted by printed hairlines. The scope is the centrepiece:
 
-    [title  ] [BOOST A ] [  scope            ] [BOOST B ] [FILTER         ] [OUTPUT ]
-    [       ] [ AMOUNT ] [                   ] [ AMOUNT ] [RESONANCE FOCUS] [  MIX  ]
-    [MODE   ] [NUM/DEN ] [THRESHOLD    GRID  ] [NUM/DEN ] [WIDTH TONE SPEED][DRY CUT]
+    [title  ] [BOOST A] [BOOST B] [  scope            ] [FILTER         ] [OUTPUT ]
+    [       ] [AMOUNT ] [AMOUNT ] [                   ] [RESONANCE FOCUS] [  MIX  ]
+    [       ] [ MULT  ] [ MULT  ] [                   ] [               ] [       ]
+    [MODE   ] [  DIV  ] [  DIV  ] [THRESHOLD    GRID  ] [WIDTH TONE SPEED][DRY CUT]
 
     python3 faceplate.py            (from this folder)
 
@@ -37,14 +38,18 @@ CRATE = os.path.join(HERE, "..", "..", "crates", "glow-up")
 GAP = 3
 EAR = 36
 # The sections' left edges, then the right ear's.
-TITLE, BOOST_A, DISPLAY, BOOST_B, FILTER, OUTPUT, RIGHT = (
-    EAR, 212, 380, 736, 904, 1148, 1264)
+TITLE, BOOST_A, BOOST_B, DISPLAY, FILTER, OUTPUT, RIGHT = (
+    EAR, 212, 324, 436, 792, 1036, 1152)
 W = RIGHT + EAR
 H = 330
 # Rows: the big knobs' centre line, the small controls', and the header.
 HEAD_Y = 40
 BIG_Y = 126
 SMALL_Y = 258
+# A boost's column: AMOUNT, then MULT, then DIV.
+AMOUNT_Y = 100
+MULT_Y = 194
+DIV_Y = 272
 # Markers: the rendered frame (knob 0.8 of it, shadow round it).
 BIG_BOX = 80
 SMALL_BOX = 48
@@ -99,11 +104,11 @@ def scale(cx, cy, r, ticks, labels, size=7.5):
         text(x, y + 3, s, size, anchor=anchor, fill=DIM)
 
 
-def knob(name, cx, cy, label, ticks, labels, big=True):
+def knob(name, cx, cy, label, ticks, labels, big=True, label_gap=24):
     box = BIG_BOX if big else SMALL_BOX
     r = 0.4 * box
     scale(cx, cy, r, ticks, labels)
-    text(cx, cy + r + 24, label, 9 if big else 8, fill=INK, spacing=1.6)
+    text(cx, cy + r + label_gap, label, 9 if big else 8, fill=INK, spacing=1.6)
     controls.append(("knob", name, cx, cy, box, "knob" if big else "knob_small"))
 
 
@@ -163,17 +168,16 @@ def exp_pos(v, lo, hi):
 
 
 def boost(x0, which):
-    """A boost's section: its AMOUNT, and its ratio as NUM over DEN."""
-    cx = x0 + 84
+    """A boost's section, a column: its AMOUNT, then its ratio, MULT over
+    DIV."""
+    cx = x0 + 56
     k = which.lower()
-    header(x0, x0 + 168, f"BOOST {which}")
-    knob(f"{k}_amount", cx, BIG_Y, "AMOUNT", lin(11), {0: "0", 0.5: "50", 1: "100"})
+    header(x0, x0 + 112, f"BOOST {which}")
+    knob(f"{k}_amount", cx, AMOUNT_Y, "AMOUNT", lin(11), {0: "0", 0.5: "50", 1: "100"},
+         label_gap=18)
     steps = {i / 7: str(i + 1) for i in range(8)}
-    knob(f"{k}_num", cx - 44, SMALL_Y, "NUM", lin(8), steps, big=False)
-    knob(f"{k}_den", cx + 44, SMALL_Y, "DEN", lin(8), steps, big=False)
-    # The ratio's bar between them.
-    o(f'  <line x1="{cx + 5}" y1="{SMALL_Y - 9}" x2="{cx - 5}" y2="{SMALL_Y + 9}" '
-      f'stroke="{DIM}" stroke-width="1.4" stroke-linecap="round"/>')
+    knob(f"{k}_mult", cx, MULT_Y, "MULT", lin(8), steps, big=False, label_gap=18)
+    knob(f"{k}_div", cx, DIV_Y, "DIV", lin(8), steps, big=False, label_gap=18)
 
 
 o(f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}">')
@@ -203,7 +207,7 @@ for x in (EAR / 2, W - EAR / 2):
         slot_and_screw(x, y)
 
 o('  <g font-family="\'Jost*\'" font-weight="500">')
-for x in (BOOST_A, DISPLAY, BOOST_B, FILTER, OUTPUT):
+for x in (BOOST_A, BOOST_B, DISPLAY, FILTER, OUTPUT):
     hairline(x)
 
 # The title.
@@ -217,6 +221,7 @@ key("mono", TITLE + 40, SMALL_Y, "MONO")
 key("stereo", TITLE + 100, SMALL_Y, "STEREO")
 
 boost(BOOST_A, "A")
+boost(BOOST_B, "B")
 
 # The display and what shapes the analysis.
 window()
@@ -226,8 +231,6 @@ text(DISPLAY + 256, SMALL_Y - 32, "GRID", 8, spacing=1.6)
 key("grid_lin", DISPLAY + 200, SMALL_Y, "LIN")
 key("grid_irr", DISPLAY + 256, SMALL_Y, "IRR")
 key("grid_tet", DISPLAY + 312, SMALL_Y, "TET")
-
-boost(BOOST_B, "B")
 
 # The filters' character.
 header(FILTER, OUTPUT, "FILTER")

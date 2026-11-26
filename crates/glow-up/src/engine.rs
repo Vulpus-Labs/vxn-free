@@ -21,8 +21,8 @@ use vxn_free_dsp::{Glide, PeakDetector, Ramp, Stft};
 use crate::bank::{BLOCK, Bank};
 use crate::observe::{FRAME_WORDS, Observation};
 use crate::{
-    A_AMOUNT, A_DEN, A_NUM, B_AMOUNT, B_DEN, B_NUM, DRY_CUT, FOCUS, GRID, GRID_LIN, GRID_TET, MIX,
-    MODE, PARAMS, RESONANCE, SPEED, THRESHOLD, TONE, WIDTH, WINDOW, grids,
+    A_AMOUNT, A_DIV, A_MULT, B_AMOUNT, B_DIV, B_MULT, DRY_CUT, FOCUS, GRID, GRID_LIN, GRID_TET,
+    MIX, MODE, PARAMS, RESONANCE, SPEED, THRESHOLD, TONE, WIDTH, WINDOW, grids,
 };
 
 /// Frames overlap this many times.
@@ -107,9 +107,9 @@ impl GlowUpEngine {
         self.value(p).round().max(0.0) as usize
     }
 
-    /// A boost's ratio from its NUM and DEN positions.
-    fn ratio(&self, num: ParamIndex, den: ParamIndex) -> f64 {
-        (self.step(num) + 1) as f64 / (self.step(den) + 1) as f64
+    /// A boost's ratio from its MULT and DIV positions.
+    fn ratio(&self, mult: ParamIndex, div: ParamIndex) -> f64 {
+        (self.step(mult) + 1) as f64 / (self.step(div) + 1) as f64
     }
 
     /// Read every control, once a block.
@@ -120,7 +120,7 @@ impl GlowUpEngine {
             f64::from(self.values[A_AMOUNT.0 as usize]) * 0.01,
             f64::from(self.values[B_AMOUNT.0 as usize]) * 0.01,
         ];
-        let ratios = [self.ratio(A_NUM, A_DEN), self.ratio(B_NUM, B_DEN)];
+        let ratios = [self.ratio(A_MULT, A_DIV), self.ratio(B_MULT, B_DIV)];
         let s = &mut self.bank.settings;
         s.ratio = ratios;
         s.resonance = RESONANCE_MOST * f64::from(self.values[RESONANCE.0 as usize]) * 0.01;

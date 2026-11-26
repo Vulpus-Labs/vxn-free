@@ -14,8 +14,8 @@ Free audio effect plugins from Vulpus Labs, built with
   ([manual](https://vulpuslabs.com/manuals/wesley/),
   [downloads](https://vulpuslabs.com/products/wesley/)).
 - **Glow-Up**: a harmonic exciter. It finds the strongest partials in the
-  input and boosts what is already there at two ratios of each, set as a
-  numerator over a denominator (an octave and a fifth above, by default),
+  input and boosts what is already there at two ratios of each, each set
+  as a multiplier over a divisor (an octave and a fifth above, by default),
   with resonance up to self-oscillation.
 
 Beverley and Glow-Up are adaptations of Vulpus Labs modules for Voltage

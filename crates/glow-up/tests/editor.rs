@@ -6,7 +6,7 @@
 
 use glow_up::faceplate::ids;
 use glow_up::{
-    A_AMOUNT, A_DEN, A_NUM, B_AMOUNT, B_DEN, B_NUM, DRY_CUT, FOCUS, GRID, MIX, MODE, PARAMS,
+    A_AMOUNT, A_DIV, A_MULT, B_AMOUNT, B_DIV, B_MULT, DRY_CUT, FOCUS, GRID, MIX, MODE, PARAMS,
     RESONANCE, SPEED, THRESHOLD, TONE, WIDTH,
 };
 use silkscreen_harness::{Harness, assert_snapshot};
@@ -31,11 +31,11 @@ fn every_control_moves_its_param() {
     let mut h = Harness::new(glow_up::editor, 1.0);
     for (control, param) in [
         (ids::A_AMOUNT, A_AMOUNT),
-        (ids::A_NUM, A_NUM),
-        (ids::A_DEN, A_DEN),
+        (ids::A_MULT, A_MULT),
+        (ids::A_DIV, A_DIV),
         (ids::B_AMOUNT, B_AMOUNT),
-        (ids::B_NUM, B_NUM),
-        (ids::B_DEN, B_DEN),
+        (ids::B_MULT, B_MULT),
+        (ids::B_DIV, B_DIV),
         (ids::WIDTH, WIDTH),
         (ids::RESONANCE, RESONANCE),
         (ids::FOCUS, FOCUS),

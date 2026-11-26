@@ -10,7 +10,7 @@ use glow_up::engine::GlowUpEngine;
 use glow_up::observe::{
     FRAME_WORDS, FilterObs, Observation, PeakObs, SPECTRUM, Shown, spectrum_hz,
 };
-use glow_up::{A_AMOUNT, A_DEN, A_NUM, B_AMOUNT, FOCUS, RESONANCE};
+use glow_up::{A_AMOUNT, A_DIV, A_MULT, B_AMOUNT, FOCUS, RESONANCE};
 use silkscreen::ParamIndex;
 use silkscreen::bridge::Engine;
 use silkscreen_harness::{Harness, assert_snapshot};
@@ -22,8 +22,8 @@ fn engine_frame(hz: f64, params: &[(ParamIndex, f32)], seconds: f64) -> Observat
     let mut e = GlowUpEngine::new(RATE as f32);
     for &(p, v) in [
         (A_AMOUNT, 100.0),
-        (A_NUM, 1.0),
-        (A_DEN, 0.0),
+        (A_MULT, 1.0),
+        (A_DIV, 0.0),
         (B_AMOUNT, 0.0),
     ]
     .iter()

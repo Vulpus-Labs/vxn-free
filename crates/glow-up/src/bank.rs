@@ -111,7 +111,7 @@ pub enum State {
 pub struct Settings {
     /// Each boost's amount, 0 to 1.
     pub amount: [f64; 2],
-    /// Each boost's ratio, numerator over denominator.
+    /// Each boost's ratio, MULT over DIV.
     pub ratio: [f64; 2],
     /// 0 to 2; a filter oscillates where this × its salience reaches 1.
     pub resonance: f64,

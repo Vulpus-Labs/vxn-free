@@ -5,8 +5,8 @@ use std::f64::consts::TAU;
 use glow_up::bank::State;
 use glow_up::engine::GlowUpEngine;
 use glow_up::{
-    A_AMOUNT, A_DEN, A_NUM, B_AMOUNT, DRY_CUT, FOCUS, GRID, MIX, MODE, RESONANCE, SPEED, THRESHOLD,
-    WIDTH,
+    A_AMOUNT, A_DIV, A_MULT, B_AMOUNT, DRY_CUT, FOCUS, GRID, MIX, MODE, RESONANCE, SPEED,
+    THRESHOLD, WIDTH,
 };
 use silkscreen::ParamIndex;
 use silkscreen::bridge::Engine;
@@ -32,8 +32,8 @@ fn engine(params: &[(ParamIndex, f32)]) -> GlowUpEngine {
 fn only_a(num: usize, den: usize, amount: f32) -> Vec<(ParamIndex, f32)> {
     vec![
         (A_AMOUNT, amount),
-        (A_NUM, (num - 1) as f32),
-        (A_DEN, (den - 1) as f32),
+        (A_MULT, (num - 1) as f32),
+        (A_DIV, (den - 1) as f32),
         (B_AMOUNT, 0.0),
     ]
 }

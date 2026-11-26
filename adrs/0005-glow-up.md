@@ -21,12 +21,13 @@ the octave below (1/2) has no way to get it.
 
 2. **Two boosts, each a ratio.** Where the module had three amounts at
    fixed multiples, Glow-Up has two boosts, A and B. Each has an AMOUNT
-   and a ratio set by two stepped selectors, NUMERATOR and DENOMINATOR,
-   each 1 to 8: the boost sits at N/D times each peak's frequency.
+   and a ratio set by two stepped selectors, MULT and DIV (first named
+   NUMERATOR and DENOMINATOR; renamed 2026-11-26), each 1 to 8: the
+   boost sits at MULT/DIV times each peak's frequency.
    - Defaults: A at 2/1 (the octave) and B at 3/2 (the fifth), both at
      25 %: the module's two most characteristic boosts.
-   - Any ratio from 1/8 to 8 is allowed. N = D boosts the peaks
-     themselves; N < D boosts below them, where something is there to
+   - Any ratio from 1/8 to 8 is allowed. MULT = DIV boosts the peaks
+     themselves; MULT < DIV boosts below them, where something is there to
      boost (a lower partial, another instrument).
    - Two equal ratios are one boost, as two near targets always are
      (point 5).
@@ -113,7 +114,7 @@ the octave below (1/2) has no way to get it.
 
 ## Consequences
 
-- Params: A AMOUNT, A NUM, A DEN, B AMOUNT, B NUM, B DEN, WIDTH,
+- Params: A AMOUNT, A MULT, A DIV, B AMOUNT, B MULT, B DIV, WIDTH,
   RESONANCE, FOCUS, MIX, THRESHOLD, TONE, GRID, SPEED, DRY CUT, MODE:
   16. WINDOW's id, 11, is retired.
 - `vxn-free-dsp` gains the peak detector, the resonator with its held

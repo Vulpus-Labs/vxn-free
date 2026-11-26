@@ -3,7 +3,7 @@
 //!
 //! A running spectrum finds the input's peaks; a bank of narrow band-pass
 //! filters boosts what is already there at two ratios of each peak, boost
-//! A's and boost B's, each a NUMERATOR over a DENOMINATOR. FOCUS blends
+//! A's and boost B's, each a MULT over a DIV. FOCUS blends
 //! resonances fixed on a grid with filters that track each peak exactly,
 //! and RESONANCE takes them up to self-oscillation. The audio never passes
 //! through the analysis, so there is no latency.
@@ -31,11 +31,11 @@ pub mod faceplate {
 }
 
 pub const A_AMOUNT: ParamIndex = ParamIndex(0);
-pub const A_NUM: ParamIndex = ParamIndex(1);
-pub const A_DEN: ParamIndex = ParamIndex(2);
+pub const A_MULT: ParamIndex = ParamIndex(1);
+pub const A_DIV: ParamIndex = ParamIndex(2);
 pub const B_AMOUNT: ParamIndex = ParamIndex(3);
-pub const B_NUM: ParamIndex = ParamIndex(4);
-pub const B_DEN: ParamIndex = ParamIndex(5);
+pub const B_MULT: ParamIndex = ParamIndex(4);
+pub const B_DIV: ParamIndex = ParamIndex(5);
 pub const WIDTH: ParamIndex = ParamIndex(6);
 pub const RESONANCE: ParamIndex = ParamIndex(7);
 pub const FOCUS: ParamIndex = ParamIndex(8);
@@ -47,10 +47,10 @@ pub const SPEED: ParamIndex = ParamIndex(13);
 pub const DRY_CUT: ParamIndex = ParamIndex(14);
 pub const MODE: ParamIndex = ParamIndex(15);
 
-/// Each boost's params: AMOUNT, NUM, DEN.
-pub const BOOSTS: [[ParamIndex; 3]; 2] = [[A_AMOUNT, A_NUM, A_DEN], [B_AMOUNT, B_NUM, B_DEN]];
+/// Each boost's params: AMOUNT, MULT, DIV.
+pub const BOOSTS: [[ParamIndex; 3]; 2] = [[A_AMOUNT, A_MULT, A_DIV], [B_AMOUNT, B_MULT, B_DIV]];
 
-/// NUM's and DEN's positions: position `k` is `k + 1`.
+/// MULT's and DIV's positions: position `k` is `k + 1`.
 const STEPS: &[&str] = &["1", "2", "3", "4", "5", "6", "7", "8"];
 
 /// The analysis window, samples: fixed (a WINDOW control was dropped,
@@ -76,14 +76,14 @@ pub static PARAMS: [ParamSpec; 16] = [
         .unit("%")
         .decimals(0)
         .id(1),
-    ParamSpec::stepped("A Numerator", STEPS, 1).id(2),
-    ParamSpec::stepped("A Denominator", STEPS, 0).id(3),
+    ParamSpec::stepped("A Multiplier", STEPS, 1).id(2),
+    ParamSpec::stepped("A Divisor", STEPS, 0).id(3),
     ParamSpec::new("B Amount", 0.0, 100.0, 25.0)
         .unit("%")
         .decimals(0)
         .id(4),
-    ParamSpec::stepped("B Numerator", STEPS, 2).id(5),
-    ParamSpec::stepped("B Denominator", STEPS, 1).id(6),
+    ParamSpec::stepped("B Multiplier", STEPS, 2).id(5),
+    ParamSpec::stepped("B Divisor", STEPS, 1).id(6),
     // Each boost's bandwidth, the same in cents at every ratio. Half
     // travel is the geometric middle of the range.
     ParamSpec::new("Width", WIDTH_MIN, WIDTH_MAX, 50.0)
@@ -155,11 +155,11 @@ pub fn state(link: Box<dyn EngineLink>) -> EditorState {
     let knob = |p| -> Box<dyn Binding> { Box::new(ParamKnob::new(p)) };
     let controls = faceplate::Controls::<Box<dyn Binding>> {
         a_amount: knob(A_AMOUNT),
-        a_num: knob(A_NUM),
-        a_den: knob(A_DEN),
+        a_mult: knob(A_MULT),
+        a_div: knob(A_DIV),
         b_amount: knob(B_AMOUNT),
-        b_num: knob(B_NUM),
-        b_den: knob(B_DEN),
+        b_mult: knob(B_MULT),
+        b_div: knob(B_DIV),
         width: knob(WIDTH),
         resonance: knob(RESONANCE),
         focus: knob(FOCUS),

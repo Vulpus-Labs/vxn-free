@@ -10,7 +10,7 @@ created: 2026-11-24
 Glow-Up as a zero-latency CLAP (and VST3) effect, as ADR 0005 decides:
 peaks found by a running spectrum, a bank of twelve narrow filters
 boosting what is already there at two ratios of each peak (each set as
-NUMERATOR / DENOMINATOR, 2/1 and 3/2 by default), resonance up to
+MULT / DIV, 2/1 and 3/2 by default), resonance up to
 self-oscillation, GRID to TRACK focus, and a display of what it is
 doing. A MODE switch picks MONO (left in, copied to both outputs) or
 STEREO (mid analysed once, each channel filtered). In a DAW early,

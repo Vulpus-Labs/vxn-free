@@ -129,3 +129,12 @@ The display is now an EQ-style plot, as asked: frequency across (log,
   each boost 168, the scope's section 356, FILTER 244, OUTPUT 116), the
   scope's window 324 × 184 (was 400), THRESHOLD and GRID's keys under it.
   The relief is re-rendered; the snapshots re-blessed.
+
+## Progress (2026-11-26): the boosts side by side, MULT and DIV
+
+- The two boosts sit side by side after the title, each a column: AMOUNT,
+  then MULT, then DIV (112 wide each). The scope, FILTER and OUTPUT
+  follow. The face is 1188 × 330.
+- NUM and DEN are MULT and DIV everywhere: the faceplate, the params'
+  names ("A Multiplier", "A Divisor"; ids unchanged), the code
+  (`A_MULT`, `A_DIV`, …), ADR 0005, E003 and the README.
