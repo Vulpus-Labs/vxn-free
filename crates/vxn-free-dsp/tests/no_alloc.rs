@@ -5,7 +5,10 @@ use std::alloc::{GlobalAlloc, Layout, System};
 use std::cell::Cell;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use vxn_free_dsp::{Crossover, DelayLine, Peak, SideBuffer, Stft, ThreeBand, peaks};
+use vxn_free_dsp::{
+    Crossover, DelayLine, PartialTracker, Peak, PeakDetector, Resonator, SideBuffer, Stft,
+    ThreeBand, peaks,
+};
 
 struct Counting;
 
@@ -117,5 +120,42 @@ fn the_stft_and_peak_picking_never_allocate() {
         }
     });
     std::hint::black_box(total);
+    assert_eq!(n, 0);
+}
+
+#[test]
+fn glow_ups_detector_resonator_and_tracker_never_allocate() {
+    let mut stft = Stft::new(2048, 4, 2048, 512);
+    let mut detector = PeakDetector::new(2048);
+    let mut res = Resonator::new(48_000.0, 440.0);
+    let mut tracker = PartialTracker::new(48_000.0);
+    let x: Vec<f32> = (0..8192).map(|n| 0.5 * (n as f32 * 0.07).sin()).collect();
+    let mut acc = 0.0f64;
+    let n = allocations(|| {
+        for window in [2048, 512, 1024] {
+            stft.configure(window, window / 4);
+            detector.set_window(window);
+            detector.set_threshold_db(6.0);
+            for chunk in x.chunks(37) {
+                stft.push(chunk, |f| detector.detect(&f, 48_000.0));
+                acc += detector.peaks().len() as f64;
+            }
+        }
+        tracker.start(535.0, 0.1);
+        for (i, &s) in x.iter().enumerate() {
+            if i % 32 == 0 {
+                res.set_frequency(400.0 + (i % 300) as f64);
+                res.set_damping(res.holding_damping(0.2, 0.05, 32, 700.0, 0.03));
+            }
+            acc += res.next(f64::from(s));
+            tracker.tick(f64::from(s), i as u64, i % 32 == 0);
+        }
+        tracker.snap(500.0);
+        tracker.stop();
+        res.reset();
+        res.seed(0.1);
+        detector.restart();
+    });
+    std::hint::black_box(acc);
     assert_eq!(n, 0);
 }

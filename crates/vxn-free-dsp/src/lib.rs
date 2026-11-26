@@ -14,20 +14,26 @@ pub mod crossover;
 pub mod crush;
 pub mod crush_chain;
 pub mod delay;
+pub mod detector;
 // A copy of Patches' FFT, kept as its source formats it (see its header).
 #[rustfmt::skip]
 pub mod fft;
 pub mod peak;
+pub mod resonator;
 pub mod smooth;
 pub mod spectrum;
 pub mod stft;
 pub mod svf;
+pub mod tracker;
 
 pub use crossover::{Crossover, MIN_BAND_RATIO, ThreeBand};
 pub use delay::{DelayLine, LANES, SideBuffer, lagrange4_weights};
+pub use detector::{DetectedPeak, PeakDetector};
 pub use fft::RealPackedFft;
 pub use peak::{PeakFollower, RangeFollower};
+pub use resonator::Resonator;
 pub use smooth::{Glide, Ramp};
 pub use spectrum::{Peak, peaks, peaks_between};
 pub use stft::{Frame, Stft};
 pub use svf::{AllpassBank, Svf, SvfOut};
+pub use tracker::PartialTracker;
