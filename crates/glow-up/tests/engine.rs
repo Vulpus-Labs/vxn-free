@@ -6,7 +6,7 @@ use glow_up::bank::State;
 use glow_up::engine::GlowUpEngine;
 use glow_up::{
     A_AMOUNT, A_DEN, A_NUM, B_AMOUNT, DRY_CUT, FOCUS, GRID, MIX, MODE, RESONANCE, SPEED, THRESHOLD,
-    WIDTH, WINDOW,
+    WIDTH,
 };
 use silkscreen::ParamIndex;
 use silkscreen::bridge::Engine;
@@ -333,7 +333,7 @@ fn the_output_is_the_same_however_the_input_is_split() {
         .map(|(a, b)| a + b)
         .collect();
     let r = saw(147.0, 0.2, 1.5);
-    let params = [(MODE, 1.0), (FOCUS, 60.0), (RESONANCE, 70.0), (WINDOW, 1.0)];
+    let params = [(MODE, 1.0), (FOCUS, 60.0), (RESONANCE, 70.0)];
     let mut e = engine(&params);
     let whole = run2(&mut e, &l, &r, l.len());
     let mut seed = 11u32;
@@ -371,26 +371,24 @@ fn the_dry_path_has_the_latency_the_engine_says() {
         .map(|n| if n >= at { 0.25 } else { 0.0 })
         .collect();
     for rate in [44_100.0, 48_000.0, 96_000.0] {
-        for window in [0.0, 1.0, 2.0] {
-            for mode in [0.0, 1.0] {
-                for mix in [0.0, 50.0, 100.0] {
-                    let params = [(WINDOW, window), (MODE, mode), (MIX, mix)];
-                    for x in [&impulse, &step] {
-                        let mut on = params.to_vec();
-                        on.push((DRY_CUT, 1.0));
-                        let (y, _) = run2(&mut engine_at(rate, &params), x, x, 256);
-                        let (cut, _) = run2(&mut engine_at(rate, &on), x, x, 256);
-                        let wet = (0.5 * std::f32::consts::PI * mix * 0.01).sin();
-                        let wet = if mix >= 100.0 { 1.0 } else { wet };
-                        for n in 0..x.len() {
-                            let d = y[n] - cut[n];
-                            assert!(
-                                (d - wet * x[n]).abs() < 1e-6,
-                                "{rate} window {window} mode {mode} mix {mix}: \
-                                 sample {n} {d} against {}",
-                                wet * x[n]
-                            );
-                        }
+        for mode in [0.0, 1.0] {
+            for mix in [0.0, 50.0, 100.0] {
+                let params = [(MODE, mode), (MIX, mix)];
+                for x in [&impulse, &step] {
+                    let mut on = params.to_vec();
+                    on.push((DRY_CUT, 1.0));
+                    let (y, _) = run2(&mut engine_at(rate, &params), x, x, 256);
+                    let (cut, _) = run2(&mut engine_at(rate, &on), x, x, 256);
+                    let wet = (0.5 * std::f32::consts::PI * mix * 0.01).sin();
+                    let wet = if mix >= 100.0 { 1.0 } else { wet };
+                    for n in 0..x.len() {
+                        let d = y[n] - cut[n];
+                        assert!(
+                            (d - wet * x[n]).abs() < 1e-6,
+                            "{rate} mode {mode} mix {mix}: \
+                             sample {n} {d} against {}",
+                            wet * x[n]
+                        );
                     }
                 }
             }

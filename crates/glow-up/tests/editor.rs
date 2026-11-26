@@ -7,7 +7,7 @@
 use glow_up::faceplate::ids;
 use glow_up::{
     A_AMOUNT, A_DEN, A_NUM, B_AMOUNT, B_DEN, B_NUM, DRY_CUT, FOCUS, GRID, MIX, MODE, PARAMS,
-    RESONANCE, SPEED, THRESHOLD, TONE, WIDTH, WINDOW,
+    RESONANCE, SPEED, THRESHOLD, TONE, WIDTH,
 };
 use silkscreen_harness::{Harness, assert_snapshot};
 
@@ -43,7 +43,6 @@ fn every_control_moves_its_param() {
         (ids::THRESHOLD, THRESHOLD),
         (ids::TONE, TONE),
         (ids::SPEED, SPEED),
-        (ids::WINDOW, WINDOW),
     ] {
         let before = h.model().get(param);
         // Down from the top for params that start there; far enough for

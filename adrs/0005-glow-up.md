@@ -33,9 +33,12 @@ the octave below (1/2) has no way to get it.
    - The ranges and defaults are drafts, settled by ear (point 10).
 
 3. **Analysis steers; the audio never waits.** An STFT (Hann, overlap
-   4, WINDOW 512, 1024 or 2048) is used only to find peaks; the audio
-   path is the input plus the filters' sum and has no latency. Only the
-   detection lags, by about a window and a hop.
+   4, a fixed window of 2048 samples) is used only to find peaks; the
+   audio path is the input plus the filters' sum and has no latency.
+   Only the detection lags, by about a window and a hop. The window was
+   first a control (WINDOW: 512, 1024 or 2048); it was dropped
+   (2026-11-26) as not worth a control, keeping 2048, the size it
+   loaded at.
 
 4. **Peaks.** Once a frame, from the frame's magnitudes:
    - a peak is a maximum over two bins either side, in this frame alone
@@ -111,8 +114,8 @@ the octave below (1/2) has no way to get it.
 ## Consequences
 
 - Params: A AMOUNT, A NUM, A DEN, B AMOUNT, B NUM, B DEN, WIDTH,
-  RESONANCE, FOCUS, MIX, WINDOW, THRESHOLD, TONE, GRID, SPEED, DRY CUT,
-  MODE: 17.
+  RESONANCE, FOCUS, MIX, THRESHOLD, TONE, GRID, SPEED, DRY CUT, MODE:
+  16. WINDOW's id, 11, is retired.
 - `vxn-free-dsp` gains the peak detector, the resonator with its held
   oscillation, and the partial tracker (ticket 0025).
 - STEREO costs a second bank's filters, not a second analysis.

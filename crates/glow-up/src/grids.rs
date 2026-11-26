@@ -2,7 +2,7 @@
 //! each grid ascending, from [`LOWEST`] to [`HIGHEST`] Hz.
 //!
 //! - **LIN**: the analysis bins' spacing, `fs / N`: sparse low down, dense
-//!   up high, and it changes with WINDOW.
+//!   up high.
 //! - **IRR**: like a room's modes. [`IRREGULAR_POINTS`] points drawn from a
 //!   density on log frequency that is a floor plus a bump about 1 kHz, 1.3
 //!   octaves either side, so densest through the midrange; each point is

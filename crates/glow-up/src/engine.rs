@@ -3,7 +3,7 @@
 //! so it never allocates or locks.
 //!
 //! The analysis signal (the left input in MONO, the mid `(L + R) / 2` in
-//! STEREO) feeds an STFT at WINDOW's size with a hop of a quarter window,
+//! STEREO) feeds an STFT of [`WINDOW`] samples with a hop of a quarter of it,
 //! and the peak detector. A frame completes on a hop boundary, which is
 //! always a control-block boundary; the bank takes it at the start of the
 //! next block, so the output is the same however the host splits its
@@ -22,7 +22,7 @@ use crate::bank::{BLOCK, Bank};
 use crate::observe::{FRAME_WORDS, Observation};
 use crate::{
     A_AMOUNT, A_DEN, A_NUM, B_AMOUNT, B_DEN, B_NUM, DRY_CUT, FOCUS, GRID, GRID_LIN, GRID_TET, MIX,
-    MODE, PARAMS, RESONANCE, SPEED, THRESHOLD, TONE, WIDTH, WINDOW, WINDOWS, grids,
+    MODE, PARAMS, RESONANCE, SPEED, THRESHOLD, TONE, WIDTH, WINDOW, grids,
 };
 
 /// Frames overlap this many times.
@@ -40,11 +40,9 @@ pub struct GlowUpEngine {
     stft: Stft,
     detector: PeakDetector,
     bank: Bank,
-    linear: [Box<[f64]>; WINDOWS.len()],
+    linear: Box<[f64]>,
     irregular: Box<[f64]>,
     tempered: Box<[f64]>,
-    /// WINDOW's position in use.
-    window: usize,
     /// A frame completed and the bank hasn't taken it.
     frame_ready: bool,
     mix: Glide,
@@ -67,26 +65,19 @@ impl GlowUpEngine {
 
     pub fn new(sample_rate: f32) -> Self {
         let rate = f64::from(sample_rate);
-        let max_window = WINDOWS[WINDOWS.len() - 1];
-        let linear = WINDOWS.map(|w| grids::linear(rate, w).into_boxed_slice());
+        let linear = grids::linear(rate, WINDOW).into_boxed_slice();
         let irregular = grids::irregular().into_boxed_slice();
         let tempered = grids::equal_tempered().into_boxed_slice();
-        let max_grid = linear
-            .iter()
-            .map(|g| g.len())
-            .chain([irregular.len(), tempered.len()])
-            .max()
-            .unwrap_or(0);
+        let max_grid = linear.len().max(irregular.len()).max(tempered.len());
         let mut e = Self {
             rate: sample_rate,
             values: PARAMS.each_ref().map(|p| p.default),
-            stft: Stft::new(max_window, OVERLAP, max_window, max_window / OVERLAP),
-            detector: PeakDetector::new(max_window),
-            bank: Bank::new(rate, max_window / 4, max_grid),
+            stft: Stft::new(WINDOW, OVERLAP, WINDOW, WINDOW / OVERLAP),
+            detector: PeakDetector::new(WINDOW),
+            bank: Bank::new(rate, WINDOW / 4, max_grid),
             linear,
             irregular,
             tempered,
-            window: WINDOWS.len() - 1,
             frame_ready: false,
             mix: Glide::new(1.0, MIX_GLIDE_MS, sample_rate / BLOCK as f32),
             mix_ramp: Ramp::default(),
@@ -97,7 +88,7 @@ impl GlowUpEngine {
             obs: Observation::default(),
             frame: [0.0; FRAME_WORDS],
         };
-        e.bank.set_hop(max_window / OVERLAP);
+        e.bank.set_hop(WINDOW / OVERLAP);
         e.controls();
         e.mix.snap();
         e
@@ -123,14 +114,6 @@ impl GlowUpEngine {
 
     /// Read every control, once a block.
     fn controls(&mut self) {
-        let w = self.step(WINDOW).min(WINDOWS.len() - 1);
-        if w != self.window {
-            self.window = w;
-            self.stft.configure(WINDOWS[w], WINDOWS[w] / OVERLAP);
-            self.detector.set_window(WINDOWS[w]);
-            self.bank.set_hop(WINDOWS[w] / OVERLAP);
-            self.frame_ready = false;
-        }
         self.detector.set_threshold_db(self.value(THRESHOLD));
         let s = &mut self.bank.settings;
         s.amount = [
@@ -158,7 +141,7 @@ impl GlowUpEngine {
         if self.frame_ready {
             self.frame_ready = false;
             let grid: &[f64] = match self.step(GRID) {
-                GRID_LIN => &self.linear[self.window],
+                GRID_LIN => &self.linear,
                 GRID_TET => &self.tempered,
                 _ => &self.irregular,
             };

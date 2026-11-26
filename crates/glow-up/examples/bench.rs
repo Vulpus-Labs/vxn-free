@@ -1,4 +1,4 @@
-//! CPU per sample, by MODE, FOCUS and WINDOW, on five sawtooths (a
+//! CPU per sample, by MODE and FOCUS, on five sawtooths (a
 //! chord) with RESONANCE part way: `cargo run --release -p glow-up
 //! --example bench`.
 
@@ -6,7 +6,7 @@ use std::f64::consts::TAU;
 use std::time::Instant;
 
 use glow_up::engine::GlowUpEngine;
-use glow_up::{FOCUS, MODE, RESONANCE, WINDOW};
+use glow_up::{FOCUS, MODE, RESONANCE};
 use silkscreen::bridge::Engine;
 
 const RATE: f64 = 48_000.0;
@@ -33,36 +33,28 @@ fn chord() -> Vec<f32> {
 
 fn main() {
     let x = chord();
-    println!("mode    focus window  ns/sample  % of a core at 48 kHz");
+    println!("mode    focus  ns/sample  % of a core at 48 kHz");
     for mode in [0.0, 1.0] {
         for focus in [0.0, 100.0] {
-            for window in [0.0, 1.0, 2.0] {
-                let mut e = GlowUpEngine::new(RATE as f32);
-                for (p, v) in [
-                    (MODE, mode),
-                    (FOCUS, focus),
-                    (WINDOW, window),
-                    (RESONANCE, 40.0),
-                ] {
-                    e.set_param(p, v);
-                }
-                e.reset();
-                let (mut l, mut r) = (x.clone(), x.clone());
-                let start = Instant::now();
-                for (a, b) in l.chunks_mut(256).zip(r.chunks_mut(256)) {
-                    e.process(&mut [a, b]);
-                }
-                let ns = start.elapsed().as_nanos() as f64 / x.len() as f64;
-                std::hint::black_box(&l);
-                println!(
-                    "{:6}  {:5}  {:5}  {:9.1}  {:6.2}",
-                    if mode > 0.0 { "STEREO" } else { "MONO" },
-                    focus,
-                    512 << window as usize,
-                    ns,
-                    ns * RATE / 1e9 * 100.0
-                );
+            let mut e = GlowUpEngine::new(RATE as f32);
+            for (p, v) in [(MODE, mode), (FOCUS, focus), (RESONANCE, 40.0)] {
+                e.set_param(p, v);
             }
+            e.reset();
+            let (mut l, mut r) = (x.clone(), x.clone());
+            let start = Instant::now();
+            for (a, b) in l.chunks_mut(256).zip(r.chunks_mut(256)) {
+                e.process(&mut [a, b]);
+            }
+            let ns = start.elapsed().as_nanos() as f64 / x.len() as f64;
+            std::hint::black_box(&l);
+            println!(
+                "{:6}  {:5}  {:9.1}  {:6.2}",
+                if mode > 0.0 { "STEREO" } else { "MONO" },
+                focus,
+                ns,
+                ns * RATE / 1e9 * 100.0
+            );
         }
     }
 }

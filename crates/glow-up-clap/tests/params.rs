@@ -33,8 +33,8 @@ fn every_param_is_listed_with_its_id_name_and_range() {
     }
     assert_eq!(
         ids,
-        (1..=17).collect::<Vec<u32>>(),
-        "ids never change or move"
+        (1..=17).filter(|&id| id != 11).collect::<Vec<u32>>(),
+        "ids never change or move; 11 (WINDOW) is retired"
     );
 }
 
@@ -49,7 +49,6 @@ fn values_read_in_their_units() {
         (2, 1.0, "2"),
         (6, 0.0, "1"),
         (7, 50.0, "50 cents"),
-        (11, 2.0, "2048"),
         (12, 6.0, "6.0 dB"),
         (14, 1.0, "IRR"),
         (17, 1.0, "Stereo"),

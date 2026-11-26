@@ -116,3 +116,16 @@ The display is now an EQ-style plot, as asked: frequency across (log,
   at once and falls by the engine's clock, across the 2^24 wrap, and
   starts again on a reset; snapshots of a glide with boosts, a singing
   filter, DRY CUT and a stopped host.
+
+## Progress (2026-11-26): no WINDOW, a red input, a smaller face
+
+- WINDOW is gone: the analysis is fixed at 2048 (`glow_up::WINDOW`), and
+  ADR 0005 says so. The params are 16; WINDOW's id, 11, is retired and
+  the others keep theirs (a test checks the ids ascend, skipping only
+  retired ones). The engine keeps one LIN grid, not one a window.
+- The scope's input line is red, its area and the cut fill in the same
+  red family, so the amber output reads as the input brightened.
+- The face is 1300 × 330 (was 1512): every section pulled in (title 176,
+  each boost 168, the scope's section 356, FILTER 244, OUTPUT 116), the
+  scope's window 324 × 184 (was 400), THRESHOLD and GRID's keys under it.
+  The relief is re-rendered; the snapshots re-blessed.

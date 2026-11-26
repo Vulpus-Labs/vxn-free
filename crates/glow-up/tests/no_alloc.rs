@@ -5,7 +5,7 @@ use std::cell::Cell;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use glow_up::engine::GlowUpEngine;
-use glow_up::{A_NUM, B_DEN, FOCUS, GRID, MODE, RESONANCE, THRESHOLD, WIDTH, WINDOW};
+use glow_up::{A_NUM, B_DEN, FOCUS, GRID, MODE, RESONANCE, THRESHOLD, WIDTH};
 use silkscreen::bridge::Engine;
 
 struct Counting;
@@ -72,7 +72,6 @@ fn processing_and_every_setting_never_allocate() {
     let n = allocations(|| {
         for pass in 0..6u8 {
             let p = f32::from(pass);
-            engine.set_param(WINDOW, p % 3.0);
             engine.set_param(GRID, (p + 1.0) % 3.0);
             engine.set_param(MODE, p % 2.0);
             engine.set_param(FOCUS, 20.0 * p);

@@ -5,7 +5,8 @@
 //! - Frequency runs left to right on a log axis from [`LOWEST`] to
 //!   [`HIGHEST`], with a line at each decade's 1, 2 and 5; level up, from
 //!   [`DB_BOTTOM`] to [`DB_TOP`] under full scale, a line every 12 dB.
-//! - The input's spectrum is a pale blue-grey line over a faint area. It
+//! - The input's spectrum is a red line over a faint area, so where the
+//!   amber output leaves it the boost reads as the input brightened. It
 //!   rises at once and
 //!   falls at [`FALL_DB_PER_SECOND`], as an analyser's does, timed by the
 //!   engine's clock.
@@ -17,8 +18,7 @@
 //! - Between the two, each column is filled with a gradient: amber, bright
 //!   at the boosted line and fading towards the input's, so it shows where
 //!   each boost lands and how far its skirts spread. Where the output falls
-//!   under the input (DRY CUT, or MIX turned down), the gap is a cool
-//!   blue-grey.
+//!   under the input (DRY CUT, or MIX turned down), the gap is a dark red.
 //! - Each detected peak is a vertical line at its frequency, brighter the
 //!   more prominent; each filter a dot on the output's line at its centre,
 //!   near-white while it sings.
@@ -58,9 +58,9 @@ const GRID: (u8, u8, u8) = (0x1a, 0x1e, 0x24);
 const DECADE: (u8, u8, u8) = (0x2a, 0x2f, 0x37);
 const AMBER: (u8, u8, u8) = (0xf2, 0xa3, 0x3a);
 const HOT: (u8, u8, u8) = (0xff, 0xec, 0xc8);
-const INPUT: (u8, u8, u8) = (0xa9, 0xbc, 0xd4);
+const INPUT: (u8, u8, u8) = (0xd2, 0x3a, 0x2c);
 const PEAK: (u8, u8, u8) = (0x7f, 0x9c, 0xbf);
-const CUT: (u8, u8, u8) = (0x5a, 0x78, 0x9e);
+const CUT: (u8, u8, u8) = (0x8a, 0x24, 0x1c);
 
 /// The scope widget.
 #[derive(Debug, Default)]
@@ -360,7 +360,7 @@ fn draw_scope(
         }
     }
     if let Some(path) = input.finish() {
-        canvas.stroke_path(&path, &paint(INPUT, dim * 0.7), &stroke(1.0), t, None);
+        canvas.stroke_path(&path, &paint(INPUT, dim * 0.9), &stroke(1.0), t, None);
     }
 
     // The output's line, only where it leaves the input's, from the column

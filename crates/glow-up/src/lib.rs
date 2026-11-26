@@ -40,13 +40,12 @@ pub const WIDTH: ParamIndex = ParamIndex(6);
 pub const RESONANCE: ParamIndex = ParamIndex(7);
 pub const FOCUS: ParamIndex = ParamIndex(8);
 pub const MIX: ParamIndex = ParamIndex(9);
-pub const WINDOW: ParamIndex = ParamIndex(10);
-pub const THRESHOLD: ParamIndex = ParamIndex(11);
-pub const TONE: ParamIndex = ParamIndex(12);
-pub const GRID: ParamIndex = ParamIndex(13);
-pub const SPEED: ParamIndex = ParamIndex(14);
-pub const DRY_CUT: ParamIndex = ParamIndex(15);
-pub const MODE: ParamIndex = ParamIndex(16);
+pub const THRESHOLD: ParamIndex = ParamIndex(10);
+pub const TONE: ParamIndex = ParamIndex(11);
+pub const GRID: ParamIndex = ParamIndex(12);
+pub const SPEED: ParamIndex = ParamIndex(13);
+pub const DRY_CUT: ParamIndex = ParamIndex(14);
+pub const MODE: ParamIndex = ParamIndex(15);
 
 /// Each boost's params: AMOUNT, NUM, DEN.
 pub const BOOSTS: [[ParamIndex; 3]; 2] = [[A_AMOUNT, A_NUM, A_DEN], [B_AMOUNT, B_NUM, B_DEN]];
@@ -54,8 +53,10 @@ pub const BOOSTS: [[ParamIndex; 3]; 2] = [[A_AMOUNT, A_NUM, A_DEN], [B_AMOUNT, B
 /// NUM's and DEN's positions: position `k` is `k + 1`.
 const STEPS: &[&str] = &["1", "2", "3", "4", "5", "6", "7", "8"];
 
-/// WINDOW's positions, in samples.
-pub const WINDOWS: [usize; 3] = [512, 1024, 2048];
+/// The analysis window, samples: fixed (a WINDOW control was dropped,
+/// ADR 0005). 2048 resolves the partials of low notes, which the shorter
+/// windows ran together.
+pub const WINDOW: usize = 2048;
 
 /// GRID's positions.
 pub const GRID_LIN: usize = 0;
@@ -68,9 +69,9 @@ pub const WIDTH_MAX: f32 = 200.0;
 
 /// The parameter table: index `i` is `ParamIndex(i)`. Each `id` is what
 /// presets and host projects store, so never change or reuse one once
-/// released. Ranges and defaults are drafts until tuned by ear (ADR 0005,
-/// point 10).
-pub static PARAMS: [ParamSpec; 17] = [
+/// released: id 11 was WINDOW's, and stays unused. Ranges and defaults are
+/// drafts until tuned by ear (ADR 0005, point 10).
+pub static PARAMS: [ParamSpec; 16] = [
     ParamSpec::new("A Amount", 0.0, 100.0, 25.0)
         .unit("%")
         .decimals(0)
@@ -104,7 +105,6 @@ pub static PARAMS: [ParamSpec; 17] = [
         .unit("%")
         .decimals(0)
         .id(10),
-    ParamSpec::stepped("Window", &["512", "1024", "2048"], 2).id(11),
     ParamSpec::new("Threshold", 0.0, 30.0, 6.0)
         .unit("dB")
         .decimals(1)
@@ -167,7 +167,6 @@ pub fn state(link: Box<dyn EngineLink>) -> EditorState {
         threshold: knob(THRESHOLD),
         tone: knob(TONE),
         speed: knob(SPEED),
-        window: knob(WINDOW),
         grid_lin: choice(GRID, GRID_LIN as f32),
         grid_irr: choice(GRID, GRID_IRR as f32),
         grid_tet: choice(GRID, GRID_TET as f32),
@@ -207,9 +206,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn ids_are_unique_and_in_order() {
-        for (i, p) in PARAMS.iter().enumerate() {
-            assert_eq!(p.id, i as u32 + 1, "{}", p.name);
+    fn ids_ascend_from_1_skipping_only_retired_ones() {
+        // 11 was WINDOW's.
+        const RETIRED: [u32; 1] = [11];
+        let mut want = 1;
+        for p in &PARAMS {
+            while RETIRED.contains(&want) {
+                want += 1;
+            }
+            assert_eq!(p.id, want, "{}", p.name);
+            want += 1;
         }
     }
 
