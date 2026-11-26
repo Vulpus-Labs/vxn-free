@@ -4,7 +4,7 @@ title: "Glow-Up manual"
 priority: medium
 created: 2026-11-24
 epic: E003
-depends: ["0010"]
+depends: ["0009"]
 ---
 
 ## Acceptance criteria

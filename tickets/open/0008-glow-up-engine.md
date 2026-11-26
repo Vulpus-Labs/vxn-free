@@ -9,19 +9,19 @@ depends: ["0025"]
 
 ## Summary
 
-The engine: twelve filters assigned to the strongest requests for a
-fifth, octave or double octave above each peak, never moved while
-sounding, faded over 10 ms when stolen.
+The engine (ADR 0005): twelve filters, with twelve spares for tails,
+assigned to the strongest requests for boost A's and boost B's ratio of
+each peak, never moved while sounding, faded over 10 ms when stolen.
 
 ## Acceptance criteria
 
-- [ ] Parameters: +7, +12, +24, WIDTH (10–200 cents), RESONANCE, FOCUS
-      (GRID to TRACK), MIX, WINDOW (512/1024/2048), THRESHOLD (0–30 dB),
-      TONE (±6 dB/oct about 1 kHz), GRID (three grids), SPEED, DRY CUT,
-      MODE (below).
-      Defaults as the module's.
-- [ ] Self-oscillation held at a steady level, within a fraction of a
-      cent of its target; it can't run away.
+- [ ] Parameters: A AMOUNT, A NUM, A DEN, B AMOUNT, B NUM, B DEN
+      (NUM and DEN stepped, 1–8), WIDTH (10–200 cents), RESONANCE,
+      FOCUS (GRID to TRACK), MIX, WINDOW (512/1024/2048), THRESHOLD
+      (0–30 dB), TONE (±6 dB/oct about 1 kHz), GRID (LIN, IRR, TET),
+      SPEED, DRY CUT, MODE. Defaults as ADR 0005 and the module's.
+- [ ] Self-oscillation held at a steady level, within a cent of its
+      target; it can't run away.
 - [ ] A MODE switch, MONO or STEREO:
       - MONO reads only the left input; the right output is a copy of
         the left output.
@@ -30,11 +30,15 @@ sounding, faded over 10 ms when stolen.
         channel, both banks following the same targets.
       MODE loads at MONO: Glow-Up is chiefly a guitar effect.
       CPU measured in each mode.
-- [ ] Tests: a sine passes almost untouched; a sawtooth's even partials
-      rise with +12; MONO ignores the right input and copies left to
-      right; STEREO filters each channel; FOCUS fully right tracks a
-      glide; resonance past half way sings on a strong note and fades
-      with it; no allocation.
+- [ ] Tests: every amount at 0 passes the input sample for sample; a
+      sine passes almost untouched; a sawtooth's even partials rise with
+      A at 2/1; a ratio of 3/1 lifts a sine's third partial; MONO ignores
+      the right input and copies left to right; STEREO filters each
+      channel; FOCUS fully right follows a glide and no sounding filter
+      is retuned; resonance sings on a strong note within a cent and
+      fades with it; loud noise with everything up stays bounded; the
+      output is the same however the input is split into blocks; no
+      allocation.
 - [ ] Latency is known exactly. The design is zero: the signal path
       never waits for the analysis, and the dry path is not delayed.
       A test measures it: an impulse (and a step) through the engine at

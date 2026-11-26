@@ -19,7 +19,8 @@ small job. They are to be given away, with their source.
    released: hosts key projects on them. ADR 0002 adds Charm
    (`labs.vulpus.charm`), an original design rather than a port, since
    shelved; ADR 0004 proposes Wesley (`labs.vulpus.wesley`), Beverley in
-   three bands.
+   three bands. ADR 0005 gives Glow-Up two boosts at ratios of the
+   player's choosing, where the module had three fixed multiples.
 3. **Targets.** CLAP and VST3, built with `cargo silkscreen bundle`
    (the VST3 through free-audio's clap-wrapper, `--vst3`; amended
    2026-11-24, ticket 0027). No web page and no standalone app for now;
