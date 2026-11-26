@@ -17,7 +17,7 @@ of this ticket, as Wesley's was (0037).
       `data/`, from `cargo run -p glow-up --example manual`: what it
       does, each control, starting points, for players.
 - [x] Linked from the README.
-- [ ] Glow-Up 0.3.0 on downloads.vulpuslabs.com, linked from
+- [x] Glow-Up 0.3.0 on downloads.vulpuslabs.com, linked from
       vulpuslabs.com, with the manual.
 
 ## Progress (2026-11-26)
@@ -49,3 +49,17 @@ of this ticket, as Wesley's was (0037).
   haven't changed since 0.2.0.
 - The DAW check (0010) and the faceplate ticket (0009) are still open;
   0.3.0 ships the draft ranges and defaults.
+
+## Close-out (2026-11-26)
+
+- Tag `v0.3.0`, run 45904661325: every platform green, and a draft
+  GitHub release of the eighteen zips. The macOS Glow-Up CLAP and VST3,
+  unpacked with `ditto`: Gatekeeper `Notarized Developer ID`, stapled,
+  x86_64 + arm64.
+- `glow-up/0.3.0` on downloads.vulpuslabs.com: six zips and
+  `SHA256SUMS`. All six fetched back match, and a quarantined download
+  of the macOS VST3 passes Gatekeeper. Beverley and Wesley at 0.3.0 are
+  unchanged from 0.2.0 and were not published.
+- vulpuslabs.com (vulpus-labs-site bbffb7d): Glow-Up's product page, in
+  the free effects, and its manual at `/manuals/glow-up/`.
+- The DAW check (0010) and the faceplate ticket (0009) stay open.
