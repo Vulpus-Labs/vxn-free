@@ -23,6 +23,7 @@ pub mod bank;
 pub mod display;
 pub mod engine;
 pub mod grids;
+pub mod observe;
 
 /// Generated from `glow-up.svg` by `silkscreen-build`.
 pub mod faceplate {
@@ -177,7 +178,9 @@ pub fn state(link: Box<dyn EngineLink>) -> EditorState {
         display: Box::new(Unbound),
     };
     let mut state = EditorState::new(&faceplate::LAYOUT, &PARAMS, controls.into_array(), link);
-    state.set_widget(faceplate::ids::DISPLAY, |_| Box::new(display::TrackDisplay));
+    state.set_widget(faceplate::ids::DISPLAY, |_| {
+        Box::new(display::TrackDisplay::default())
+    });
     state
 }
 
@@ -190,7 +193,7 @@ pub const UI: PluginUi = PluginUi {
     specs: &PARAMS,
     factory: &[],
     faceplate: &faceplate::FACEPLATE,
-    frame: 0,
+    frame: observe::FRAME_WORDS,
     state,
 };
 

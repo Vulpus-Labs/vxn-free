@@ -19,6 +19,7 @@ use silkscreen::bridge::Engine;
 use vxn_free_dsp::{Glide, PeakDetector, Ramp, Stft};
 
 use crate::bank::{BLOCK, Bank};
+use crate::observe::{FRAME_WORDS, Observation};
 use crate::{
     A_AMOUNT, A_DEN, A_NUM, B_AMOUNT, B_DEN, B_NUM, DRY_CUT, FOCUS, GRID, GRID_LIN, GRID_TET, MIX,
     MODE, PARAMS, RESONANCE, SPEED, THRESHOLD, TONE, WIDTH, WINDOW, WINDOWS, grids,
@@ -52,6 +53,11 @@ pub struct GlowUpEngine {
     stereo: bool,
     /// Samples of the current block already rendered.
     into_block: usize,
+    /// Samples since the last reset, for the display's time axis.
+    time: u64,
+    /// What the display is sent, and room to encode it.
+    obs: Observation,
+    frame: [f32; FRAME_WORDS],
 }
 
 impl GlowUpEngine {
@@ -87,6 +93,9 @@ impl GlowUpEngine {
             dry_cut: false,
             stereo: false,
             into_block: BLOCK,
+            time: 0,
+            obs: Observation::default(),
+            frame: [0.0; FRAME_WORDS],
         };
         e.bank.set_hop(max_window / OVERLAP);
         e.controls();
@@ -254,6 +263,16 @@ impl Engine for GlowUpEngine {
             self.into_block += n;
             start += n;
         }
+        self.time += frames as u64;
+    }
+
+    /// The display's frame: the latest analysis frame's peaks and every
+    /// filter, as of the end of the block.
+    fn frame(&mut self, write: &mut dyn FnMut(&[f32])) {
+        self.obs
+            .observe(self.time, self.rate, &self.bank, self.detector.peaks());
+        self.obs.to_frame(&mut self.frame);
+        write(&self.frame);
     }
 
     fn reset(&mut self) {
@@ -264,6 +283,7 @@ impl Engine for GlowUpEngine {
         self.detector.restart();
         self.frame_ready = false;
         self.into_block = BLOCK;
+        self.time = 0;
     }
 }
 

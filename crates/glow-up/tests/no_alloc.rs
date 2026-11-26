@@ -68,6 +68,7 @@ fn processing_and_every_setting_never_allocate() {
         .collect();
     let mut l = x.clone();
     let mut r = x.clone();
+    let mut words = 0;
     let n = allocations(|| {
         for pass in 0..6u8 {
             let p = f32::from(pass);
@@ -83,10 +84,12 @@ fn processing_and_every_setting_never_allocate() {
             r.copy_from_slice(&x);
             for (a, b) in l.chunks_mut(173).zip(r.chunks_mut(173)) {
                 engine.process(&mut [a, b]);
+                engine.frame(&mut |f| words += f.len());
             }
         }
         engine.reset();
     });
     std::hint::black_box(&l);
+    assert!(words > 0);
     assert_eq!(n, 0);
 }

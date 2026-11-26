@@ -22,12 +22,12 @@ unit like Beverley and Wesley, but modern rather than 1990s (decided
       Blender as Beverley's is.
 - [x] Faceplate SVG written by a script from scratch, with every
       control in 0008, replacing 0010's plain one.
-- [ ] A display of what the engine is doing: the found peaks and the
+- [x] A display of what the engine is doing: the found peaks and the
       filters' targets and levels, fed by bridge telemetry.
 - [ ] Hover text as the module's (for example `A: 2/1, the octave above
       each peak, 25%`).
 - [x] Snapshot tests.
-- [ ] Snapshot tests of the display.
+- [x] Snapshot tests of the display.
 
 ## Progress (2026-11-26)
 
@@ -49,6 +49,31 @@ unit like Beverley and Wesley, but modern rather than 1990s (decided
 - GRID and MODE are rows of keys, one lit; DRY CUT a lit key.
 - The display draws its screen and frequency grid; the engine's
   telemetry is next.
+
+## Progress (2026-11-26): the tracking display
+
+- `src/observe.rs`: `Observation`, a telemetry frame of 142 words: the
+  engine's time in samples (modulo 2^24), the sample rate, the latest
+  analysis frame's peaks (at most 32, the most prominent, ascending;
+  frequency and prominence) and every filter of the pool (centre, level
+  as a share of the most boost, and BOOSTING, SINGING, FADING or free).
+- `GlowUpEngine::frame` publishes it after every block, without
+  allocating.
+- `src/display.rs`: `TrackDisplay` keeps the frames on the editor's
+  side, placed by the engine's clock (so the traces scroll at the
+  audio's pace however often the editor draws; the 2^24 wrap and resets
+  handled), and draws the last 2 s: time left to right, frequency up a
+  log axis from 40 Hz to 16 kHz with lines at each decade's 1, 2 and 5;
+  each filter an amber trace, brighter and heavier with its level,
+  near-white while singing, thin while fading, ending in a dot; the
+  peaks as faint blue-grey ticks, brighter with prominence. Traces are
+  grouped into a few paths a filter by look, not a stroke a segment.
+  250 ms without a frame (the host stopped) dims them.
+- Tests: the engine reports a 440 Hz peak and a 2/1 filter at 880 Hz at
+  full level, singing with RESONANCE up; at most 32 peaks, ascending;
+  frames round-trip; the clock across the wrap and a reset; the ring
+  keeps its newest; snapshots of a bend, a singing filter and a stopped
+  host, from hand-built frames; no allocation with frames published.
 - Tests: snapshots of the defaults and of TET, STEREO and DRY CUT lit;
   every control moves its param; each key picks its position and
   keeps it when pressed again.
