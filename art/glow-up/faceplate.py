@@ -8,10 +8,10 @@ aluminium knobs and soft-touch keys with LEDs (`blender/controls.py`),
 black hex button-head rack screws. No engraved grooves: the sections are
 parted by printed hairlines. The scope is the centrepiece:
 
-    [title       ] [BOOST A] [BOOST B] [  scope            ] [FILTER         ]
-    [            ] [AMOUNT ] [AMOUNT ] [                   ] [RESONANCE FOCUS]
-    [MIX  DRY CUT] [ MULT  ] [ MULT  ] [                   ] [               ]
-    [MODE        ] [  DIV  ] [  DIV  ] [THRESHOLD    GRID  ] [WIDTH TONE SPEED]
+    [title       ] [BOOST A] [BOOST B] [  scope            ] [FILTER          ]
+    [    MIX     ] [AMOUNT ] [AMOUNT ] [                   ] [RESONANCE FOCUS ]
+    [            ] [ MULT  ] [ MULT  ] [                   ] [WIDTH     SPEED ]
+    [MODE DRY CUT] [  DIV  ] [  DIV  ] [      GRID         ] [TONE  THRESHOLD ]
 
     python3 faceplate.py            (from this folder)
 
@@ -39,7 +39,7 @@ GAP = 3
 EAR = 36
 # The sections' left edges, then the right ear's.
 TITLE, BOOST_A, BOOST_B, DISPLAY, FILTER, RIGHT = (
-    EAR, 188, 300, 412, 768, 1012)
+    EAR, 188, 300, 412, 768, 964)
 W = RIGHT + EAR
 H = 330
 # Rows: the big knobs' centre line, the small controls', and the header.
@@ -50,10 +50,11 @@ SMALL_Y = 258
 AMOUNT_Y = 100
 MULT_Y = 194
 DIV_Y = 272
-# The output's row, under the title.
-OUT_Y = 160
+# MIX, under the title.
+MIX_Y = 138
 # Markers: the rendered frame (knob 0.8 of it, shadow round it).
 BIG_BOX = 80
+MEDIUM_BOX = 64
 SMALL_BOX = 48
 KEY_BOX = 30
 # Graphite anodised aluminium.
@@ -63,7 +64,7 @@ DIM = "#8e9096"
 FAINT = "#4a4d53"
 ACCENT = "#f2a33a"  # amber: the title and the lights
 # The display's window.
-WIN = (DISPLAY + 16, 24, 324, 184)
+WIN = (DISPLAY + 16, 24, 324, 210)
 GLASS_INSET = 6
 
 out = []
@@ -106,12 +107,14 @@ def scale(cx, cy, r, ticks, labels, size=7.5):
         text(x, y + 3, s, size, anchor=anchor, fill=DIM)
 
 
-def knob(name, cx, cy, label, ticks, labels, big=True, label_gap=24):
-    box = BIG_BOX if big else SMALL_BOX
+def knob(name, cx, cy, label, ticks, labels, big=True, label_gap=24, medium=False):
+    box, skin = (BIG_BOX, "knob") if big else (SMALL_BOX, "knob_small")
+    if medium:
+        box, skin = MEDIUM_BOX, "knob_medium"
     r = 0.4 * box
     scale(cx, cy, r, ticks, labels)
-    text(cx, cy + r + label_gap, label, 9 if big else 8, fill=INK, spacing=1.6)
-    controls.append(("knob", name, cx, cy, box, "knob" if big else "knob_small"))
+    text(cx, cy + r + label_gap, label, 9 if big or medium else 8, fill=INK, spacing=1.6)
+    controls.append(("knob", name, cx, cy, box, skin))
 
 
 def key(name, cx, cy, label):
@@ -213,40 +216,50 @@ for x in (BOOST_A, BOOST_B, DISPLAY, FILTER):
     hairline(x)
 
 # The title.
-o(f'  <ellipse cx="{TITLE + 78}" cy="84" rx="80" ry="42" fill="url(#glow)"/>')
-text(TITLE + 14, 90, "GLOW-UP", 26, anchor="start", spacing=2.5)
-o(f'  <rect x="{TITLE + 15}" y="101" width="30" height="2" fill="{ACCENT}"/>')
-text(TITLE + 15, 120, "HARMONIC FILTER", 8.5, anchor="start", fill=ACCENT, spacing=2.6)
+# The title, its top level with the sections' headers.
+TITLE_Y = HEAD_Y + 12
+o(f'  <ellipse cx="{TITLE + 78}" cy="{TITLE_Y - 6}" rx="80" ry="36" fill="url(#glow)"/>')
+text(TITLE + 14, TITLE_Y, "GLOW-UP", 26, anchor="start", spacing=2.5)
+o(f'  <rect x="{TITLE + 15}" y="{TITLE_Y + 9}" width="30" height="2" fill="{ACCENT}"/>')
+text(TITLE + 15, TITLE_Y + 27, "HARMONIC FILTER", 8.5, anchor="start", fill=ACCENT,
+     spacing=2.6)
 text(TITLE + 15, H - 22, "VULPUS LABS", 7.5, anchor="start", fill=DIM, spacing=2.4)
+# The output: MIX under the title; DRY CUT in a row with MODE's keys.
+knob("mix", TITLE + 76, MIX_Y, "MIX", lin(11), {0: "DRY", 1: "WET"}, label_gap=18)
 text(TITLE + 15, SMALL_Y - 28, "MODE", 8, anchor="start", spacing=1.6)
-key("mono", TITLE + 34, SMALL_Y, "MONO")
-key("stereo", TITLE + 90, SMALL_Y, "STEREO")
-# The output, tucked under the title.
-knob("mix", TITLE + 40, OUT_Y, "MIX", lin(11), {0: "DRY", 1: "WET"}, big=False,
-     label_gap=18)
-key("dry_cut", TITLE + 108, OUT_Y, "DRY CUT")
+key("mono", TITLE + 26, SMALL_Y, "MONO")
+key("stereo", TITLE + 72, SMALL_Y, "STEREO")
+key("dry_cut", TITLE + 126, SMALL_Y, "DRY CUT")
 
 boost(BOOST_A, "A")
 boost(BOOST_B, "B")
 
 # The display and what shapes the analysis.
 window()
-knob("threshold", DISPLAY + 72, SMALL_Y, "THRESHOLD", lin(7),
-     {0: "0", 0.5: "15", 1: "30 dB"}, big=False)
-text(DISPLAY + 256, SMALL_Y - 32, "GRID", 8, spacing=1.6)
-key("grid_lin", DISPLAY + 200, SMALL_Y, "LIN")
-key("grid_irr", DISPLAY + 256, SMALL_Y, "IRR")
-key("grid_tet", DISPLAY + 312, SMALL_Y, "TET")
+# GRID's keys, centred under it, named to their left.
+GRID_X = DISPLAY + 178
+text(GRID_X - 86, SMALL_Y + 3, "GRID", 8, anchor="end", spacing=1.6)
+key("grid_lin", GRID_X - 56, SMALL_Y, "LIN")
+key("grid_irr", GRID_X, SMALL_Y, "IRR")
+key("grid_tet", GRID_X + 56, SMALL_Y, "TET")
 
 # The filters' character.
 header(FILTER, RIGHT, "FILTER")
-knob("resonance", FILTER + 66, BIG_Y, "RESONANCE", lin(11), {0: "0", 0.5: "SING", 1: "100"})
-knob("focus", FILTER + 176, BIG_Y, "FOCUS", lin(11), {0: "GRID", 1: "TRACK"})
-knob("width", FILTER + 46, SMALL_Y, "WIDTH", lin(9),
-     {0: "10", 0.5: "45", 1: "200"}, big=False)
-knob("tone", FILTER + 122, SMALL_Y, "TONE", lin(9), {0: "-6", 0.5: "0", 1: "+6"},
-     big=False)
-knob("speed", FILTER + 198, SMALL_Y, "SPEED", lin(9), {0: "SLOW", 1: "FAST"}, big=False)
+# Two columns on the boosts' rows: RESONANCE and FOCUS, then WIDTH and
+# SPEED, then TONE and THRESHOLD (which peaks get filters at all).
+LEFT, RIGHT_COL = FILTER + 50, FILTER + 140
+knob("resonance", LEFT, AMOUNT_Y, "RESONANCE", lin(11), {0: "0", 0.5: "SING", 1: "100"},
+     big=False, medium=True, label_gap=23)
+knob("focus", RIGHT_COL, AMOUNT_Y, "FOCUS", lin(11), {0: "GRID", 1: "TRACK"},
+     big=False, medium=True, label_gap=23)
+knob("width", LEFT, MULT_Y, "WIDTH", lin(9), {0: "10", 0.5: "45", 1: "200"},
+     big=False, label_gap=18)
+knob("speed", RIGHT_COL, MULT_Y, "SPEED", lin(9), {0: "SLOW", 1: "FAST"}, big=False,
+     label_gap=18)
+knob("tone", LEFT, DIV_Y, "TONE", lin(9), {0: "-6", 0.5: "0", 1: "+6"}, big=False,
+     label_gap=18)
+knob("threshold", RIGHT_COL, DIV_Y, "THRESHOLD", lin(7), {0: "0", 0.5: "15", 1: "30 dB"},
+     big=False, label_gap=18)
 
 o('  </g>')
 

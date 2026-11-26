@@ -153,3 +153,14 @@ The display is now an EQ-style plot, as asked: frequency across (log,
 - The OUTPUT section is gone: MIX (now a small knob) and DRY CUT sit in a
   row under the title, above MODE. The face is 1048 × 330. Relief
   re-rendered, snapshots re-blessed.
+
+## Progress (2026-11-26): FILTER in two columns, MIX large, the logo up
+
+- The title's top is level with the sections' headers. MIX is a large
+  knob under it; DRY CUT is in a row with MONO and STEREO.
+- FILTER is two columns on the boosts' three rows: RESONANCE and FOCUS
+  (medium knobs, a new `knob_medium` skin from the same frames), WIDTH
+  and SPEED, TONE and THRESHOLD. THRESHOLD moved here from under the
+  scope, which now has only GRID's keys under it and is 210 tall (was
+  184).
+- The face is 1000 × 330. Relief re-rendered, snapshots re-blessed.

@@ -29,10 +29,12 @@ fn main() {
         // repeats every ridge.
         .skin("knob", &refs(&knob))
         .skin_cycle("knob", KNURL_PERIOD)
-        // The same knob, smaller, for the trims: a skin renders at one
-        // size.
+        // The same knob, smaller, for the trims and FILTER's two: a skin
+        // renders at one size.
         .skin("knob_small", &refs(&knob))
         .skin_cycle("knob_small", KNURL_PERIOD)
+        .skin("knob_medium", &refs(&knob))
+        .skin_cycle("knob_medium", KNURL_PERIOD)
         .skin("key", &refs(&key))
         .build();
 }
