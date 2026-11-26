@@ -60,6 +60,7 @@ of this ticket, as Wesley's was (0037).
   `SHA256SUMS`. All six fetched back match, and a quarantined download
   of the macOS VST3 passes Gatekeeper. Beverley and Wesley at 0.3.0 are
   unchanged from 0.2.0 and were not published.
-- vulpuslabs.com (vulpus-labs-site bbffb7d): Glow-Up's product page, in
+- vulpuslabs.com (vulpus-labs-site bbffb7d, its download links fixed in
+  19cf314): Glow-Up's product page, in
   the free effects, and its manual at `/manuals/glow-up/`.
 - The DAW check (0010) and the faceplate ticket (0009) stay open.
