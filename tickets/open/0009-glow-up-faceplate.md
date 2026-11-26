@@ -39,7 +39,7 @@ unit like Beverley and Wesley, but modern rather than 1990s (decided
   THRESHOLD and GRID under it; BOOST B; FILTER (RESONANCE, FOCUS; WIDTH,
   TONE, SPEED); OUTPUT (MIX, DRY CUT).
 - `art/glow-up/blender/controls.py`: a machined aluminium knob (60-ridge
-  knurl, turned top, an amber line), cycled every 6° with four body
+  knurl, turned top, a dark polished-metal line), cycled every 6° with four body
   frames, used as `knob` and `knob_small`; a soft-touch key with an amber
   LED, off and lit. About 40 s.
 - Beverley's `blender/panel.py` gains a hex button-head screw with no

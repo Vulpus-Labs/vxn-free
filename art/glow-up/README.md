@@ -2,7 +2,7 @@
 
 Glow-Up looks like a modern rack unit: graphite anodised aluminium with a
 horizontal brush, light legends and fine scales, machined aluminium knobs
-with an amber line, soft-touch keys with amber LEDs, and black hex
+with a dark polished-metal line, soft-touch keys with amber LEDs, and black hex
 button-head rack screws. Beverley and Wesley are its 1990s siblings.
 
 Everything here is original, drawn and modelled for vxn-free, under the
