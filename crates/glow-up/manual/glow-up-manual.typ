@@ -36,7 +36,7 @@
   #set par(justify: false)
   #text(font: sans, size: 30pt, weight: "bold")[Glow-Up]
   #v(-4mm)
-  #text(font: sans, size: 12pt, fill: ink-2)[Harmonic filter · CLAP and VST3 plugin · free and
+  #text(font: sans, size: 12pt, fill: ink-2)[Harmonic filter · CLAP and VST®3 plugin · free and
     open source]
   #v(6mm)
   #align(center, face(img("init"), pos, width: 100%))
@@ -61,6 +61,7 @@
   #place(bottom + left, text(font: sans, size: 7.5pt, fill: ink-3)[
     Vulpus Labs · manual for version 0.3.0
   ])
+  #place(bottom + right, vst-logo(read("/docs/manual/vst-compatible.png", encoding: none)))
 ]
 
 = Quick start
@@ -441,4 +442,4 @@ Each of these changes only the controls it names; leave the rest at their defaul
 - Delay: none.
 - Licence: free, under the MIT or Apache-2.0 licence. The source code is at
   #link("https://github.com/Vulpus-Labs/vxn-free").
-- VST is a registered trademark of Steinberg Media Technologies GmbH.
+- #vst-trademark

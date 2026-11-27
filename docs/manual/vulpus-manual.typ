@@ -97,6 +97,18 @@
   body
 }
 
+// --- VST ---------------------------------------------------------------------------------------
+
+// Steinberg's attribution, which its VST Usage Guidelines (§15, shipped with the VST3 SDK) ask for
+// in the documentation of a plugin built with the SDK. Its first "VST" in a manual carries ®.
+#let vst-trademark = [VST is a registered trademark of Steinberg Media Technologies GmbH.]
+
+// Steinberg's VST Compatible logo, which carries that line, unaltered (docs/manual/
+// vst-compatible.png, from the guidelines), at their minimum printed size of 20 × 18.7 mm. The
+// manual reads the image and passes its bytes: `vst-logo(read("/docs/manual/vst-compatible.png",
+// encoding: none))`.
+#let vst-logo(img) = image(img, width: 20mm)
+
 // Small sans text: notes beside figures, tooltips quoted.
 #let note(body) = text(font: sans, size: 8pt, fill: ink-2, body)
 

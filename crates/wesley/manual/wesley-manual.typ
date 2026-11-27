@@ -23,7 +23,7 @@
   #set par(justify: false)
   #text(font: sans, size: 30pt, weight: "bold")[Wesley]
   #v(-4mm)
-  #text(font: sans, size: 12pt, fill: ink-2)[Three-band crusher · CLAP and VST3 plugin · free and
+  #text(font: sans, size: 12pt, fill: ink-2)[Three-band crusher · CLAP and VST®3 plugin · free and
     open source]
   #v(6mm)
   #align(center, face(img("init"), pos, width: 78%))
@@ -46,6 +46,7 @@
   #place(bottom + left, text(font: sans, size: 7.5pt, fill: ink-3)[
     Vulpus Labs · manual for version 0.2.0
   ])
+  #place(bottom + right, vst-logo(read("/docs/manual/vst-compatible.png", encoding: none)))
 ]
 
 = Quick start
@@ -115,7 +116,7 @@ of the sound where you want it. To pull the kick drum's click into MID while its
 LOW, for example, bring *LOW X* down to about 100 Hz.
 
 The bands overlap a little at each crossover, so nothing is cut off sharply, and they always add
-back to an even sound: turn every band off and Wesley sounds like the original. MID is always at
+back to an even sound: switch every band off, with each *LEVEL* at 0 dB, for a clean bypass. MID is always at
 least an octave wide: if *HIGH X* is set less than an octave above *LOW X*, Wesley splits an
 octave above *LOW X* instead, though the knob stays where you left it.
 
@@ -305,7 +306,7 @@ too much.
 
 *MIX*, at the bottom right, blends the whole of Wesley's sound with the clean sound, from DRY to
 WET (the default). The clean side is the three bands added back together uncrushed and
-without their *LEVEL* settings, so at DRY Wesley sounds like the original.
+without their *LEVEL* settings, so DRY is a clean bypass.
 
 The knobs respond smoothly as you turn or automate them, without clicks; the switches change at
 once. Wesley adds no delay, so it can be used while recording or playing live.
@@ -390,4 +391,4 @@ Each of these changes only the controls it names; leave the rest at their defaul
 - Delay: none.
 - Licence: free, under the MIT or Apache-2.0 licence. The source code is at
   #link("https://github.com/Vulpus-Labs/vxn-free").
-- VST is a registered trademark of Steinberg Media Technologies GmbH.
+- #vst-trademark

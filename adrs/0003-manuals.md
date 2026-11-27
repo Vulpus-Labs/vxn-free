@@ -31,6 +31,15 @@ graphs generated from the audio engine rather than drawn by hand.
    `build.sh` regenerates them. The PDF is published on vulpuslabs.com
    (`/manuals/<plugin>/`), linked from the plugin's product page and from
    this repository's README.
+4. **Steinberg's rules for VST.** The VST3 SDK's VST Usage Guidelines
+   ask that a plugin's documentation shows the VST Compatible logo, puts
+   ® on the first "VST", and gives the line "VST is a registered
+   trademark of Steinberg Media Technologies GmbH." The template has
+   `vst-logo`, which sets Steinberg's logo (`docs/manual/
+   vst-compatible.png`, unaltered, from the guidelines) at its minimum
+   printed size of 20 × 18.7 mm, and `vst-trademark`, the line. Each
+   manual's title page shows the logo and reads "CLAP and VST®3 plugin";
+   its reference gives the line.
 
 ## Consequences
 

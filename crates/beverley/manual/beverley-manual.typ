@@ -70,7 +70,7 @@
   #set par(justify: false)
   #text(font: sans, size: 30pt, weight: "bold")[Beverley]
   #v(-4mm)
-  #text(font: sans, size: 12pt, fill: ink-2)[Bitcrusher · CLAP and VST3 plugin · free and open
+  #text(font: sans, size: 12pt, fill: ink-2)[Bitcrusher · CLAP and VST®3 plugin · free and open
     source]
   #v(8mm)
   #face(img("init"), pos)
@@ -93,6 +93,7 @@
   #place(bottom + left, text(font: sans, size: 7.5pt, fill: ink-3)[
     Vulpus Labs · manual for version 0.2.0
   ])
+  #place(bottom + right, vst-logo(read("/docs/manual/vst-compatible.png", encoding: none)))
 ]
 
 = Quick start
@@ -479,4 +480,4 @@ Each of these changes only the controls it names; leave the rest at their defaul
 - Delay: none.
 - Licence: free, under the MIT or Apache-2.0 licence. The source code is at
   #link("https://github.com/Vulpus-Labs/vxn-free").
-- VST is a registered trademark of Steinberg Media Technologies GmbH.
+- #vst-trademark
