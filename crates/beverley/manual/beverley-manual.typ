@@ -159,7 +159,7 @@ you can see the steps change before you hear them.
 
 #block(breakable: false, grid(columns: (50mm, 1fr), column-gutter: 6mm, align: horizon,
   face(img("init"), pos, crop: display-group, width: 50mm),
-  [With *AUTO* off, the tone in the window is at half of full level before *GAIN*, so turning
+  [With *AUTO* off, the tone in the window is at 3 dB below full level before *GAIN*, so turning
     *GAIN* up drives it into more steps, then flattens and lowers its peaks, as the music would
     be. With *AUTO* on it is at full level, the way auto gain sets the sound up for the crush.],
 ))

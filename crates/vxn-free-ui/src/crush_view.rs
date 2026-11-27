@@ -8,8 +8,10 @@
 //! Which sine: with AUTO GAIN on, the chain sees any signal at full scale,
 //! so the sine is at full scale. With it off, the result depends on the
 //! input's level, which the display can't know; it takes a sine at
-//! [`FIXED_GAIN_REFERENCE`] (−6 dBFS) before GAIN, so 0 dB uses half the
-//! quantiser's range, +6 dB all of it, and more clips. Both curves are
+//! [`FIXED_GAIN_REFERENCE`] (−3 dBFS) before GAIN, so 0 dB uses about 0.7
+//! of the quantiser's range, +3 dB all of it, and more clips. Not −6 dBFS:
+//! its peak would sit exactly on symmetric 1 bit's step at 0.5 and the
+//! output would draw flat (ticket 0047). Both curves are
 //! drawn relative to that sine's peak: the sine fills the height, and the
 //! output shows its shape and level against it (a clipped sine comes out
 //! quieter, as Beverley's gain is undone after the crush).
@@ -22,8 +24,8 @@ use silkscreen::core::{Rect, WidgetState};
 use silkscreen::{EditorState, EditorWidget, Model, ParamIndex};
 use vxn_free_dsp::crush::{Mode, Prepared, Settings};
 
-/// The sine's peak with AUTO GAIN off, before GAIN: −6 dBFS.
-pub const FIXED_GAIN_REFERENCE: f32 = 0.5;
+/// The sine's peak with AUTO GAIN off, before GAIN: −3 dBFS.
+pub const FIXED_GAIN_REFERENCE: f32 = 0.707_945_8;
 
 /// One chain's params, as its plugin numbers them, in Beverley's units:
 /// GAIN dB, AUTO GAIN and CRUSH MODE switches, GAMMA's knob (−1 to 1),
@@ -373,12 +375,35 @@ mod tests {
     }
 
     #[test]
+    fn symmetric_one_bit_at_unity_gain_shows_its_pulses() {
+        // Ticket 0047: at −6 dBFS the reference's peak sat on this step
+        // and every point drew as 0.
+        let v = ChainValues {
+            auto_gain: false,
+            gain_db: 0.0,
+            gamma_knob: 0.0,
+            bits: 1.0,
+            smoothing_pct: 0.0,
+            symmetric: true,
+            mix_pct: 100.0,
+        };
+        let cycle = crush_cycle(&v, 128);
+        let top = cycle.iter().map(|&(_, o)| o).fold(0.0f32, f32::max);
+        let bottom = cycle.iter().map(|&(_, o)| o).fold(0.0f32, f32::min);
+        assert!((top - 1.0 / FIXED_GAIN_REFERENCE).abs() < 1e-4, "{top}");
+        assert!(
+            (bottom + 1.0 / FIXED_GAIN_REFERENCE).abs() < 1e-4,
+            "{bottom}"
+        );
+    }
+
+    #[test]
     fn driving_past_full_scale_clips_and_comes_out_quieter() {
-        // −6 dBFS with +18 dB is 4× full scale: clipped at a quarter of
+        // The reference driven to 4× full scale: clipped at a quarter of
         // the sine's peak, relative to it.
         let v = ChainValues {
             auto_gain: false,
-            gain_db: 18.06,
+            gain_db: 20.0 * (4.0 / FIXED_GAIN_REFERENCE).log10(),
             bits: 16.0,
             ..defaults()
         };
