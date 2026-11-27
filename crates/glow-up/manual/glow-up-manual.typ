@@ -43,10 +43,13 @@
   #v(6mm)
   #grid(columns: (1fr, 1fr), column-gutter: 10mm,
     [
-      Glow-Up listens for the strongest notes and overtones in a sound and brightens it at
-      chosen intervals above them: an octave, a fifth, or any ratio you set. It does this with
-      narrow filters that boost what is already there, so it adds shimmer and focus without
-      adding notes, until you turn up its resonance and the filters start to sing.
+      Glow-Up finds the strongest pitches in a sound and boosts the overtones already there at
+      chosen intervals above them: an octave, a fifth, or any ratio you set. On a plucked guitar
+      note, rich in overtones, the one at that interval comes forward until you hear it as a
+      second pitch alongside the note. On other sounds it brightens, and with its resonance
+      turned up it adds overtones that ring and sing.
+
+      For a shimmer, turn on *DRY CUT* and send only the boosts into a reverb.
 
       It adds no delay. Start with the Quick start on the next page.
     ],
@@ -389,8 +392,11 @@ turn or automate them. Glow-Up adds no delay, so it can be used while recording 
 
 Each of these changes only the controls it names; leave the rest at their defaults.
 
-/ Shimmer: A *AMOUNT* 50%, B *MULT* 4, B *DIV* 1, B *AMOUNT* 30%, *TONE* +3 dB/oct. An airy
+/ Sheen: A *AMOUNT* 50%, B *MULT* 4, B *DIV* 1, B *AMOUNT* 30%, *TONE* +3 dB/oct. An airy
   octave-and-two-octaves sheen on clean guitar or pads.
+/ Shimmer: *DRY CUT* on, A *AMOUNT* 50%, B *MULT* 4, B *DIV* 1, B *AMOUNT* 30%, then a long
+  reverb after Glow-Up. Put the pair on a send, or in parallel with the dry guitar, so only the
+  overtones are washed into the reverb and the notes stay clear.
 / Organ body: A *AMOUNT* 40%, B *AMOUNT* 40% (the defaults' octave and fifth, stronger). Rich and
   full on synths and keys.
 / Warm floor: A *MULT* 1, A *DIV* 2, A *AMOUNT* 50%, B *AMOUNT* 0. Lifts what lies an octave
