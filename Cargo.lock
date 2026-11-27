@@ -74,7 +74,7 @@ dependencies = [
 
 [[package]]
 name = "beverley"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "silkscreen",
  "silkscreen-bridge",
@@ -86,7 +86,7 @@ dependencies = [
 
 [[package]]
 name = "beverley-clap"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "beverley",
  "clack-extensions",
@@ -176,7 +176,7 @@ checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
 
 [[package]]
 name = "charm"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "hound",
  "silkscreen",
@@ -188,7 +188,7 @@ dependencies = [
 
 [[package]]
 name = "charm-clap"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "charm",
  "clack-extensions",
@@ -537,7 +537,7 @@ dependencies = [
 
 [[package]]
 name = "glow-up"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "silkscreen",
  "silkscreen-bridge",
@@ -548,7 +548,7 @@ dependencies = [
 
 [[package]]
 name = "glow-up-clap"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "clack-extensions",
  "clack-host",
@@ -1615,11 +1615,11 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 
 [[package]]
 name = "vxn-free-dsp"
-version = "0.3.0"
+version = "0.3.1"
 
 [[package]]
 name = "vxn-free-ui"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "silkscreen",
  "vxn-free-dsp",
@@ -1747,7 +1747,7 @@ checksum = "a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88"
 
 [[package]]
 name = "wesley"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "silkscreen",
  "silkscreen-bridge",
@@ -1759,7 +1759,7 @@ dependencies = [
 
 [[package]]
 name = "wesley-clap"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "clack-extensions",
  "clack-host",
